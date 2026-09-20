@@ -1,20 +1,15 @@
 # AgriTech - Frontend Client
 
-The frontend client for the **Precision AgriTech Platform**, built with **React**, **TypeScript**, **Vite**, and **pure Tailwind CSS v4** (no PostCSS).
+The frontend client for the **Precision AgriTech Platform**, built with **React**, **TypeScript**, **Vite**, and **pure Tailwind CSS v4**.
 
 ## Overview
 
 The client application powers farm managers and field workers with interactive spatial tools:
+
 - **Interactive GIS Map**: Spatial polygon drawing and parcel status overlays via Leaflet.
 - **Disease Progression Slider**: WebGL/Canvas leaf disease progression cross-dissolve engine.
 - **3D Plant Anatomy Explorer**: Three.js / React Three Fiber interactive low-poly crop models with anatomical hotspot callouts.
 - **Regional Risk Engine**: Türkiye 7-region / 81-province climate risk choropleth dashboard.
-
-## Styling Architecture: Pure Tailwind CSS (No PostCSS)
-This frontend utilizes the official **Tailwind CSS v4** Vite plugin (`@tailwindcss/vite`).
-- No `postcss.config.js` or PostCSS runner needed.
-- No `tailwind.config.js` required for standard setups.
-- Tailwind is imported directly in `src/index.css` via `@import "tailwindcss";`.
 
 ## Prerequisites
 
@@ -24,18 +19,23 @@ This frontend utilizes the official **Tailwind CSS v4** Vite plugin (`@tailwindc
 ## Getting Started
 
 ### 1. Install Dependencies
+
 ```powershell
 npm install
 ```
 
 ### 2. Start the Development Server
+
 ```powershell
 npm run dev
 ```
+
 The application will be accessible at `http://localhost:5173`.
 
 ### 3. Build for Production
+
 ```powershell
 npm run build
 ```
+
 Build output will be placed in `dist/`.
