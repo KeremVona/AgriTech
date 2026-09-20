@@ -5,6 +5,7 @@ The computer vision and disease diagnostics microservice for the **Precision Agr
 ## Overview
 
 This service handles foliage image analysis and leaf pathology diagnostics:
+
 - **Leaf Disease Classification**: Classifies plant health using models trained on the PlantVillage dataset.
 - **Low-Latency Inference**: Runs lightweight CNN models (e.g., MobileNetV3 / EfficientNet-B0) exported to ONNX format.
 - **RESTful Diagnostics API**: Ingests multipart image uploads and returns predicted disease, confidence score, pathogen type, and class probabilities.
@@ -16,7 +17,8 @@ This service handles foliage image analysis and leaf pathology diagnostics:
 
 ## Getting Started
 
-### 1. Create and Activate a Virtual Environment
+### 1. Make and Activate a Virtual Environment
+
 ```powershell
 # Windows PowerShell
 python -m venv venv
@@ -28,15 +30,19 @@ source venv/bin/activate
 ```
 
 ### 2. Install Dependencies
+
 ```powershell
 pip install -r requirements.txt
 ```
 
 ### 3. Run the Inference Server
+
 ```powershell
 python main.py
 ```
+
 Or with uvicorn directly:
+
 ```powershell
 uvicorn main:app --reload --port 8000
 ```
