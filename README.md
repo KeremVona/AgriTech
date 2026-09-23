@@ -25,7 +25,7 @@
                                  |
                                  v
                     [ Relational Database + GIS ]
-                 - PostgreSQL with PostGIS extension
+                 - PostgreSQL 16 with PostGIS 3.4 (Docker)
 ```
 
 ---
@@ -54,8 +54,16 @@ agritech/
 │   ├── requirements.txt      # Python dependencies (FastAPI, ONNXRuntime, etc.)
 │   └── README.md             # ML service setup & documentation
 │
-├── PROJECT_DETAILS.md        # Comprehensive system specification & roadmap
-├── PHASE1_DB_SCHEMA.md       # Phase 1 database schema & entity specifications
+├── docker/                   # Container initialization & configurations
+│   ├── postgres/             # PostGIS extension scripts (auto-executed on boot)
+│   └── mosquitto/config/     # Mosquitto MQTT broker configuration
+│
+├── PROJECT_DETAILS/          # Project documentation, plans, and database design
+│   ├── PROJECT_DETAILS.md    # Comprehensive system specification & roadmap
+│   ├── Database Design/      # Master database schema specifications
+│   └── Phase Plans/          # Tracks and TODOs for Phases 1 through 6
+│
+├── docker-compose.yml        # One-command developer infrastructure (PostGIS + MQTT)
 ├── .gitignore                # Global gitignore across .NET, Node, Python & PostGIS
 ├── .env.example              # Environment variable template
 └── README.md                 # Project root guide (this file)
@@ -66,11 +74,11 @@ agritech/
 ## Prerequisites
 
 Ensure you have the following installed on your machine:
+- **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** (Used to run PostgreSQL+PostGIS and Mosquitto with zero configuration)
 - **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)**
 - **[Node.js](https://nodejs.org/)** (v20+ or v24 LTS)
 - **[Python](https://www.python.org/)** (v3.10+)
 - **[Git](https://git-scm.com/)**
-- **[PostgreSQL](https://www.postgresql.org/)** with the **[PostGIS](https://postgis.net/)** extension
 
 ---
 
@@ -82,7 +90,22 @@ git clone <REPOSITORY_URL>
 cd agritech
 ```
 
-### 2. Run the Backend API (.NET 10)
+### 2. Start the Local Infrastructure (Database & MQTT Broker)
+Ensure Docker Desktop is running, then run:
+```powershell
+docker compose up -d
+```
+This spins up:
+- **PostgreSQL 16 + PostGIS 3.4** on port `5432` (`agritech_db`, user: `postgres`, password: `postgres`).
+- **Eclipse Mosquitto MQTT Broker** on port `1883` (MQTT) and `9001` (WebSockets).
+
+> **Useful Docker commands:**
+> - `docker compose ps` — Check running containers and health status.
+> - `docker compose logs -f` — View live container logs.
+> - `docker compose down` — Stop the containers.
+
+### 3. Run the Backend API (.NET 10)
+In a new terminal:
 ```powershell
 cd backend
 dotnet restore
@@ -90,7 +113,7 @@ dotnet run --project AgriTech.Api.csproj
 ```
 The API starts on `http://localhost:5000` (or the configured port).
 
-### 3. Run the Frontend Client (React + Pure Tailwind CSS)
+### 4. Run the Frontend Client (React + Pure Tailwind CSS)
 In a new terminal:
 ```powershell
 cd frontend
@@ -99,7 +122,7 @@ npm run dev
 ```
 The Vite development server will open at `http://localhost:5173`.
 
-### 4. Run the Machine Learning Service (Python / FastAPI)
+### 5. Run the Machine Learning Service (Python / FastAPI)
 In a new terminal:
 ```powershell
 cd ml-service
@@ -120,5 +143,6 @@ The FastAPI inference server will run at `http://localhost:8000`. Interactive do
 ## Detailed Documentation & Roadmap
 
 For deep dives into the functional modules, data models, and feature specifications, consult:
-- **[PROJECT_DETAILS.md](PROJECT_DETAILS.md)**: Full capstone blueprint including the Disease Progression Slider Engine, 3D Plant Anatomy Explorer, and Türkiye Regional Risk Engine.
-- **[PHASE1_DB_SCHEMA.md](PHASE1_DB_SCHEMA.md)**: Relational schema and entity specifications for Phase 1 crop disease taxonomies, stages, and inference logging.
+- **[PROJECT_DETAILS/PROJECT_DETAILS.md](PROJECT_DETAILS/PROJECT_DETAILS.md)**: Full capstone blueprint including the Disease Progression Slider Engine, 3D Plant Anatomy Explorer, and Türkiye Regional Risk Engine.
+- **[PROJECT_DETAILS/Database Design/COMPLETE_PROJECT_DATABASE_SCHEMA.md](PROJECT_DETAILS/Database%20Design/COMPLETE_PROJECT_DATABASE_SCHEMA.md)**: Master database schema and entity specifications across all 9 domain modules.
+- **[PROJECT_DETAILS/Phase Plans/Task Completion.md](PROJECT_DETAILS/Phase%20Plans/Task%20Completion.md)**: The mandatory engineering protocol for completing TODOs, executing tests, and submitting completion reports.

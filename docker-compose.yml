@@ -1,0 +1,45 @@
+services:
+  # -------------------------------------------------------------
+  # 1. PostgreSQL 16 with PostGIS Spatial Extension
+  # -------------------------------------------------------------
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: agritech_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: agritech_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-extensions.sql:/docker-entrypoint-initdb.d/01-init-extensions.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d agritech_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------
+  # 2. Eclipse Mosquitto MQTT Broker (IoT Sensor Simulation)
+  # -------------------------------------------------------------
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: agritech_mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"  # MQTT protocol
+      - "9001:9001"  # MQTT over WebSockets
+    volumes:
+      - ./docker/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+
+volumes:
+  postgres_data:
+    name: agritech_postgres_data
+  mosquitto_data:
+    name: agritech_mosquitto_data
+  mosquitto_log:
+    name: agritech_mosquitto_log
