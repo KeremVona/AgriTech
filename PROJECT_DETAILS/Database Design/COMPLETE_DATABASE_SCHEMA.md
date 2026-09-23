@@ -109,16 +109,16 @@ erDiagram
 #### 1.1 `users`
 Represents farm operators, agronomists, field workers, and platform administrators.
 
-| Column | Type / Representation | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | Primary Key | Unique user identifier |
-| `email` | `VARCHAR(255)` | Unique, Not Null | Account login and contact address |
-| `full_name` | `VARCHAR(120)` | Not Null | User full legal/display name |
-| `role` | `VARCHAR(30)` | Not Null | Role: `FARM_OWNER`, `AGRONOMIST`, `FIELD_WORKER`, `ADMIN` |
-| `phone_number` | `VARCHAR(30)` | Nullable | Field worker contact for urgent alerts |
-| `is_active` | `BOOLEAN` | Not Null, Default `TRUE` | Account status flag |
-| `created_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Registration timestamp |
-| `updated_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Profile modification timestamp |
+| Column         | Type / Representation | Constraints               | Description                                               |
+| :------------- | :-------------------- | :------------------------ | :-------------------------------------------------------- |
+| `id`           | `UUID`                | Primary Key               | Unique user identifier                                    |
+| `email`        | `VARCHAR(255)`        | Unique, Not Null          | Account login and contact address                         |
+| `full_name`    | `VARCHAR(120)`        | Not Null                  | User full legal/display name                              |
+| `role`         | `VARCHAR(30)`         | Not Null                  | Role: `FARM_OWNER`, `AGRONOMIST`, `FIELD_WORKER`, `ADMIN` |
+| `phone_number` | `VARCHAR(30)`         | Nullable                  | Field worker contact for urgent alerts                    |
+| `is_active`    | `BOOLEAN`             | Not Null, Default `TRUE`  | Account status flag                                       |
+| `made_at`      | `TIMESTAMPTZ`         | Not Null, Default `NOW()` | Registration timestamp                                    |
+| `updated_at`   | `TIMESTAMPTZ`         | Not Null, Default `NOW()` | Profile change timestamp                                  |
 
 #### 1.2 `fields`
 Represents an overarching agricultural landholding or farm perimeter boundary.
@@ -131,7 +131,7 @@ Represents an overarching agricultural landholding or farm perimeter boundary.
 | `boundary_geom` | `GEOMETRY(Polygon, 4326)` | Not Null | Outer perimeter boundary polygon |
 | `total_area_hectares`| `NUMERIC(8, 2)` | Not Null | Calculated geographic area in hectares |
 | `location_name` | `VARCHAR(150)` | Nullable | Administrative address / district (e.g., "Mustafakemalpaşa, Bursa") |
-| `created_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Creation timestamp |
+| `made_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | making timestamp |
 | `updated_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Update timestamp |
 
 #### 1.3 `parcels`
@@ -151,7 +151,7 @@ Represents individual zoned agricultural management blocks inside a field, assig
 | `irrigation_method`| `VARCHAR(30)` | Not Null, Default `'DRIP'` | Method: `DRIP`, `SPRINKLER`, `MICRO_JET` |
 | `system_flow_rate_lpm`| `NUMERIC(8, 2)` | Not Null, Default `100.00` | Water delivery flow rate (Liters per minute) |
 | `irrigation_efficiency`| `NUMERIC(3, 2)` | Not Null, Default `0.88` | Application efficiency factor $\eta \in [0.70, 0.95]$ |
-| `created_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Creation timestamp |
+| `made_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | making timestamp |
 | `updated_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Update timestamp |
 
 ---
@@ -181,7 +181,7 @@ Catalog of crop varieties supported by the platform, vision models, and irrigati
 | `scientific_name` | `VARCHAR(120)` | Nullable | Botanical binomial (e.g., *Solanum lycopersicum*) |
 | `family` | `VARCHAR(80)` | Nullable | Plant family (e.g., *Solanaceae*, *Poaceae*) |
 | `default_root_depth_max_m`| `NUMERIC(3, 2)` | Not Null, Default `0.60` | Maximum effective rooting depth $Z_r$ at maturity (meters) |
-| `created_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Creation timestamp |
+| `made_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | making timestamp |
 
 #### 2.3 `crop_growth_stages`
 Configures phenological development stage durations and $K_c$ coefficients for FAO-56 calculations.
@@ -371,7 +371,7 @@ Tracks the complete valve actuation lifecycle from threshold trigger to completi
 | `flow_rate_lpm` | `NUMERIC(8, 2)` | Not Null | Flow rate during event |
 | `reason` | `VARCHAR(150)` | Nullable | Trigger reason (e.g., "MAD_EXCEEDED_DEFICIT_RECOVERY") |
 | `triggered_by_user_id`| `UUID` | FK (`users.id`) ON DELETE SET NULL, Nullable | Operator user ID if manual override |
-| `created_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Event creation timestamp |
+| `made_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Event making timestamp |
 
 ---
 
@@ -388,7 +388,7 @@ Operational and audit log recording every leaf scan processed by the FastAPI vis
 | `confidence_score`| `NUMERIC(5, 4)` | Not Null | Classifier confidence score ($0.0000 \to 1.0000$) |
 | `class_probabilities`| `JSONB` | Not Null | Softmax probability distribution across all classes |
 | `inference_time_ms`| `INTEGER` | Not Null | Model inference execution latency in milliseconds |
-| `created_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Inference execution timestamp |
+| `made_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | Inference execution timestamp |
 
 #### 7.2 `crop_scans`
 Stores in-field visual diagnosis records linked via spatial containment (`ST_Contains`).
@@ -548,7 +548,7 @@ ST_ClusterDBSCAN(geom_point::geography, eps := 50, minpoints := 3) OVER ()
 4. **Model Inference:** ONNX Runtime processes the image in $<85\text{ms}$, returning *Late Blight* with $96.4\%$ confidence. Writes to `model_inferences`.
 5. **Spatial Resolution:** PostGIS evaluates `ST_Contains` on `parcels` table and associates `parcel_id = 'parcel-tomato-01'`.
 6. **Persistence:** Ingestion writes to `crop_scans`.
-7. **Clustering & Alert:** Spatial job detects $\ge 3$ Late Blight scans within $50\text{m}$, creating a record in `disease_outbreak_clusters` with `lock_overhead_irrigation = TRUE`.
+7. **Clustering & Alert:** Spatial job detects $\ge 3$ Late Blight scans within $50\text{m}$, making a record in `disease_outbreak_clusters` with `lock_overhead_irrigation = TRUE`.
 8. **Real-time Broadcast:** SignalR hub pushes marker and red cluster polygon to the desktop farm dashboard.
 
 ### Scenario B: Telemetry Decay & Automated FAO-56 Irrigation Trigger (Phase 2 + Phase 3 + Phase 6)
