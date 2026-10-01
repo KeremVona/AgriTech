@@ -1,0 +1,272 @@
+{
+  "version": "1.0.0",
+  "description": "Morphological Leaf Disease Progression Manifest for Precision AgriTech Platform",
+  "asset_spec": {
+    "format": "WEBP",
+    "resolution": "800x800",
+    "channels": "RGBA",
+    "target_size_limit_kb": 150
+  },
+  "crops": [
+    {
+      "crop_id": "tomato",
+      "crop_name": "Tomato",
+      "scientific_name": "Solanum lycopersicum",
+      "disease_name": "Early Blight",
+      "pathogen_scientific": "Alternaria solani",
+      "pathogen_type": "FUNGAL",
+      "resolution": {
+        "width": 800,
+        "height": 800
+      },
+      "stages": [
+        {
+          "stage_order": 0,
+          "stage_label": "Asymptomatic Baseline",
+          "min_slider_pct": 0.0,
+          "max_slider_pct": 30.0,
+          "symptom_markers": "Healthy turgid leaflet with intact lamina, normal chlorophyll pigmentation, and crisp venation.",
+          "agronomic_advice": "Maintain preventive cultural hygiene; ensure drip irrigation to avoid foliar wetness.",
+          "color_palette_hex": [
+            "#2D6A4F",
+            "#52B788",
+            "#74C69D"
+          ],
+          "assets": {
+            "base_image_url": "/progression/tomato/tomato_stage0_healthy.webp",
+            "mask_image_url": null
+          }
+        },
+        {
+          "stage_order": 1,
+          "stage_label": "Early Concentric Lesions",
+          "min_slider_pct": 30.01,
+          "max_slider_pct": 70.0,
+          "symptom_markers": "Discrete brown-black lesions with faint yellow chlorotic halos; emerging concentric target-like rings on lower foliage.",
+          "agronomic_advice": "Apply preventive copper hydroxide or chlorothalonil barrier before upcoming precipitation events.",
+          "color_palette_hex": [
+            "#D4A373",
+            "#E9C46A",
+            "#582F0E"
+          ],
+          "assets": {
+            "base_image_url": "/progression/tomato/tomato_stage1_early.webp",
+            "mask_image_url": "/progression/tomato/tomato_stage1_mask.webp"
+          }
+        },
+        {
+          "stage_order": 2,
+          "stage_label": "Severe Necrosis & Defoliation",
+          "min_slider_pct": 70.01,
+          "max_slider_pct": 100.0,
+          "symptom_markers": "Extensive coalescing necrotic blotches, brittle necrotic leaf tissue collapse, and widespread chlorosis leading to blight defoliation.",
+          "agronomic_advice": "Immediately prune and isolate infected stems; apply systemic fungicide (mancozeb/difenoconazole); lock out overhead irrigation.",
+          "color_palette_hex": [
+            "#BC6C25",
+            "#3D2616",
+            "#1D1208"
+          ],
+          "assets": {
+            "base_image_url": "/progression/tomato/tomato_stage2_severe.webp",
+            "mask_image_url": "/progression/tomato/tomato_stage2_mask.webp"
+          }
+        }
+      ]
+    },
+    {
+      "crop_id": "potato",
+      "crop_name": "Potato",
+      "scientific_name": "Solanum tuberosum",
+      "disease_name": "Late Blight",
+      "pathogen_scientific": "Phytophthora infestans",
+      "pathogen_type": "OOMYCETE / FUNGAL",
+      "resolution": {
+        "width": 800,
+        "height": 800
+      },
+      "stages": [
+        {
+          "stage_order": 0,
+          "stage_label": "Asymptomatic Baseline",
+          "min_slider_pct": 0.0,
+          "max_slider_pct": 30.0,
+          "symptom_markers": "Vibrant emerald green leaf blade with smooth ovate margins, healthy stomatal turgor, and zero necrotic marks.",
+          "agronomic_advice": "Inspect field margins; monitor ambient relative humidity and leaf wetness hours.",
+          "color_palette_hex": [
+            "#285943",
+            "#4A8B66",
+            "#78B48C"
+          ],
+          "assets": {
+            "base_image_url": "/progression/potato/potato_stage0_healthy.webp",
+            "mask_image_url": null
+          }
+        },
+        {
+          "stage_order": 1,
+          "stage_label": "Water-Soaked Margins",
+          "min_slider_pct": 30.01,
+          "max_slider_pct": 70.0,
+          "symptom_markers": "Irregular pale water-soaked grayish lesions emerging on leaf margins and expanding rapidly under humid conditions.",
+          "agronomic_advice": "Initiate protective spray program (metalaxyl/mancozeb) prior to prolonged wet periods.",
+          "color_palette_hex": [
+            "#859B7A",
+            "#6B8E6B",
+            "#C8B88A"
+          ],
+          "assets": {
+            "base_image_url": "/progression/potato/potato_stage1_early.webp",
+            "mask_image_url": "/progression/potato/potato_stage1_mask.webp"
+          }
+        },
+        {
+          "stage_order": 2,
+          "stage_label": "Severe Necrotic Blight",
+          "min_slider_pct": 70.01,
+          "max_slider_pct": 100.0,
+          "symptom_markers": "Dark purplish-black necrotic collapse with white sporulation mycelial halos at lesion margins; irreversible tissue degradation.",
+          "agronomic_advice": "Emergency systemic intervention; halt overhead watering immediately; destroy heavily blighted vine refuse.",
+          "color_palette_hex": [
+            "#2B1D19",
+            "#3D231E",
+            "#9A988D"
+          ],
+          "assets": {
+            "base_image_url": "/progression/potato/potato_stage2_severe.webp",
+            "mask_image_url": "/progression/potato/potato_stage2_mask.webp"
+          }
+        }
+      ]
+    },
+    {
+      "crop_id": "corn",
+      "crop_name": "Corn (Maize)",
+      "scientific_name": "Zea mays",
+      "disease_name": "Common Rust",
+      "pathogen_scientific": "Puccinia sorghi",
+      "pathogen_type": "FUNGAL",
+      "resolution": {
+        "width": 800,
+        "height": 800
+      },
+      "stages": [
+        {
+          "stage_order": 0,
+          "stage_label": "Asymptomatic Baseline",
+          "min_slider_pct": 0.0,
+          "max_slider_pct": 30.0,
+          "symptom_markers": "Uniform linear blade with prominent central midrib, intact cuticle, and healthy light-to-forest green parallel striations.",
+          "agronomic_advice": "Ensure balanced nitrogen nutrition; scout lower canopy during early vegetative stages.",
+          "color_palette_hex": [
+            "#386641",
+            "#6A994E",
+            "#B5E48C"
+          ],
+          "assets": {
+            "base_image_url": "/progression/corn/corn_stage0_healthy.webp",
+            "mask_image_url": null
+          }
+        },
+        {
+          "stage_order": 1,
+          "stage_label": "Active Pustule Eruption",
+          "min_slider_pct": 30.01,
+          "max_slider_pct": 70.0,
+          "symptom_markers": "Small oval to elongate cinnamon-brown pustules erupting through the epidermis along parallel veins, encircled by chlorotic halos.",
+          "agronomic_advice": "Monitor rust pustule coverage on ear leaf; evaluate triazole or strobilurin fungicide threshold.",
+          "color_palette_hex": [
+            "#CB6824",
+            "#D97724",
+            "#E9D8A6"
+          ],
+          "assets": {
+            "base_image_url": "/progression/corn/corn_stage1_early.webp",
+            "mask_image_url": "/progression/corn/corn_stage1_mask.webp"
+          }
+        },
+        {
+          "stage_order": 2,
+          "stage_label": "Severe Pustule Coalescence",
+          "min_slider_pct": 70.01,
+          "max_slider_pct": 100.0,
+          "symptom_markers": "Dense coalescent dark reddish-brown to black teliospores; longitudinal necrotic banding causing premature leaf death and tip shredding.",
+          "agronomic_advice": "Apply fungicide immediately if rust threatens upper canopy before dent stage (R5); note hybrid resistance for next planting.",
+          "color_palette_hex": [
+            "#49111C",
+            "#5E1914",
+            "#2E080D"
+          ],
+          "assets": {
+            "base_image_url": "/progression/corn/corn_stage2_severe.webp",
+            "mask_image_url": "/progression/corn/corn_stage2_mask.webp"
+          }
+        }
+      ]
+    },
+    {
+      "crop_id": "apple",
+      "crop_name": "Apple",
+      "scientific_name": "Malus domestica",
+      "disease_name": "Apple Scab",
+      "pathogen_scientific": "Venturia inaequalis",
+      "pathogen_type": "FUNGAL",
+      "resolution": {
+        "width": 800,
+        "height": 800
+      },
+      "stages": [
+        {
+          "stage_order": 0,
+          "stage_label": "Asymptomatic Baseline",
+          "min_slider_pct": 0.0,
+          "max_slider_pct": 30.0,
+          "symptom_markers": "Broad elliptical glossy apple foliage with fine marginal serrations, rich green cuticle, and intact vascular arching.",
+          "agronomic_advice": "Maintain seasonal primary scab ascospore monitoring; schedule preventive cover sprays based on Mills periods.",
+          "color_palette_hex": [
+            "#2D5A27",
+            "#539032",
+            "#80B918"
+          ],
+          "assets": {
+            "base_image_url": "/progression/apple/apple_stage0_healthy.webp",
+            "mask_image_url": null
+          }
+        },
+        {
+          "stage_order": 1,
+          "stage_label": "Velvety Olive Lesions",
+          "min_slider_pct": 30.01,
+          "max_slider_pct": 70.0,
+          "symptom_markers": "Dull olive-green to smoky velvety spots with indistinct margins developing on upper leaf surface, accompanied by slight leaf crinkling.",
+          "agronomic_advice": "Apply kick-back curative fungicides (flusilazole/difenoconazole) within 72 hours of primary infection event.",
+          "color_palette_hex": [
+            "#555B38",
+            "#474E2B",
+            "#8C8343"
+          ],
+          "assets": {
+            "base_image_url": "/progression/apple/apple_stage1_early.webp",
+            "mask_image_url": "/progression/apple/apple_stage1_mask.webp"
+          }
+        },
+        {
+          "stage_order": 2,
+          "stage_label": "Corky Scab Necrosis",
+          "min_slider_pct": 70.01,
+          "max_slider_pct": 100.0,
+          "symptom_markers": "Thickened dark corky scab lesions, extensive chlorotic yellowing, puckered distortion, and premature necrotic leaf drop.",
+          "agronomic_advice": "Apply autumn urea spray or shredded leaf sanitation to accelerate leaf decay and reduce overwintering pseudothecia inocula.",
+          "color_palette_hex": [
+            "#1F2416",
+            "#2D1F14",
+            "#C9A227"
+          ],
+          "assets": {
+            "base_image_url": "/progression/apple/apple_stage2_severe.webp",
+            "mask_image_url": "/progression/apple/apple_stage2_mask.webp"
+          }
+        }
+      ]
+    }
+  ]
+}
