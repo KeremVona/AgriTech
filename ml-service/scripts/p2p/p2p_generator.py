@@ -1,0 +1,233 @@
+"""
+Standalone generation and postprocessing script for Prompt-to-Prompt Disease Progression.
+Executable locally or directly in Google Colab.
+Precision AgriTech Platform - Phase 1 (TODO-107 / Feature #1).
+"""
+
+import os
+import sys
+import json
+import argparse
+from pathlib import Path
+from typing import List, Dict, Tuple
+from PIL import Image, ImageOps, ImageChops, ImageFilter
+import numpy as np
+
+
+# Default prompt triplets and agronomic definitions for the 4 target crops
+DEFAULT_CROP_SPECS = {
+    "tomato": {
+        "crop_name": "Tomato",
+        "disease_name": "Early Blight",
+        "pathogen_scientific": "Alternaria solani",
+        "seed": 42,
+        "prompts": [
+            "macro studio photograph of a single healthy green tomato leaflet with distinct venation, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "macro studio photograph of a single green tomato leaflet with small dark brown concentric target-like lesions and faint yellow chlorotic halos, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "macro studio photograph of a single withered tomato leaflet with extensive dark brown necrotic patches, severe dry tissue collapse, and leaf margin yellowing, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+        ],
+        "cross_replace_steps": 0.75,
+        "self_replace_steps": 0.60,
+    },
+    "potato": {
+        "crop_name": "Potato",
+        "disease_name": "Late Blight",
+        "pathogen_scientific": "Phytophthora infestans",
+        "seed": 108,
+        "prompts": [
+            "macro studio photograph of a single broad oval healthy green potato leaflet, prominent center vein, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "macro studio photograph of a single green potato leaflet with irregular water-soaked dark brown-black lesions and pale green margins, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "macro studio photograph of a single decaying potato leaflet with large dark brown necrotic blotches, shriveled leaf edges, and severe tissue rot, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+        ],
+        "cross_replace_steps": 0.75,
+        "self_replace_steps": 0.60,
+    },
+    "corn": {
+        "crop_name": "Corn (Maize)",
+        "disease_name": "Common Rust",
+        "pathogen_scientific": "Puccinia sorghi",
+        "seed": 204,
+        "prompts": [
+            "macro studio photograph of a single long lanceolate healthy green corn leaf blade with parallel veins, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "macro studio photograph of a single green corn leaf blade with scattered elongated cinnamon-brown powdery pustules, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "macro studio photograph of a single dry corn leaf blade with dense confluent dark brown rust pustules, necrotic scorch streaks, and tissue brittleness, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+        ],
+        "cross_replace_steps": 0.70,
+        "self_replace_steps": 0.55,
+    },
+    "apple": {
+        "crop_name": "Apple",
+        "disease_name": "Apple Scab",
+        "pathogen_scientific": "Venturia inaequalis",
+        "seed": 312,
+        "prompts": [
+            "macro studio photograph of a single elliptical healthy green apple leaf with finely serrated margins, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "macro studio photograph of a single green apple leaf with discrete dull olive-green to black velvety spots, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "macro studio photograph of a single distorted apple leaf with large corky brown scab lesions, puckered lamina, and severe necrotic leaf margins, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+        ],
+        "cross_replace_steps": 0.75,
+        "self_replace_steps": 0.60,
+    },
+}
+
+
+def remove_white_background(img: Image.Image, threshold: int = 240) -> Image.Image:
+    """
+    Converts pure or near-white background pixels to transparent RGBA.
+    Preserves interior green and brown leaf pixels intact.
+    """
+    img = img.convert("RGBA")
+    data = np.array(img)
+    # Check if pixel is near-white
+    r, g, b, a = data[:, :, 0], data[:, :, 1], data[:, :, 2], data[:, :, 3]
+    white_mask = (r > threshold) & (g > threshold) & (b > threshold)
+    data[white_mask, 3] = 0
+    return Image.fromarray(data, mode="RGBA")
+
+
+def compute_difference_mask(img_base: Image.Image, img_target: Image.Image, blur_radius: float = 3.0) -> Image.Image:
+    """
+    Computes a localized grayscale pathology mask highlighting where symptoms emerged
+    between two progression stages. Fed to WebGL fragment shader uniforms u_mask1 and u_mask2.
+    """
+    # Convert to grayscale
+    gray_base = img_base.convert("L")
+    gray_target = img_target.convert("L")
+    
+    # Calculate absolute difference
+    diff = ImageChops.difference(gray_base, gray_target)
+    
+    # Contrast stretch to maximize mask separation
+    diff = ImageOps.autocontrast(diff, cutoff=2)
+    
+    # Smooth with Gaussian blur for organic shader edge blending
+    if blur_radius > 0:
+        diff = diff.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+        
+    return diff
+
+
+def normalize_to_target_spec(img: Image.Image, target_size: Tuple[int, int] = (800, 800)) -> Image.Image:
+    """Resizes and pads image to strictly 800x800 RGBA while maintaining aspect ratio."""
+    img = img.convert("RGBA")
+    img.thumbnail(target_size, Image.Resampling.LANCZOS)
+    
+    # Center on transparent canvas
+    final_img = Image.new("RGBA", target_size, (0, 0, 0, 0))
+    paste_x = (target_size[0] - img.width) // 2
+    paste_y = (target_size[1] - img.height) // 2
+    final_img.paste(img, (paste_x, paste_y), img)
+    return final_img
+
+
+def run_prompt_to_prompt_generation(
+    crop_id: str,
+    output_dir: Path,
+    device: str = "cuda",
+    model_id: str = "runwayml/stable-diffusion-v1-5",
+    num_inference_steps: int = 50,
+    guidance_scale: float = 7.5,
+):
+    """
+    Runs the complete Prompt-to-Prompt pipeline for a specified crop:
+    1. Loads Stable Diffusion pipeline.
+    2. Hooks AttentionControlEdit controller.
+    3. Runs joint batched generation for [Stage 0, Stage 1, Stage 2].
+    4. Postprocesses outputs into 800x800 WebP assets and companion masks.
+    """
+    import torch
+    from diffusers import StableDiffusionPipeline, DDIMScheduler
+    from cross_attention_control import AttentionControlEdit, register_attention_control
+
+    spec = DEFAULT_CROP_SPECS[crop_id]
+    prompts = spec["prompts"]
+    seed = spec["seed"]
+    cross_replace = spec["cross_replace_steps"]
+    self_replace = spec["self_replace_steps"]
+
+    print(f"\n[+] Starting Prompt-to-Prompt Generation for: {spec['crop_name']} ({spec['disease_name']})")
+    print(f"    Device: {device} | Model: {model_id} | Seed: {seed}")
+    print(f"    Cross Replace Steps: {cross_replace} | Self Replace Steps: {self_replace}")
+
+    generator = torch.Generator(device=device).manual_seed(seed)
+
+    scheduler = DDIMScheduler(
+        beta_start=0.00085,
+        beta_end=0.012,
+        beta_schedule="scaled_linear",
+        clip_sample=False,
+        set_alpha_to_one=False,
+    )
+
+    pipe = StableDiffusionPipeline.from_pretrained(
+        model_id,
+        scheduler=scheduler,
+        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+    ).to(device)
+
+    # Instantiate Prompt-to-Prompt controller
+    controller = AttentionControlEdit(
+        prompts=prompts,
+        num_steps=num_inference_steps,
+        cross_replace_steps=cross_replace,
+        self_replace_steps=self_replace,
+        tokenizer=pipe.tokenizer,
+        device=device,
+    )
+    register_attention_control(pipe, controller)
+
+    # Execute batched generation
+    with torch.autocast(device if device == "cuda" else "cpu"):
+        outputs = pipe(
+            prompts,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            generator=generator,
+        ).images
+
+    img_stage0, img_stage1, img_stage2 = outputs[0], outputs[1], outputs[2]
+
+    # Postprocessing
+    crop_out = output_dir / crop_id
+    crop_out.mkdir(parents=True, exist_ok=True)
+
+    print("    Post-processing output assets (800x800 RGBA WebP)...")
+    s0 = normalize_to_target_spec(remove_white_background(img_stage0))
+    s1 = normalize_to_target_spec(remove_white_background(img_stage1))
+    s2 = normalize_to_target_spec(remove_white_background(img_stage2))
+
+    # Masks for WebGL shaders
+    mask1 = compute_difference_mask(s0, s1)
+    mask2 = compute_difference_mask(s1, s2)
+
+    s0.save(crop_out / f"{crop_id}_stage0_healthy.webp", "WEBP", quality=90)
+    s1.save(crop_out / f"{crop_id}_stage1_early.webp", "WEBP", quality=90)
+    s2.save(crop_out / f"{crop_id}_stage2_severe.webp", "WEBP", quality=90)
+    mask1.save(crop_out / f"{crop_id}_stage1_mask.webp", "WEBP", quality=85)
+    mask2.save(crop_out / f"{crop_id}_stage2_mask.webp", "WEBP", quality=85)
+
+    print(f"[✓] Saved all 5 assets for {crop_id} in: {crop_out}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Prompt-to-Prompt Disease Progression Asset Generator")
+    parser.add_argument("--crop", type=str, choices=["all", "tomato", "potato", "corn", "apple"], default="all")
+    parser.add_argument("--output-dir", type=str, default="frontend/public/progression")
+    parser.add_argument("--device", type=str, default="cuda" if sys.platform != "darwin" else "cpu")
+    parser.add_argument("--steps", type=int, default=50)
+    args = parser.parse_args()
+
+    out_path = Path(args.output_dir)
+    crops_to_run = list(DEFAULT_CROP_SPECS.keys()) if args.crop == "all" else [args.crop]
+
+    for crop in crops_to_run:
+        run_prompt_to_prompt_generation(
+            crop_id=crop,
+            output_dir=out_path,
+            device=args.device,
+            num_inference_steps=args.steps,
+        )
+
+
+if __name__ == "__main__":
+    main()
