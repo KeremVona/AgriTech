@@ -8,11 +8,11 @@ Implemented and executed the dataset ingestion, validation, filtering, and deter
 
 ## Changes Made
 
-### Created
+### Made
 
 - `PROJECT_DETAILS/Reports/Phase 1/TODO-101-dataset-split.md` — Formal completion report and verification documentation for TODO-101.
 
-### Modified
+### Changed
 
 - `ml-service/scripts/prepare_dataset.py` — Enhanced with per-class SHA-256 duplicate image detection to filter identical images present in the raw source data prior to splitting, guaranteeing zero label leakage across train, val, and test splits.
 
@@ -72,21 +72,21 @@ python ml-service/scripts/prepare_dataset.py --raw-dir ml-service/data/raw/Plant
 
 ### Class Distribution Breakdown
 
-| Class Name | Raw Valid | Train (70%) | Val (15%) | Test (15%) |
-| :--- | :---: | :---: | :---: | :---: |
-| `Apple___Cedar_apple_rust` | 275 | 192 | 41 | 42 |
-| `Apple___healthy` | 1,638 | 1,147 | 246 | 245 |
-| `Corn_(maize)___Common_rust_` | 1,192 | 834 | 179 | 179 |
-| `Corn_(maize)___healthy` | 1,162 | 813 | 174 | 175 |
-| `Corn_(maize)___Northern_Leaf_Blight` | 985 | 690 | 148 | 147 |
-| `Potato___Early_blight` | 1,000 | 700 | 150 | 150 |
-| `Potato___healthy` | 152 | 106 | 23 | 23 |
-| `Potato___Late_blight` | 1,000 | 700 | 150 | 150 |
-| `Tomato___Bacterial_spot` | 2,127 | 1,489 | 319 | 319 |
-| `Tomato___Early_blight` | 1,000 | 700 | 150 | 150 |
-| `Tomato___healthy` | 1,577 | 1,110 | 238 | 237 |
-| `Tomato___Late_blight` | 1,909 | 1,331 | 285 | 285 |
-| **Total** | **14,017** | **9,812** | **2,103** | **2,102** |
+| Class Name                            | Raw Valid  | Train (70%) | Val (15%) | Test (15%) |
+| :------------------------------------ | :--------: | :---------: | :-------: | :--------: |
+| `Apple___Cedar_apple_rust`            |    275     |     192     |    41     |     42     |
+| `Apple___healthy`                     |   1,638    |    1,147    |    246    |    245     |
+| `Corn_(maize)___Common_rust_`         |   1,192    |     834     |    179    |    179     |
+| `Corn_(maize)___healthy`              |   1,162    |     813     |    174    |    175     |
+| `Corn_(maize)___Northern_Leaf_Blight` |    985     |     690     |    148    |    147     |
+| `Potato___Early_blight`               |   1,000    |     700     |    150    |    150     |
+| `Potato___healthy`                    |    152     |     106     |    23     |     23     |
+| `Potato___Late_blight`                |   1,000    |     700     |    150    |    150     |
+| `Tomato___Bacterial_spot`             |   2,127    |    1,489    |    319    |    319     |
+| `Tomato___Early_blight`               |   1,000    |     700     |    150    |    150     |
+| `Tomato___healthy`                    |   1,577    |    1,110    |    238    |    237     |
+| `Tomato___Late_blight`                |   1,909    |    1,331    |    285    |    285     |
+| **Total**                             | **14,017** |  **9,812**  | **2,103** | **2,102**  |
 
 ## Acceptance Criteria
 
