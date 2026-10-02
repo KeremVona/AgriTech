@@ -192,18 +192,30 @@ def prepare_dataset_pipeline(
             continue
 
         valid_files_for_class: List[Path] = []
+        seen_hashes_for_class: Set[str] = set()
+
         for file_path in source_class_dir.iterdir():
             if not file_path.is_file():
                 continue
 
             total_inspected += 1
             is_valid, reason = validate_image(file_path, min_resolution=min_resolution)
-            if is_valid:
-                valid_files_for_class.append(file_path)
-            else:
+            if not is_valid:
                 rejected_count += 1
                 class_stats[class_name]["rejected"] += 1
                 rejections.append({"file": str(file_path), "reason": reason})
+                continue
+
+            # Check for duplicate image content within class to eliminate leakage across splits
+            file_hash = calculate_file_hash(file_path)
+            if file_hash in seen_hashes_for_class:
+                rejected_count += 1
+                class_stats[class_name]["rejected"] += 1
+                rejections.append({"file": str(file_path), "reason": f"Duplicate image content (SHA-256: {file_hash[:12]})"})
+                continue
+
+            seen_hashes_for_class.add(file_hash)
+            valid_files_for_class.append(file_path)
 
         valid_count += len(valid_files_for_class)
 

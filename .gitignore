@@ -88,8 +88,8 @@ venv.bak/
 # ML Datasets & Large Binary Weights
 # (Store datasets and model checkpoints locally or on cloud storage / DVC)
 datasets/
-data/raw/
-data/processed/
+ml-service/data/raw/
+ml-service/data/processed/
 *.pt
 *.pth
 *.ckpt
@@ -128,3 +128,5 @@ Desktop.ini
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+
+*.pdf
