@@ -117,22 +117,32 @@ class AttentionControlEdit(AttentionStore):
     def __call__(self, attn: torch.Tensor, is_cross: bool, place_in_unet: str) -> torch.Tensor:
         super().__call__(attn, is_cross, place_in_unet)
 
-        # attn shape: [batch_size * num_heads, pixels, tokens]
+        total_heads, pixels, tokens = attn.shape
+        b_prompts = self.batch_size
+
+        # In Stable Diffusion with Classifier-Free Guidance, UNet batch is doubled:
+        # [uncond_prompt0..N, cond_prompt0..N]
+        is_cfg = (total_heads % (2 * b_prompts) == 0)
+        num_streams = 2 if is_cfg else 1
+        heads_per_item = total_heads // (num_streams * b_prompts)
+
         if self.cur_step < self.num_steps * self.cross_replace_steps[1]:
             if is_cross:
-                # Replace cross-attention maps of target images with the source (Stage 0) maps
-                # for the background and structural tokens
-                h = attn.shape[0] // self.batch_size
-                attn_source = attn[:h]
-                for b in range(1, self.batch_size):
-                    attn[b * h : (b + 1) * h] = attn_source
+                # Reshape to explicitly isolate [stream, prompt_index, head, pixels, tokens]
+                reshaped = attn.view(num_streams, b_prompts, heads_per_item, pixels, tokens)
+                for s in range(num_streams):
+                    source_attn = reshaped[s, 0].clone()
+                    for b in range(1, b_prompts):
+                        reshaped[s, b] = source_attn
+                attn = reshaped.view(total_heads, pixels, tokens)
             else:
                 if self.cur_step < self.num_steps * self.self_replace_steps:
-                    # Self-attention replacement preserves high-level layout and edge structure
-                    h = attn.shape[0] // self.batch_size
-                    attn_source = attn[:h]
-                    for b in range(1, self.batch_size):
-                        attn[b * h : (b + 1) * h] = attn_source
+                    reshaped = attn.view(num_streams, b_prompts, heads_per_item, pixels, tokens)
+                    for s in range(num_streams):
+                        source_attn = reshaped[s, 0].clone()
+                        for b in range(1, b_prompts):
+                            reshaped[s, b] = source_attn
+                    attn = reshaped.view(total_heads, pixels, tokens)
 
         return attn
 
@@ -142,9 +152,14 @@ def register_attention_control(model, controller: AttentionControl):
     Hooks into Stable Diffusion UNet cross-attention and self-attention processor modules
     to route forward-pass attention maps through the AttentionControl object.
     """
+    # Collect all Attention modules in execution order
+    attn_modules = [m for m in model.unet.modules() if m.__class__.__name__ == "Attention"]
+    last_module = attn_modules[-1] if attn_modules else None
+
     class P2PAttentionProcessor:
-        def __init__(self, place_in_unet: str):
+        def __init__(self, place_in_unet: str, is_last: bool = False):
             self.place_in_unet = place_in_unet
+            self.is_last = is_last
 
         def __call__(self, attn_module, hidden_states, encoder_hidden_states=None, attention_mask=None, **kwargs):
             batch_size, sequence_length, _ = hidden_states.shape
@@ -180,6 +195,9 @@ def register_attention_control(model, controller: AttentionControl):
             hidden_states = attn_module.to_out[0](hidden_states)
             hidden_states = attn_module.to_out[1](hidden_states)
 
+            if self.is_last:
+                controller.step()
+
             return hidden_states
 
     # Register hook on all cross and self attention modules in UNet
@@ -190,4 +208,5 @@ def register_attention_control(model, controller: AttentionControl):
                 place = "down"
             elif "up_blocks" in name:
                 place = "up"
-            module.set_processor(P2PAttentionProcessor(place_in_unet=place))
+            is_last = (module is last_module)
+            module.set_processor(P2PAttentionProcessor(place_in_unet=place, is_last=is_last))
