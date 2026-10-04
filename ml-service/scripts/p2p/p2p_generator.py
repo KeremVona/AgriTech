@@ -21,7 +21,7 @@ UNIVERSAL_NEGATIVE_PROMPT = (
     "shadow, blurry, 3d render, illustration"
 )
 
-# Default prompt triplets and agronomic definitions for the 4 target crops
+# Calibrated prompt triplets and agronomic definitions for the 4 target crops
 DEFAULT_CROP_SPECS = {
     "tomato": {
         "crop_name": "Tomato",
@@ -32,6 +32,11 @@ DEFAULT_CROP_SPECS = {
             "botanical specimen photograph of a single healthy green leaf blade of a tomato plant (Solanum lycopersicum foliage), distinct venation, centered, flat lay, pure solid white background, sharp focus, 8k",
             "botanical specimen photograph of a single green leaf blade of a tomato plant with small dark brown concentric target-like early blight spots and faint yellow chlorotic halos, centered, flat lay, pure solid white background, sharp focus, 8k",
             "botanical specimen photograph of a single withered leaf blade of a tomato plant with large dark brown necrotic patches, dry tissue collapse, and leaf margin chlorosis, centered, flat lay, pure solid white background, sharp focus, 8k",
+        ],
+        "blend_words": [
+            [],
+            ["concentric", "spots", "halos"],
+            ["necrotic", "patches", "collapse"],
         ],
         "cross_replace_steps": 0.75,
         "self_replace_steps": 0.60,
@@ -46,6 +51,11 @@ DEFAULT_CROP_SPECS = {
             "botanical specimen photograph of a single green leaf blade of a potato plant with irregular water-soaked dark brown late blight lesions and pale green margins, centered, flat lay, pure solid white background, sharp focus, 8k",
             "botanical specimen photograph of a single decaying leaf blade of a potato plant with large dark brown necrotic blotches, shriveled leaf edges, and severe tissue rot, centered, flat lay, pure solid white background, sharp focus, 8k",
         ],
+        "blend_words": [
+            [],
+            ["water-soaked", "lesions"],
+            ["necrotic", "blotches", "rot"],
+        ],
         "cross_replace_steps": 0.75,
         "self_replace_steps": 0.60,
     },
@@ -59,6 +69,11 @@ DEFAULT_CROP_SPECS = {
             "botanical specimen photograph of a single green leaf blade of a corn plant with scattered elongated cinnamon-brown powdery rust pustules, centered, flat lay, pure solid white background, sharp focus, 8k",
             "botanical specimen photograph of a single dry leaf blade of a corn plant with dense confluent dark brown rust pustules, necrotic scorch streaks, and tissue brittleness, centered, flat lay, pure solid white background, sharp focus, 8k",
         ],
+        "blend_words": [
+            [],
+            ["cinnamon-brown", "rust", "pustules"],
+            ["dense", "rust", "pustules", "scorch"],
+        ],
         "cross_replace_steps": 0.70,
         "self_replace_steps": 0.55,
     },
@@ -71,6 +86,11 @@ DEFAULT_CROP_SPECS = {
             "botanical specimen photograph of a single elliptical healthy green leaf blade of an apple tree (Malus domestica foliage), finely serrated margins, centered, flat lay, pure solid white background, sharp focus, 8k",
             "botanical specimen photograph of a single green leaf blade of an apple tree with discrete dull olive-green to black velvety scab spots, centered, flat lay, pure solid white background, sharp focus, 8k",
             "botanical specimen photograph of a single distorted leaf blade of an apple tree with large corky brown scab lesions, puckered lamina, and severe necrotic leaf margins, centered, flat lay, pure solid white background, sharp focus, 8k",
+        ],
+        "blend_words": [
+            [],
+            ["olive-green", "scab", "spots"],
+            ["corky", "scab", "lesions", "puckered"],
         ],
         "cross_replace_steps": 0.75,
         "self_replace_steps": 0.60,
@@ -125,7 +145,6 @@ def compute_difference_mask(img_base: Image.Image, img_target: Image.Image, blur
     Computes a localized grayscale pathology mask highlighting where symptoms emerged
     between two progression stages. Fed to WebGL fragment shader uniforms u_mask1 and u_mask2.
     """
-    # Convert to grayscale
     gray_base = img_base.convert("L")
     gray_target = img_target.convert("L")
     
@@ -164,25 +183,30 @@ def run_prompt_to_prompt_generation(
     guidance_scale: float = 7.5,
 ):
     """
-    Runs the complete Prompt-to-Prompt pipeline for a specified crop:
+    Runs the complete Prompt-to-Prompt pipeline for a specified crop using
+    Google's reference architecture (init_latent broadcast + AttentionRefine + LocalBlend):
     1. Loads Stable Diffusion pipeline.
-    2. Hooks AttentionControlEdit controller.
-    3. Runs joint batched generation for [Stage 0, Stage 1, Stage 2].
-    4. Postprocesses outputs into 800x800 WebP assets and companion masks.
+    2. Instantiates LocalBlend for pathology tokens.
+    3. Hooks AttentionRefine controller with Needleman-Wunsch sequence alignment.
+    4. Runs deterministic diffusion loop via run_p2p_diffusion.
+    5. Postprocesses outputs into 800x800 WebP assets and companion WebGL shader masks.
     """
     import torch
     from diffusers import StableDiffusionPipeline, DDIMScheduler
-    from cross_attention_control import AttentionControlEdit, register_attention_control
+    from cross_attention_control import AttentionRefine, LocalBlend, run_p2p_diffusion
 
     spec = DEFAULT_CROP_SPECS[crop_id]
     prompts = spec["prompts"]
     seed = spec["seed"]
     cross_replace = spec["cross_replace_steps"]
     self_replace = spec["self_replace_steps"]
+    blend_words = spec.get("blend_words", None)
 
     print(f"\n[+] Starting Prompt-to-Prompt Generation for: {spec['crop_name']} ({spec['disease_name']})")
     print(f"    Device: {device} | Model: {model_id} | Seed: {seed}")
     print(f"    Cross Replace Steps: {cross_replace} | Self Replace Steps: {self_replace}")
+    if blend_words:
+        print(f"    LocalBlend Words: {blend_words}")
 
     generator = torch.Generator(device=device).manual_seed(seed)
 
@@ -202,26 +226,39 @@ def run_prompt_to_prompt_generation(
         requires_safety_checker=False,
     ).to(device)
 
-    # Instantiate Prompt-to-Prompt controller
-    controller = AttentionControlEdit(
+    # 1. Instantiate LocalBlend if words are specified
+    local_blend = None
+    if blend_words is not None:
+        local_blend = LocalBlend(
+            prompts=prompts,
+            words=blend_words,
+            tokenizer=pipe.tokenizer,
+            device=device,
+            threshold=0.3,
+        )
+
+    # 2. Instantiate Google Prompt-to-Prompt Refinement controller
+    controller = AttentionRefine(
         prompts=prompts,
         num_steps=num_inference_steps,
         cross_replace_steps=cross_replace,
         self_replace_steps=self_replace,
         tokenizer=pipe.tokenizer,
         device=device,
+        local_blend=local_blend,
     )
-    register_attention_control(pipe, controller)
 
-    # Execute batched generation
+    # 3. Execute diffusion runner with latent broadcasting and attention injection
     with torch.autocast(device if device == "cuda" else "cpu"):
-        outputs = pipe(
-            prompts,
-            negative_prompt=[UNIVERSAL_NEGATIVE_PROMPT] * len(prompts),
+        outputs = run_p2p_diffusion(
+            pipe=pipe,
+            prompts=prompts,
+            controller=controller,
             num_inference_steps=num_inference_steps,
             guidance_scale=guidance_scale,
             generator=generator,
-        ).images
+            negative_prompt=UNIVERSAL_NEGATIVE_PROMPT,
+        )
 
     img_stage0, img_stage1, img_stage2 = outputs[0], outputs[1], outputs[2]
 
@@ -234,7 +271,7 @@ def run_prompt_to_prompt_generation(
     s1 = normalize_to_target_spec(remove_white_background(img_stage1))
     s2 = normalize_to_target_spec(remove_white_background(img_stage2))
 
-    # Masks for WebGL shaders
+    # Companion difference masks for WebGL shaders (uniforms u_mask1 and u_mask2)
     mask1 = compute_difference_mask(s0, s1)
     mask2 = compute_difference_mask(s1, s2)
 
