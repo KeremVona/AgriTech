@@ -14,6 +14,13 @@ from PIL import Image, ImageOps, ImageChops, ImageFilter
 import numpy as np
 
 
+UNIVERSAL_NEGATIVE_PROMPT = (
+    "fruit, vegetable, food, slice, cut, tuber, potato, tomato fruit, kiwi, "
+    "wood, wooden table, cutting board, plate, bowl, kitchen, grass, soil, "
+    "slate, stone, dark background, textured background, complex background, "
+    "shadow, blurry, 3d render, illustration"
+)
+
 # Default prompt triplets and agronomic definitions for the 4 target crops
 DEFAULT_CROP_SPECS = {
     "tomato": {
@@ -22,9 +29,9 @@ DEFAULT_CROP_SPECS = {
         "pathogen_scientific": "Alternaria solani",
         "seed": 42,
         "prompts": [
-            "macro studio photograph of a single healthy green tomato leaflet with distinct venation, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
-            "macro studio photograph of a single green tomato leaflet with small dark brown concentric target-like lesions and faint yellow chlorotic halos, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
-            "macro studio photograph of a single withered tomato leaflet with extensive dark brown necrotic patches, severe dry tissue collapse, and leaf margin yellowing, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "botanical specimen photograph of a single healthy green leaf blade of a tomato plant (Solanum lycopersicum foliage), distinct venation, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single green leaf blade of a tomato plant with small dark brown concentric target-like early blight spots and faint yellow chlorotic halos, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single withered leaf blade of a tomato plant with large dark brown necrotic patches, dry tissue collapse, and leaf margin chlorosis, centered, flat lay, pure solid white background, sharp focus, 8k",
         ],
         "cross_replace_steps": 0.75,
         "self_replace_steps": 0.60,
@@ -35,9 +42,9 @@ DEFAULT_CROP_SPECS = {
         "pathogen_scientific": "Phytophthora infestans",
         "seed": 108,
         "prompts": [
-            "macro studio photograph of a single broad oval healthy green potato leaflet, prominent center vein, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
-            "macro studio photograph of a single green potato leaflet with irregular water-soaked dark brown-black lesions and pale green margins, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
-            "macro studio photograph of a single decaying potato leaflet with large dark brown necrotic blotches, shriveled leaf edges, and severe tissue rot, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "botanical specimen photograph of a single broad oval healthy green leaf blade of a potato plant (Solanum tuberosum foliage), distinct center vein, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single green leaf blade of a potato plant with irregular water-soaked dark brown late blight lesions and pale green margins, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single decaying leaf blade of a potato plant with large dark brown necrotic blotches, shriveled leaf edges, and severe tissue rot, centered, flat lay, pure solid white background, sharp focus, 8k",
         ],
         "cross_replace_steps": 0.75,
         "self_replace_steps": 0.60,
@@ -48,9 +55,9 @@ DEFAULT_CROP_SPECS = {
         "pathogen_scientific": "Puccinia sorghi",
         "seed": 204,
         "prompts": [
-            "macro studio photograph of a single long lanceolate healthy green corn leaf blade with parallel veins, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
-            "macro studio photograph of a single green corn leaf blade with scattered elongated cinnamon-brown powdery pustules, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
-            "macro studio photograph of a single dry corn leaf blade with dense confluent dark brown rust pustules, necrotic scorch streaks, and tissue brittleness, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "botanical specimen photograph of a single long lanceolate healthy green leaf blade of a corn plant (Zea mays foliage), parallel longitudinal venation, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single green leaf blade of a corn plant with scattered elongated cinnamon-brown powdery rust pustules, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single dry leaf blade of a corn plant with dense confluent dark brown rust pustules, necrotic scorch streaks, and tissue brittleness, centered, flat lay, pure solid white background, sharp focus, 8k",
         ],
         "cross_replace_steps": 0.70,
         "self_replace_steps": 0.55,
@@ -61,9 +68,9 @@ DEFAULT_CROP_SPECS = {
         "pathogen_scientific": "Venturia inaequalis",
         "seed": 312,
         "prompts": [
-            "macro studio photograph of a single elliptical healthy green apple leaf with finely serrated margins, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
-            "macro studio photograph of a single green apple leaf with discrete dull olive-green to black velvety spots, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
-            "macro studio photograph of a single distorted apple leaf with large corky brown scab lesions, puckered lamina, and severe necrotic leaf margins, centered, flat lay, isolated on a clean pure white background, sharp focus, 8k",
+            "botanical specimen photograph of a single elliptical healthy green leaf blade of an apple tree (Malus domestica foliage), finely serrated margins, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single green leaf blade of an apple tree with discrete dull olive-green to black velvety scab spots, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single distorted leaf blade of an apple tree with large corky brown scab lesions, puckered lamina, and severe necrotic leaf margins, centered, flat lay, pure solid white background, sharp focus, 8k",
         ],
         "cross_replace_steps": 0.75,
         "self_replace_steps": 0.60,
@@ -73,16 +80,20 @@ DEFAULT_CROP_SPECS = {
 
 def remove_white_background(img: Image.Image, threshold: int = 240) -> Image.Image:
     """
-    Converts pure or near-white background pixels to transparent RGBA.
-    Preserves interior green and brown leaf pixels intact.
+    Converts background to transparent RGBA.
+    Uses AI salient object segmentation (rembg) if installed,
+    falling back to color thresholding.
     """
-    img = img.convert("RGBA")
-    data = np.array(img)
-    # Check if pixel is near-white
-    r, g, b, a = data[:, :, 0], data[:, :, 1], data[:, :, 2], data[:, :, 3]
-    white_mask = (r > threshold) & (g > threshold) & (b > threshold)
-    data[white_mask, 3] = 0
-    return Image.fromarray(data)
+    try:
+        from rembg import remove
+        return remove(img)
+    except ImportError:
+        img = img.convert("RGBA")
+        data = np.array(img)
+        r, g, b, a = data[:, :, 0], data[:, :, 1], data[:, :, 2], data[:, :, 3]
+        white_mask = (r > threshold) & (g > threshold) & (b > threshold)
+        data[white_mask, 3] = 0
+        return Image.fromarray(data)
 
 
 def compute_difference_mask(img_base: Image.Image, img_target: Image.Image, blur_radius: float = 3.0) -> Image.Image:
@@ -182,6 +193,7 @@ def run_prompt_to_prompt_generation(
     with torch.autocast(device if device == "cuda" else "cpu"):
         outputs = pipe(
             prompts,
+            negative_prompt=[UNIVERSAL_NEGATIVE_PROMPT] * len(prompts),
             num_inference_steps=num_inference_steps,
             guidance_scale=guidance_scale,
             generator=generator,
