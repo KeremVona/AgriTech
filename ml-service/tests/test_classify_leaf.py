@@ -1,5 +1,6 @@
 """
-Tests for TODO-104: FastAPI application setup and inference endpoint.
+Tests for TODO-104 + TODO-105: FastAPI application setup, inference endpoint,
+and agronomic advisory integration.
 
 Covers:
 - MIME type validation → 400
@@ -7,10 +8,13 @@ Covers:
 - File too large → 413
 - Invalid image bytes → 400
 - Valid image → 200 with correct response schema (stub mode)
+- Advisory fields present in classify-leaf response (TODO-105)
+- Low-confidence endpoint path returns ClassifyLeafLowConfidenceResponse (TODO-105)
 - /health/live endpoint
-- /health/ready endpoint (stub mode)
+- /health/ready endpoint with advisory_kb field (TODO-105)
 - Concurrent load: 5 simultaneous requests must all complete ≤ 150 ms turnaround
 """
+
 
 import asyncio
 import io
@@ -68,7 +72,8 @@ async def test_health_live(client):
 
 @pytest.mark.anyio
 async def test_health_ready_stub_mode(client):
-    """In test environment no ONNX model is present → stub mode → still 200."""
+    """In test environment no ONNX model is present → stub mode → still 200.
+    TODO-105: advisory_kb field must be present and loaded."""
     response = await client.get("/health/ready")
     assert response.status_code == 200
     data = response.json()
@@ -76,6 +81,11 @@ async def test_health_ready_stub_mode(client):
     # model_loaded may be True or False depending on environment
     assert "model_loaded" in data
     assert "mode" in data
+    # TODO-105: advisory_kb status must be included
+    assert "advisory_kb" in data
+    assert data["advisory_kb"]["loaded"] is True
+    assert data["advisory_kb"]["class_count"] == 12
+
 
 
 @pytest.mark.anyio
@@ -149,7 +159,8 @@ async def test_classify_leaf_file_too_large(client):
 
 @pytest.mark.anyio
 async def test_classify_leaf_valid_jpeg(client):
-    """Valid JPEG must return 200 with a correctly-shaped response."""
+    """Valid JPEG must return 200 with a correctly-shaped response
+    including the TODO-105 expanded advisory fields."""
     jpeg_bytes = _make_jpeg_bytes()
     response = await client.post(
         "/api/v1/classify-leaf",
@@ -186,6 +197,23 @@ async def test_classify_leaf_valid_jpeg(client):
     # Execution time must be non-negative
     assert data["execution_time_ms"] >= 0
 
+    # TODO-105: advisory must have expanded fields
+    advisory = data["agronomic_advisory"]
+    assert "immediate_action" in advisory
+    assert "chemical_treatments" in advisory
+    assert "cultural_controls" in advisory
+    assert "biological_controls" in advisory
+    assert "microclimate_risks" in advisory
+    assert "environmental_risk_factors" in advisory
+    assert isinstance(advisory["cultural_controls"], list)
+    assert len(advisory["cultural_controls"]) >= 1
+
+    # TODO-105: telemetry_linkage_hints must have recommended_irrigation_restriction
+    hints = data["telemetry_linkage_hints"]
+    assert "moisture_risk" in hints
+    assert "leaf_wetness_threshold_hours" in hints
+    assert "recommended_irrigation_restriction" in hints
+
 
 @pytest.mark.anyio
 async def test_classify_leaf_valid_png(client):
@@ -211,6 +239,85 @@ async def test_classify_leaf_inference_id_is_unique(client):
         assert resp.status_code == 200
         ids.add(resp.json()["inference_id"])
     assert len(ids) == 3, "inference_id should be unique per request"
+
+
+# ---------------------------------------------------------------------------
+# TODO-105: Advisory integration tests on the endpoint level
+# ---------------------------------------------------------------------------
+
+@pytest.mark.anyio
+async def test_classify_leaf_stub_mode_high_confidence_advisory_populated(client):
+    """
+    Stub mode always returns Tomato___Late_blight at ~89% confidence.
+    Advisory for this class should contain ≥1 chemical treatment (CRITICAL disease).
+    """
+    jpeg_bytes = _make_jpeg_bytes()
+    response = await client.post(
+        "/api/v1/classify-leaf",
+        files={"file": ("leaf.jpg", jpeg_bytes, "image/jpeg")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    # Stub: confidence is ~89%, well above 60% → should get full advisory
+    advisory = data["agronomic_advisory"]
+    # Late blight should be CRITICAL with ≥1 chemical treatment
+    assert len(advisory["chemical_treatments"]) >= 1
+    assert advisory["microclimate_risks"]["fungal_risk"] in ("HIGH", "CRITICAL")
+
+
+@pytest.mark.anyio
+async def test_classify_leaf_low_confidence_returns_rescan_advisory(client, monkeypatch):
+    """
+    When the inference engine returns a confidence below 0.60,
+    the endpoint must return ClassifyLeafLowConfidenceResponse
+    with requires_rescan=True and rescan_instructions.
+    """
+    # Monkeypatch inference_engine.run to return a low-confidence result
+    from inference import inference_engine, CLASS_LABELS
+    import numpy as np
+
+    original_run = inference_engine.run
+
+    def low_confidence_run(image_bytes: bytes):
+        # Build a flat distribution (confidence ≈ 1/12 ≈ 8.3% per class)
+        probs = np.full(len(CLASS_LABELS), 1.0 / len(CLASS_LABELS), dtype=np.float32)
+        return {
+            "top_label": CLASS_LABELS[0],
+            "confidence": float(probs[0]),       # ≈ 0.083 — well below 0.60
+            "top_probabilities": [
+                {"label": CLASS_LABELS[i], "probability": float(probs[i])}
+                for i in range(3)
+            ],
+            "all_probabilities": {CLASS_LABELS[i]: float(probs[i]) for i in range(len(CLASS_LABELS))},
+            "execution_time_ms": 12.5,
+            "model_version": "stub_low_confidence_test",
+            "model_loaded": False,
+        }
+
+    monkeypatch.setattr(inference_engine, "run", low_confidence_run)
+
+    jpeg_bytes = _make_jpeg_bytes()
+    response = await client.post(
+        "/api/v1/classify-leaf",
+        files={"file": ("leaf.jpg", jpeg_bytes, "image/jpeg")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    # Must be the low-confidence response shape
+    assert data.get("requires_rescan") is True
+    assert "low_confidence_advisory" in data
+    low_conf = data["low_confidence_advisory"]
+    assert low_conf["requires_rescan"] is True
+    assert low_conf["confidence_score"] < 0.60
+    assert low_conf["threshold"] == 0.60
+    assert "message" in low_conf
+    assert isinstance(low_conf["rescan_instructions"], list)
+    assert len(low_conf["rescan_instructions"]) >= 4
+
+    # Must NOT contain the normal advisory (no chemical_treatments at top level)
+    assert "agronomic_advisory" not in data
 
 
 # ---------------------------------------------------------------------------
