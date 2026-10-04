@@ -82,7 +82,7 @@ def remove_white_background(img: Image.Image, threshold: int = 240) -> Image.Ima
     r, g, b, a = data[:, :, 0], data[:, :, 1], data[:, :, 2], data[:, :, 3]
     white_mask = (r > threshold) & (g > threshold) & (b > threshold)
     data[white_mask, 3] = 0
-    return Image.fromarray(data, mode="RGBA")
+    return Image.fromarray(data)
 
 
 def compute_difference_mask(img_base: Image.Image, img_target: Image.Image, blur_radius: float = 3.0) -> Image.Image:
@@ -163,6 +163,8 @@ def run_prompt_to_prompt_generation(
         model_id,
         scheduler=scheduler,
         torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        safety_checker=None,
+        requires_safety_checker=False,
     ).to(device)
 
     # Instantiate Prompt-to-Prompt controller
