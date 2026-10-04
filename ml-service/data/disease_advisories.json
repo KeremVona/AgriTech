@@ -1,0 +1,730 @@
+{
+  "version": "1.0.0",
+  "description": "Precision AgriTech - Agronomic Advisory Knowledge Base. Covers all 12 target crop-disease classes defined in Phase 1. Indexed by PlantVillage class labels.",
+  "low_confidence_threshold": 0.60,
+  "classes": {
+
+    "Tomato___healthy": {
+      "class_label": "Tomato___healthy",
+      "crop": "Tomato",
+      "condition": "Healthy",
+      "scientific_name": null,
+      "pathogen_type": "HEALTHY",
+      "risk_level": "NONE",
+      "general_description": "The tomato plant shows no signs of disease, pest damage, or nutritional deficiency. Foliage displays uniform deep green coloration with firm, turgid leaf tissue. Continue standard agronomic practice.",
+      "favorable_conditions": null,
+      "chemical_treatments": [],
+      "cultural_controls": [
+        "Maintain adequate plant spacing (45–60 cm) to promote airflow and reduce humidity.",
+        "Monitor soil moisture and maintain consistent irrigation to avoid drought stress.",
+        "Rotate crops annually to prevent soilborne disease buildup.",
+        "Inspect plants weekly for early signs of pest or pathogen activity."
+      ],
+      "biological_controls": [],
+      "immediate_action": "No intervention required. Continue routine field monitoring and maintain preventative spray calendar.",
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 18,
+        "optimal_temp_c_max": 29,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      }
+    },
+
+    "Tomato___Early_blight": {
+      "class_label": "Tomato___Early_blight",
+      "crop": "Tomato",
+      "condition": "Early Blight",
+      "scientific_name": "Alternaria solani",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "MEDIUM",
+      "general_description": "Early Blight is caused by the fungus Alternaria solani. Characteristic concentric brown lesions with a target-like pattern appear on older, lower leaves first, progressing upward. Severe infections cause premature defoliation, reducing photosynthetic capacity and yield by 20–30%.",
+      "favorable_conditions": "Warm temperatures (24–29°C), high relative humidity (>80%), extended leaf wetness (>6 hours), and alternating wet-dry cycles. Nitrogen-deficient plants are significantly more susceptible.",
+      "chemical_treatments": [
+        {
+          "product": "Chlorothalonil 75% WP",
+          "active_substance": "Chlorothalonil",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "1.5–2.0 kg/ha",
+          "application_timing": "Apply every 7–10 days beginning at first sign of disease or during high-risk weather windows.",
+          "pre_harvest_interval_days": 7,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Mancozeb 80% WP",
+          "active_substance": "Mancozeb (Dithiocarbamate)",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "2.0–2.5 kg/ha",
+          "application_timing": "Apply preventatively before rain events or when humidity exceeds 80% for >6 hours.",
+          "pre_harvest_interval_days": 5,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Azoxystrobin 25% SC",
+          "active_substance": "Azoxystrobin (Strobilurin)",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "0.8–1.0 L/ha",
+          "application_timing": "Apply at first symptom appearance; do not exceed 3 applications per season to prevent resistance.",
+          "pre_harvest_interval_days": 3,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Copper Hydroxide 77% WP",
+          "active_substance": "Copper Hydroxide",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "2.5–3.0 kg/ha",
+          "application_timing": "Apply as a protective spray every 10–14 days in humid conditions.",
+          "pre_harvest_interval_days": 1,
+          "is_organic_certified": true
+        }
+      ],
+      "cultural_controls": [
+        "Remove and destroy infected lower leaves immediately to reduce inoculum load.",
+        "Avoid overhead irrigation; switch to drip or furrow irrigation to minimize leaf wetness duration.",
+        "Apply nitrogen fertilization as split doses to maintain adequate plant nutrition and resistance.",
+        "Implement minimum 3-year crop rotation with non-Solanaceous crops.",
+        "Use certified disease-free transplants and resistant cultivars (e.g., Plum Regal, Mountain Magic).",
+        "Mulch the soil surface to prevent rain splash dispersal of soilborne conidia."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade ASO",
+          "dosage": "2–4 L/ha",
+          "notes": "Preventative mode of action; most effective when applied before disease onset."
+        },
+        {
+          "agent": "Trichoderma harzianum",
+          "product_example": "Trianum-P",
+          "dosage": "Soil drench at transplant",
+          "notes": "Suppresses soilborne inoculum; combine with copper-based foliar sprays for integrated management."
+        }
+      ],
+      "immediate_action": "Remove all visibly infected lower leaves. Switch to drip irrigation immediately. Apply Mancozeb 80% WP or Chlorothalonil as a protective spray. Monitor daily for disease progression.",
+      "microclimate_risks": {
+        "fungal_risk": "HIGH",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 24,
+        "optimal_temp_c_max": 29,
+        "consecutive_wet_hours_threshold": 6
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 6,
+        "recommended_irrigation_restriction": true
+      }
+    },
+
+    "Tomato___Late_blight": {
+      "class_label": "Tomato___Late_blight",
+      "crop": "Tomato",
+      "condition": "Late Blight",
+      "scientific_name": "Phytophthora infestans",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "CRITICAL",
+      "general_description": "Late Blight is caused by the oomycete Phytophthora infestans — the same pathogen responsible for the Irish Potato Famine of 1845. Water-soaked, dark olive-green to brown lesions rapidly expand across leaves, stems, and fruits. A characteristic white cottony sporulation (sporangiophores) appears on the underside of infected tissue in humid conditions. Under favorable weather, entire crops can be destroyed within 1–2 weeks without intervention.",
+      "favorable_conditions": "Cool temperatures (15–22°C), relative humidity >90%, extended leaf wetness (>10 hours), rain events followed by cool nights. Particularly severe in coastal and valley regions with persistent morning fog.",
+      "chemical_treatments": [
+        {
+          "product": "Cymoxanil + Mancozeb (e.g., Curzate M)",
+          "active_substance": "Cymoxanil + Mancozeb",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "2.0–2.5 kg/ha",
+          "application_timing": "Apply at first symptom appearance; repeat every 5–7 days under high disease pressure.",
+          "pre_harvest_interval_days": 7,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Dimethomorph 50% WP",
+          "active_substance": "Dimethomorph (Morpholine)",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "1.0 kg/ha",
+          "application_timing": "Apply within 24–48 hours of infection event; highly systemic.",
+          "pre_harvest_interval_days": 7,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Fluopicolide + Propamocarb (e.g., Infinito)",
+          "active_substance": "Fluopicolide + Propamocarb hydrochloride",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "1.2–1.6 L/ha",
+          "application_timing": "Apply preventatively or immediately after a high-risk weather event.",
+          "pre_harvest_interval_days": 3,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Copper Hydroxide 77% WP",
+          "active_substance": "Copper Hydroxide",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "3.0–4.0 kg/ha",
+          "application_timing": "Apply every 5–7 days as a protective barrier during high-risk periods.",
+          "pre_harvest_interval_days": 1,
+          "is_organic_certified": true
+        }
+      ],
+      "cultural_controls": [
+        "IMMEDIATELY isolate affected parcels — do not allow workers or equipment to pass through infected areas without decontamination.",
+        "Destroy all infected plant material by deep burial or incineration (do NOT compost).",
+        "Eliminate overhead irrigation; switch to drip irrigation only to eliminate foliar wetness.",
+        "Implement strict crop rotation — do not plant Solanaceous crops on affected land for 3+ years.",
+        "Monitor neighboring fields and report confirmed outbreaks to local agricultural authority.",
+        "Apply stramineous mulch to suppress soilborne sporangia splash-dispersal.",
+        "Plant certified blight-resistant cultivars (e.g., Defiant PhR, Mountain Merit)."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade Opti",
+          "dosage": "3–5 L/ha",
+          "notes": "Preventative only; not effective on established infections. Use as part of an integrated spray program with copper-based fungicides."
+        }
+      ],
+      "immediate_action": "CRITICAL: Isolate affected perimeter immediately. Restrict all overhead irrigation. Apply a curative fungicide (Cymoxanil + Mancozeb or Dimethomorph) within 24 hours. Notify neighboring farm operators. Prepare contingency harvest of unaffected fruit if disease spread exceeds 30% canopy coverage.",
+      "microclimate_risks": {
+        "fungal_risk": "CRITICAL",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 90,
+        "optimal_temp_c_min": 15,
+        "optimal_temp_c_max": 22,
+        "consecutive_wet_hours_threshold": 10
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 6,
+        "recommended_irrigation_restriction": true
+      }
+    },
+
+    "Tomato___Bacterial_spot": {
+      "class_label": "Tomato___Bacterial_spot",
+      "crop": "Tomato",
+      "condition": "Bacterial Spot",
+      "scientific_name": "Xanthomonas campestris pv. vesicatoria",
+      "pathogen_type": "BACTERIAL",
+      "risk_level": "MEDIUM",
+      "general_description": "Bacterial Spot is caused by Xanthomonas campestris pv. vesicatoria. Symptoms include small, water-soaked, angular lesions on leaves that turn dark brown with yellow halos. On fruit, sunken, dark, scab-like lesions reduce marketability. The disease spreads rapidly by rain splash and aerosols in warm, wet conditions.",
+      "favorable_conditions": "Warm temperatures (24–30°C), high relative humidity (>80%), rain events, overhead irrigation, and high nitrogen nutrition. Bacteria can survive in seed and crop debris.",
+      "chemical_treatments": [
+        {
+          "product": "Copper Hydroxide 77% WP",
+          "active_substance": "Copper Hydroxide",
+          "type": "BACTERICIDE",
+          "dosage": "2.5–3.5 kg/ha",
+          "application_timing": "Begin applications at transplanting; repeat every 7 days during wet periods.",
+          "pre_harvest_interval_days": 1,
+          "is_organic_certified": true
+        },
+        {
+          "product": "Copper Oxychloride 50% WP",
+          "active_substance": "Copper Oxychloride",
+          "type": "BACTERICIDE",
+          "dosage": "2.0–3.0 kg/ha",
+          "application_timing": "Apply preventatively before rain events; do not apply when temperatures exceed 32°C to avoid phytotoxicity.",
+          "pre_harvest_interval_days": 1,
+          "is_organic_certified": true
+        },
+        {
+          "product": "Copper + Mancozeb tank mix",
+          "active_substance": "Copper Hydroxide + Mancozeb",
+          "type": "COMBINATION_BACTERICIDE_FUNGICIDE",
+          "dosage": "2.0 kg + 2.0 kg per ha",
+          "application_timing": "Apply at first symptom or after each rain event above 10 mm.",
+          "pre_harvest_interval_days": 5,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Use certified pathogen-free seed; treat seed with hot water (50°C for 25 minutes) before planting.",
+        "Eliminate overhead irrigation; use drip irrigation to minimize leaf wetness.",
+        "Remove and dispose of infected plant debris at season end; do not leave in field.",
+        "Disinfect pruning tools between plants with 10% bleach solution or 70% isopropyl alcohol.",
+        "Maintain adequate plant spacing to reduce canopy humidity.",
+        "Plant resistant or tolerant cultivars where available."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade ASO",
+          "dosage": "2–4 L/ha",
+          "notes": "Apply as a preventative at 7–10 day intervals; may be tank-mixed with copper bactericides."
+        }
+      ],
+      "immediate_action": "Stop overhead irrigation immediately. Apply copper-based bactericide within 48 hours. Remove and destroy all heavily infected tissue. Disinfect all field equipment before movement to adjacent parcels.",
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "HIGH",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 24,
+        "optimal_temp_c_max": 30,
+        "consecutive_wet_hours_threshold": 6
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 6,
+        "recommended_irrigation_restriction": true
+      }
+    },
+
+    "Potato___healthy": {
+      "class_label": "Potato___healthy",
+      "crop": "Potato",
+      "condition": "Healthy",
+      "scientific_name": null,
+      "pathogen_type": "HEALTHY",
+      "risk_level": "NONE",
+      "general_description": "The potato plant is in healthy condition with no visible signs of foliar disease, pest activity, or nutritional stress. Continue standard management practices.",
+      "favorable_conditions": null,
+      "chemical_treatments": [],
+      "cultural_controls": [
+        "Use certified disease-free seed tubers from trusted suppliers.",
+        "Maintain adequate hilling to protect developing tubers from greening and late blight.",
+        "Monitor soil moisture to avoid waterlogging, which predisposes plants to Pythium and bacterial rot.",
+        "Scout fields weekly for early signs of aphid colonies (vectors of Potato Virus Y and PVX)."
+      ],
+      "biological_controls": [],
+      "immediate_action": "No intervention required. Maintain preventative spray schedule based on Blight Forecasting models (e.g., BLITECAST) or regional disease alert systems.",
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 15,
+        "optimal_temp_c_max": 25,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      }
+    },
+
+    "Potato___Early_blight": {
+      "class_label": "Potato___Early_blight",
+      "crop": "Potato",
+      "condition": "Early Blight",
+      "scientific_name": "Alternaria solani",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "MEDIUM",
+      "general_description": "Potato Early Blight, caused by Alternaria solani, produces characteristic target-like concentric ring lesions on older lower leaves. Unlike Late Blight, lesions are dry and angular, often surrounded by a yellow chlorotic halo. The disease progresses upward as the season advances and accelerates under warm, humid conditions.",
+      "favorable_conditions": "Warm temperatures (24–29°C), high relative humidity (>80%), periods of dry weather alternating with rain, and nutrient-stressed plants (particularly nitrogen and potassium deficiency).",
+      "chemical_treatments": [
+        {
+          "product": "Chlorothalonil 75% WP",
+          "active_substance": "Chlorothalonil",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "1.5–2.0 kg/ha",
+          "application_timing": "Apply every 10–14 days starting at row closure (canopy closure).",
+          "pre_harvest_interval_days": 7,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Mancozeb 80% WP",
+          "active_substance": "Mancozeb (Dithiocarbamate)",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "2.0 kg/ha",
+          "application_timing": "Apply as a protective spray before expected rain events.",
+          "pre_harvest_interval_days": 5,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Difenoconazole 25% EC",
+          "active_substance": "Difenoconazole (Triazole)",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "0.3–0.5 L/ha",
+          "application_timing": "Apply at first symptom appearance; maximum 3 applications per season.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Apply balanced NPK fertilization — adequate nitrogen and potassium significantly reduce susceptibility.",
+        "Remove heavily infected haulm tissue; do not leave in field after harvest.",
+        "Implement 3–4 year crop rotation with cereals or legumes.",
+        "Use certified seed tubers with known disease resistance.",
+        "Avoid overhead irrigation during evening hours to reduce nocturnal leaf wetness."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade ASO",
+          "dosage": "2–4 L/ha",
+          "notes": "Best applied preventatively at 7-day intervals; can be combined with conventional fungicide programs."
+        }
+      ],
+      "immediate_action": "Remove and destroy infected lower leaves. Apply Mancozeb 80% WP or Chlorothalonil protectively. Ensure adequate potassium and nitrogen nutrition via leaf tissue test.",
+      "microclimate_risks": {
+        "fungal_risk": "HIGH",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 24,
+        "optimal_temp_c_max": 29,
+        "consecutive_wet_hours_threshold": 6
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 6,
+        "recommended_irrigation_restriction": true
+      }
+    },
+
+    "Potato___Late_blight": {
+      "class_label": "Potato___Late_blight",
+      "crop": "Potato",
+      "condition": "Late Blight",
+      "scientific_name": "Phytophthora infestans",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "CRITICAL",
+      "general_description": "Potato Late Blight, caused by Phytophthora infestans, is the most destructive potato disease worldwide. Pale green to brown water-soaked lesions appear on leaves and rapidly expand; white sporulation is visible on the underside of leaves in moist conditions. Infected stems collapse, and tubers develop brown, granular internal rot (storage rot). A single infected field can be completely destroyed within 7–10 days under epidemic conditions.",
+      "favorable_conditions": "Cool temperatures (10–20°C), prolonged relative humidity >90%, rain events, fog, and extended periods of leaf wetness (>10 hours). The pathogen survives in volunteer potato plants and infected tubers in storage or soil.",
+      "chemical_treatments": [
+        {
+          "product": "Metalaxyl-M + Mancozeb (e.g., Ridomil Gold MZ)",
+          "active_substance": "Metalaxyl-M + Mancozeb",
+          "type": "SYSTEMIC_CURATIVE_FUNGICIDE",
+          "dosage": "2.0–2.5 kg/ha",
+          "application_timing": "Apply at first sign of disease or after a Blitecast warning threshold is exceeded; repeat every 7–14 days.",
+          "pre_harvest_interval_days": 7,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Propamocarb Hydrochloride (e.g., Previcur N)",
+          "active_substance": "Propamocarb HCl",
+          "type": "SYSTEMIC_FUNGICIDE",
+          "dosage": "1.5–2.0 L/ha",
+          "application_timing": "Apply preventatively or at very early infection; most effective before symptom expression.",
+          "pre_harvest_interval_days": 7,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Copper Hydroxide 77% WP",
+          "active_substance": "Copper Hydroxide",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "3.0–4.0 kg/ha",
+          "application_timing": "Apply every 5–7 days during high-risk weather windows.",
+          "pre_harvest_interval_days": 1,
+          "is_organic_certified": true
+        }
+      ],
+      "cultural_controls": [
+        "IMMEDIATELY destroy or desiccate infected haulm (diquat or mechanical destruction) to prevent tuber infection.",
+        "Delay harvest by 2–3 weeks after haulm destruction to allow tuber skin set and reduce storage rot.",
+        "Never store or replant tubers from a blight-affected field.",
+        "Eliminate all volunteer potato plants in and around the field.",
+        "Implement a rigorous 4–5 year rotation; never plant potatoes after tomatoes.",
+        "Plant certified blight-resistant cultivars (e.g., Sarpo Mira, Penta, Innovator)."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade Opti",
+          "dosage": "3–5 L/ha",
+          "notes": "Preventative use only as part of an integrated blight management program; pair with copper-based protectants."
+        }
+      ],
+      "immediate_action": "CRITICAL: Begin haulm desiccation protocol on severely affected parcels immediately. Apply a systemic curative fungicide (Metalaxyl-M + Mancozeb) within 24 hours. Cease all irrigation. Alert neighboring potato growers. Check tuber lots in storage for early rot symptoms.",
+      "microclimate_risks": {
+        "fungal_risk": "CRITICAL",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 90,
+        "optimal_temp_c_min": 10,
+        "optimal_temp_c_max": 20,
+        "consecutive_wet_hours_threshold": 10
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 6,
+        "recommended_irrigation_restriction": true
+      }
+    },
+
+    "Corn_(maize)___healthy": {
+      "class_label": "Corn_(maize)___healthy",
+      "crop": "Corn",
+      "condition": "Healthy",
+      "scientific_name": null,
+      "pathogen_type": "HEALTHY",
+      "risk_level": "NONE",
+      "general_description": "The corn (maize) plant is in healthy condition with vibrant green foliage and no evidence of disease lesions, rust pustules, or foliar blight symptoms. Maintain current crop management practice.",
+      "favorable_conditions": null,
+      "chemical_treatments": [],
+      "cultural_controls": [
+        "Monitor for European corn borer and western corn rootworm populations during silking.",
+        "Maintain adequate side-dress nitrogen applications at V6 growth stage.",
+        "Ensure adequate plant population density (70,000–90,000 plants/ha) for targeted hybrid.",
+        "Scout bi-weekly for early disease signs, particularly in late July/August when conditions favor rust and blight."
+      ],
+      "biological_controls": [],
+      "immediate_action": "No intervention required. Maintain preventative scouting program and weather-based disease monitoring.",
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 20,
+        "optimal_temp_c_max": 32,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      }
+    },
+
+    "Corn_(maize)___Common_rust_": {
+      "class_label": "Corn_(maize)___Common_rust_",
+      "crop": "Corn",
+      "condition": "Common Rust",
+      "scientific_name": "Puccinia sorghi",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "MEDIUM",
+      "general_description": "Common Rust, caused by Puccinia sorghi, is an obligate biotrophic fungus producing brick-red to cinnamon-colored urediniospore pustules on both leaf surfaces. Pustules rupture the epidermis and appear in dense clusters along leaf veins. Under severe infection, premature senescence and significant yield losses of 10–30% can occur, particularly in susceptible sweet corn cultivars and late-planted field corn.",
+      "favorable_conditions": "Cool temperatures (16–23°C), high relative humidity (>95%), extended periods of leaf wetness (dew periods), and cloudy overcast conditions. Urediospores are wind-dispersed over long distances from southern overwintering regions (tropical/subtropical rust nurseries).",
+      "chemical_treatments": [
+        {
+          "product": "Propiconazole 25% EC",
+          "active_substance": "Propiconazole (Triazole)",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "0.5–0.8 L/ha",
+          "application_timing": "Apply at VT (tasseling) to R2 (blister) growth stage when rust pustules first appear on upper leaves.",
+          "pre_harvest_interval_days": 30,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Tebuconazole 25% EC",
+          "active_substance": "Tebuconazole (Triazole)",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "0.8–1.0 L/ha",
+          "application_timing": "Apply from VT through R3 (milk) growth stage; maximum 2 applications per season.",
+          "pre_harvest_interval_days": 30,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Azoxystrobin + Propiconazole (e.g., Quilt Xcel)",
+          "active_substance": "Azoxystrobin + Propiconazole",
+          "type": "CURATIVE_FUNGICIDE_MIXTURE",
+          "dosage": "1.0–1.2 L/ha",
+          "application_timing": "Single application at VT or when rust first detected on ear leaf; highly effective on Puccinia spp.",
+          "pre_harvest_interval_days": 30,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Plant rust-resistant hybrids — check seed catalog for Rp gene resistance ratings.",
+        "Time planting to avoid peak urediospore dispersal periods in late summer.",
+        "Monitor for rust progression from the bottom canopy upward — treatment is most economic at VT stage.",
+        "Maintain balanced NPK fertilization; potassium deficiency increases rust susceptibility."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus amyloliquefaciens strain D747",
+          "product_example": "Double Nickel 55",
+          "dosage": "2–4 L/ha",
+          "notes": "Preventative use; apply at early canopy development before rust season onset."
+        }
+      ],
+      "immediate_action": "Scout the entire field for pustule density. If more than 30% of plants show pustules above the ear leaf at VT stage, apply a triazole or strobilurin-triazole combination fungicide within the next 3–5 days.",
+      "microclimate_risks": {
+        "fungal_risk": "HIGH",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 95,
+        "optimal_temp_c_min": 16,
+        "optimal_temp_c_max": 23,
+        "consecutive_wet_hours_threshold": 8
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 8,
+        "recommended_irrigation_restriction": false
+      }
+    },
+
+    "Corn_(maize)___Northern_Leaf_Blight": {
+      "class_label": "Corn_(maize)___Northern_Leaf_Blight",
+      "crop": "Corn",
+      "condition": "Northern Leaf Blight",
+      "scientific_name": "Exserohilum turcicum",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "HIGH",
+      "general_description": "Northern Leaf Blight (NLB), caused by Exserohilum turcicum, produces distinctive long, elliptical, tan to gray-green lesions (3–15 cm) that run parallel to leaf veins. The lesions have wavy borders and may develop a dark olivaceous sporulation (conidia) under moist conditions. NLB infection above the ear leaf during the grain-fill period (R1–R6) can cause yield losses of 30–50% in highly susceptible hybrids.",
+      "favorable_conditions": "Moderate temperatures (18–27°C), relative humidity >90%, extended periods of leaf wetness (>6 hours), and moderate rainfall. Disease is most severe in areas with minimum tillage and surface corn debris from previous crop.",
+      "chemical_treatments": [
+        {
+          "product": "Pyraclostrobin + Metconazole (e.g., Headline AMP)",
+          "active_substance": "Pyraclostrobin + Metconazole",
+          "type": "CURATIVE_FUNGICIDE_MIXTURE",
+          "dosage": "0.8–1.0 L/ha",
+          "application_timing": "Apply at VT (tasseling) through R1 (silking); most critical application window for ear leaf protection.",
+          "pre_harvest_interval_days": 30,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Propiconazole 25% EC",
+          "active_substance": "Propiconazole (Triazole)",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "0.5–0.8 L/ha",
+          "application_timing": "Apply at VT stage when disease is detected in lower canopy; do not apply after R3 (milk).",
+          "pre_harvest_interval_days": 30,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Trifloxystrobin + Prothioconazole (e.g., Stratego YLD)",
+          "active_substance": "Trifloxystrobin + Prothioconazole",
+          "type": "CURATIVE_FUNGICIDE_MIXTURE",
+          "dosage": "0.6–0.8 L/ha",
+          "application_timing": "Preventative-to-curative application at VT for highly susceptible hybrids in high-disease-risk regions.",
+          "pre_harvest_interval_days": 30,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Plant NLB-resistant hybrids — look for Ht1, Ht2, Htm1 gene resistance in seed catalog.",
+        "Implement full-inversion plowing or minimum 2-year rotation to decompose infected surface debris.",
+        "Avoid planting corn on corn in regions with historically high NLB pressure.",
+        "Perform intensive scouting from V10 through R2 to evaluate economic threshold (approximately 50% plants with lesions above ear leaf).",
+        "Maintain adequate nitrogen and potassium fertilization to support plant immunity."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade ASO",
+          "dosage": "3–4 L/ha",
+          "notes": "Preventative supplemental application during early canopy development; not a replacement for conventional fungicides at VT in high-risk scenarios."
+        }
+      ],
+      "immediate_action": "Evaluate disease severity index (DSI) across the field. If >30% plants show NLB lesions on or above the ear leaf before R3, apply a strobilurin-triazole combination fungicide. Under high-risk conditions, a single well-timed VT application can protect yield potential significantly.",
+      "microclimate_risks": {
+        "fungal_risk": "CRITICAL",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 90,
+        "optimal_temp_c_min": 18,
+        "optimal_temp_c_max": 27,
+        "consecutive_wet_hours_threshold": 6
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 6,
+        "recommended_irrigation_restriction": false
+      }
+    },
+
+    "Apple___healthy": {
+      "class_label": "Apple___healthy",
+      "crop": "Apple",
+      "condition": "Healthy",
+      "scientific_name": null,
+      "pathogen_type": "HEALTHY",
+      "risk_level": "NONE",
+      "general_description": "The apple tree foliage is in healthy condition with no visible scab lesions, rust pustules, or foliar disease symptoms. Maintain current integrated pest and disease management schedule.",
+      "favorable_conditions": null,
+      "chemical_treatments": [],
+      "cultural_controls": [
+        "Implement a preventative copper fungicide program at green tip and pink bud stages before wet weather.",
+        "Prune trees annually during dormancy to improve light penetration and air circulation.",
+        "Remove and destroy mummified fruit and fallen leaves — primary inoculum sources for Venturia and Gymnosporangium.",
+        "Scout weekly from green tip through petal fall for early disease and pest signs.",
+        "Maintain soil pH 6.0–6.5 to optimize nutrient availability and plant health."
+      ],
+      "biological_controls": [],
+      "immediate_action": "No intervention required. Maintain scheduled spray program based on apple scab infection model (Mills periods) and regional pathogen pressure alerts.",
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 10,
+        "optimal_temp_c_max": 25,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      }
+    },
+
+    "Apple___Cedar_apple_rust": {
+      "class_label": "Apple___Cedar_apple_rust",
+      "crop": "Apple",
+      "condition": "Cedar Apple Rust",
+      "scientific_name": "Gymnosporangium juniperi-virginianae",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "MEDIUM",
+      "general_description": "Cedar Apple Rust is a heteroecious rust fungus requiring both apple (or crabapple) and eastern red cedar (Juniperus virginiana) or other susceptible Juniperus species to complete its life cycle. Bright orange-yellow lesions (aecia) appear on the upper surface of apple leaves from petal fall through early summer, often with distinctive tube-like aeciospore horns on the lower leaf surface. Severely infected leaves may drop prematurely, weakening the tree and reducing fruit set in subsequent years.",
+      "favorable_conditions": "Wet spring weather with temperatures of 10–24°C during apple bloom and green tip stages. Orange gelatinous telial horns on cedar galls release basidiospores during warm spring rains that infect apple tissue. Orchards within 500 m of susceptible Juniper hosts are at highest risk.",
+      "chemical_treatments": [
+        {
+          "product": "Myclobutanil 40% WP (e.g., Rally 40W)",
+          "active_substance": "Myclobutanil (Triazole)",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "0.17–0.25 kg/ha",
+          "application_timing": "Apply from silver tip through third cover (5–6 applications); most critical from pink to third cover when spore release peaks.",
+          "pre_harvest_interval_days": 30,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Tebuconazole 25% EC",
+          "active_substance": "Tebuconazole (Triazole)",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "0.3–0.5 L/ha",
+          "application_timing": "Apply at pink bud and repeat every 10–14 days through petal fall.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Captan 80% WG",
+          "active_substance": "Captan",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "2.0–2.5 kg/ha",
+          "application_timing": "Apply from green tip through first cover as part of a multi-disease protectant program.",
+          "pre_harvest_interval_days": 0,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Sulfur 80% WG",
+          "active_substance": "Elemental Sulfur",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "3.0–4.0 kg/ha",
+          "application_timing": "Apply at green tip; avoid use when temperatures exceed 32°C to prevent phytotoxicity.",
+          "pre_harvest_interval_days": 7,
+          "is_organic_certified": true
+        }
+      ],
+      "cultural_controls": [
+        "Remove or eradicate eastern red cedar and susceptible Juniperus hosts within 500 m of the orchard where feasible.",
+        "Plant rust-resistant apple cultivars (e.g., Enterprise, Liberty, Freedom, GoldRush).",
+        "Prune to improve airflow and reduce canopy humidity during spring infection periods.",
+        "Remove infected leaves and mummified fruit at season end to reduce local inoculum.",
+        "Monitor regional rust spore release forecasts from local extension services or weather-based models."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade ASO",
+          "dosage": "2–4 L/ha",
+          "notes": "Preventative use from green tip through petal fall; pair with sulfur or captan for adequate rust protection in organic systems."
+        }
+      ],
+      "immediate_action": "Apply a triazole fungicide (myclobutanil or tebuconazole) immediately if orange-yellow lesions are detected at or after petal fall. Inspect nearby Juniperus species for active telial horn galls and remove if feasible. Inform neighboring orchard operators of active rust pressure.",
+      "microclimate_risks": {
+        "fungal_risk": "HIGH",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 95,
+        "optimal_temp_c_min": 10,
+        "optimal_temp_c_max": 24,
+        "consecutive_wet_hours_threshold": 6
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 6,
+        "recommended_irrigation_restriction": false
+      }
+    }
+
+  }
+}
