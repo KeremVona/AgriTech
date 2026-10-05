@@ -11,7 +11,7 @@
   - Implement single noise latent broadcasting (`init_latent`) across all 3 stages.
   - Configure `AttentionRefine` with Needleman-Wunsch sequence alignment.
 
-- [ ] **Task 3: Agronomic Prompt Calibration & Anti-Macro Framing**
+- [x] **Task 3: Agronomic Prompt Calibration & Anti-Macro Framing**
   - Retain validated configurations for Potato (`seed: 108`) and Apple (`seed: 312`).
   - Calibrate Tomato prompt with anti-macro framing directives (`"isolated whole single leaf blade, full leaf margins visible, ample white background space"`).
   - Calibrate Corn prompt with anti-macro framing directives (`"isolated long leaf blade, full tip visible, centered"`).

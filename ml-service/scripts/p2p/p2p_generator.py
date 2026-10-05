@@ -15,10 +15,11 @@ import numpy as np
 
 
 UNIVERSAL_NEGATIVE_PROMPT = (
-    "fruit, vegetable, food, slice, cut, tuber, potato, tomato fruit, kiwi, "
+    "close up, macro, extreme close-up, cropped, cut off, out of frame, edge-to-edge, touching borders, "
+    "fruit, vegetable, food, slice, cut, tuber, potato, tomato fruit, kiwi, cobs, ears, "
     "wood, wooden table, cutting board, plate, bowl, kitchen, grass, soil, "
     "slate, stone, dark background, textured background, complex background, "
-    "shadow, blurry, 3d render, illustration"
+    "shadow, blurry, 3d render, illustration, text, watermark, label, barcode"
 )
 
 # Calibrated prompt triplets and agronomic definitions for the 4 target crops
@@ -27,11 +28,11 @@ DEFAULT_CROP_SPECS = {
         "crop_name": "Tomato",
         "disease_name": "Early Blight",
         "pathogen_scientific": "Alternaria solani",
-        "seed": 42,
+        "seed": 55,
         "prompts": [
-            "botanical specimen photograph of a single healthy green leaf blade of a tomato plant (Solanum lycopersicum foliage), distinct venation, centered, flat lay, pure solid white background, sharp focus, 8k",
-            "botanical specimen photograph of a single green leaf blade of a tomato plant with small dark brown concentric target-like early blight spots and faint yellow chlorotic halos, centered, flat lay, pure solid white background, sharp focus, 8k",
-            "botanical specimen photograph of a single withered leaf blade of a tomato plant with large dark brown necrotic patches, dry tissue collapse, and leaf margin chlorosis, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of an isolated whole single green leaf blade of a tomato plant (Solanum lycopersicum foliage), full leaf outline and serrated margins completely visible, ample whitespace surrounding entire leaf, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of an isolated whole single green leaf blade of a tomato plant with small dark brown concentric target-like early blight spots and faint yellow chlorotic halos, full leaf outline and serrated margins completely visible, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of an isolated whole single withered leaf blade of a tomato plant with large dark brown necrotic patches, dry tissue collapse, and leaf margin chlorosis, full leaf outline and serrated margins completely visible, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
         ],
         "blend_words": [
             [],
@@ -63,11 +64,11 @@ DEFAULT_CROP_SPECS = {
         "crop_name": "Corn (Maize)",
         "disease_name": "Common Rust",
         "pathogen_scientific": "Puccinia sorghi",
-        "seed": 204,
+        "seed": 128,
         "prompts": [
-            "botanical specimen photograph of a single long lanceolate healthy green leaf blade of a corn plant (Zea mays foliage), parallel longitudinal venation, centered, flat lay, pure solid white background, sharp focus, 8k",
-            "botanical specimen photograph of a single green leaf blade of a corn plant with scattered elongated cinnamon-brown powdery rust pustules, centered, flat lay, pure solid white background, sharp focus, 8k",
-            "botanical specimen photograph of a single dry leaf blade of a corn plant with dense confluent dark brown rust pustules, necrotic scorch streaks, and tissue brittleness, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single isolated long lanceolate healthy green leaf blade of a corn plant (Zea mays foliage), pointed leaf tip and entire leaf blade fully visible within frame, ample whitespace surrounding the leaf, parallel longitudinal venation, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single isolated long lanceolate green leaf blade of a corn plant with scattered elongated cinnamon-brown powdery rust pustules, pointed leaf tip and entire leaf blade fully visible within frame, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single isolated long lanceolate dry leaf blade of a corn plant with dense confluent dark brown rust pustules, necrotic scorch streaks, and tissue brittleness, pointed leaf tip and entire leaf blade fully visible within frame, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
         ],
         "blend_words": [
             [],
