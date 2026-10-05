@@ -17,7 +17,7 @@
   - Calibrate Corn prompt with anti-macro framing directives (`"isolated long leaf blade, full tip visible, centered"`).
   - Define pathology `blend_words` for all 4 crops.
 
-- [ ] **Task 4: Zero-Dependency Matte, Mask Extraction & Asset Packaging**
+- [x] **Task 4: Zero-Dependency Matte, Mask Extraction & Asset Packaging**
   - Implement pure NumPy corner-sampling background segmentation.
   - Add $800 \times 800$ RGBA WebP normalization.
   - Generate companion difference masks (`u_mask1`, `u_mask2`) for WebGL fragment shaders.
