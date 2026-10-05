@@ -6,7 +6,7 @@
   - Embed `seq_aligner.py` and `cross_attention_control.py` persistence.
   - Switch model loading to public `runwayml/stable-diffusion-v1-5` with `DDIMScheduler` (no auth token required).
 
-- [ ] **Task 2: Multi-Stage Algorithm Adaptation (`LocalBlend` & `AttentionRefine`)**
+- [x] **Task 2: Multi-Stage Algorithm Adaptation (`LocalBlend` & `AttentionRefine`)**
   - Upgrade `LocalBlend` to handle 3 prompt stages ($N=3$) without tensor broadcast errors.
   - Implement single noise latent broadcasting (`init_latent`) across all 3 stages.
   - Configure `AttentionRefine` with Needleman-Wunsch sequence alignment.
