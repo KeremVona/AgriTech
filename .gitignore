@@ -47,6 +47,8 @@ build/
 .turbo/
 *.tsbuildinfo
 .eslintcache
+*.mp4
+*.webm
 
 # ------------------------------------------
 # Python / Machine Learning / PyTorch
