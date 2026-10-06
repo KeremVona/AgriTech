@@ -1,0 +1,369 @@
+"""
+Standalone generation and postprocessing script for Prompt-to-Prompt Disease Progression.
+Executable locally or directly in Google Colab.
+Precision AgriTech Platform - Phase 1 (TODO-107 / Feature #1).
+"""
+
+import os
+import sys
+import json
+import argparse
+from pathlib import Path
+from typing import List, Dict, Tuple
+from PIL import Image, ImageOps, ImageChops, ImageFilter
+import numpy as np
+
+
+UNIVERSAL_NEGATIVE_PROMPT = (
+    "close up, macro, extreme close-up, cropped, cut off, out of frame, edge-to-edge, touching borders, "
+    "fruit, vegetable, food, slice, cut, tuber, potato, tomato fruit, kiwi, cobs, ears, "
+    "wood, wooden table, cutting board, plate, bowl, kitchen, grass, soil, "
+    "slate, stone, dark background, textured background, complex background, "
+    "shadow, blurry, 3d render, illustration, text, watermark, label, barcode"
+)
+
+# Calibrated prompt triplets and agronomic definitions for the 4 target crops
+DEFAULT_CROP_SPECS = {
+    "tomato": {
+        "crop_name": "Tomato",
+        "disease_name": "Early Blight",
+        "pathogen_scientific": "Alternaria solani",
+        "seed": 55,
+        "prompts": [
+            "botanical specimen photograph of an isolated whole single green leaf blade of a tomato plant (Solanum lycopersicum foliage), full leaf outline and serrated margins completely visible, ample whitespace surrounding entire leaf, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of an isolated whole single green leaf blade of a tomato plant with small dark brown concentric target-like early blight spots and faint yellow chlorotic halos, full leaf outline and serrated margins completely visible, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of an isolated whole single withered leaf blade of a tomato plant with large dark brown necrotic patches, dry tissue collapse, and leaf margin chlorosis, full leaf outline and serrated margins completely visible, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
+        ],
+        "blend_words": [
+            [],
+            ["concentric", "spots", "halos"],
+            ["necrotic", "patches", "collapse"],
+        ],
+        "cross_replace_steps": 0.75,
+        "self_replace_steps": 0.60,
+    },
+    "potato": {
+        "crop_name": "Potato",
+        "disease_name": "Late Blight",
+        "pathogen_scientific": "Phytophthora infestans",
+        "seed": 108,
+        "prompts": [
+            "botanical specimen photograph of a single broad oval healthy green leaf blade of a potato plant (Solanum tuberosum foliage), distinct center vein, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single green leaf blade of a potato plant with irregular water-soaked dark brown late blight lesions and pale green margins, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single decaying leaf blade of a potato plant with large dark brown necrotic blotches, shriveled leaf edges, and severe tissue rot, centered, flat lay, pure solid white background, sharp focus, 8k",
+        ],
+        "blend_words": [
+            [],
+            ["water-soaked", "lesions"],
+            ["necrotic", "blotches", "rot"],
+        ],
+        "cross_replace_steps": 0.75,
+        "self_replace_steps": 0.60,
+    },
+    "corn": {
+        "crop_name": "Corn (Maize)",
+        "disease_name": "Common Rust",
+        "pathogen_scientific": "Puccinia sorghi",
+        "seed": 128,
+        "prompts": [
+            "botanical specimen photograph of a single isolated long lanceolate healthy green leaf blade of a corn plant (Zea mays foliage), pointed leaf tip and entire leaf blade fully visible within frame, ample whitespace surrounding the leaf, parallel longitudinal venation, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single isolated long lanceolate green leaf blade of a corn plant with scattered elongated cinnamon-brown powdery rust pustules, pointed leaf tip and entire leaf blade fully visible within frame, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single isolated long lanceolate dry leaf blade of a corn plant with dense confluent dark brown rust pustules, necrotic scorch streaks, and tissue brittleness, pointed leaf tip and entire leaf blade fully visible within frame, centered specimen, flat lay, pure solid white background, sharp focus, 8k",
+        ],
+        "blend_words": [
+            [],
+            ["cinnamon-brown", "rust", "pustules"],
+            ["dense", "rust", "pustules", "scorch"],
+        ],
+        "cross_replace_steps": 0.70,
+        "self_replace_steps": 0.55,
+    },
+    "apple": {
+        "crop_name": "Apple",
+        "disease_name": "Apple Scab",
+        "pathogen_scientific": "Venturia inaequalis",
+        "seed": 312,
+        "prompts": [
+            "botanical specimen photograph of a single elliptical healthy green leaf blade of an apple tree (Malus domestica foliage), finely serrated margins, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single green leaf blade of an apple tree with discrete dull olive-green to black velvety scab spots, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single distorted leaf blade of an apple tree with large corky brown scab lesions, puckered lamina, and severe necrotic leaf margins, centered, flat lay, pure solid white background, sharp focus, 8k",
+        ],
+        "blend_words": [
+            [],
+            ["olive-green", "scab", "spots"],
+            ["corky", "scab", "lesions", "puckered"],
+        ],
+        "cross_replace_steps": 0.75,
+        "self_replace_steps": 0.60,
+    },
+}
+
+
+def remove_white_background(img: Image.Image, tolerance: int = 40) -> Image.Image:
+    """
+    Isolates foreground leaf on a solid white/light background using
+    luminance-saturation segmentation and corner background sampling.
+    Zero external dependencies (pure Pillow + NumPy).
+    """
+    img = img.convert("RGBA")
+    arr = np.array(img).astype(np.float32)
+    r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
+
+    # Sample the 4 corners to detect the exact background color generated by SD
+    corners = np.vstack([
+        arr[0:15, 0:15, :3].reshape(-1, 3),
+        arr[0:15, -15:, :3].reshape(-1, 3),
+        arr[-15:, 0:15, :3].reshape(-1, 3),
+        arr[-15:, -15:, :3].reshape(-1, 3),
+    ])
+    bg_color = np.median(corners, axis=0)
+
+    # Euclidean color distance from background
+    color_dist = np.sqrt(
+        (r - bg_color[0]) ** 2 +
+        (g - bg_color[1]) ** 2 +
+        (b - bg_color[2]) ** 2
+    )
+
+    # High brightness and low color saturation check
+    brightness = (r + g + b) / 3.0
+    max_c = np.maximum(np.maximum(r, g), b)
+    min_c = np.minimum(np.minimum(r, g), b)
+    saturation = np.where(max_c > 0, (max_c - min_c) / (max_c + 1e-5), 0)
+
+    # Background is close to corner color OR very bright near-white neutral
+    is_bg = (color_dist < tolerance) | ((brightness > 215) & (saturation < 0.18))
+
+    # Construct smooth alpha mask
+    alpha = np.where(is_bg, 0, 255).astype(np.uint8)
+    alpha_img = Image.fromarray(alpha, mode="L").filter(ImageFilter.GaussianBlur(radius=1.2))
+    img.putalpha(alpha_img)
+    return img
+
+
+def compute_difference_mask(img_base: Image.Image, img_target: Image.Image, blur_radius: float = 3.0) -> Image.Image:
+    """
+    Computes a localized grayscale pathology mask highlighting where symptoms emerged
+    between two progression stages. Fed to WebGL fragment shader uniforms u_mask1 and u_mask2.
+    """
+    gray_base = img_base.convert("L")
+    gray_target = img_target.convert("L")
+    
+    # Calculate absolute difference
+    diff = ImageChops.difference(gray_base, gray_target)
+    
+    # Contrast stretch to maximize mask separation
+    diff = ImageOps.autocontrast(diff, cutoff=2)
+    
+    # Smooth with Gaussian blur for organic shader edge blending
+    if blur_radius > 0:
+        diff = diff.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+        
+    return diff
+
+
+def normalize_to_target_spec(img: Image.Image, target_size: Tuple[int, int] = (800, 800)) -> Image.Image:
+    """Resizes and pads image to strictly 800x800 RGBA while maintaining aspect ratio."""
+    img = img.convert("RGBA")
+    img.thumbnail(target_size, Image.Resampling.LANCZOS)
+    
+    # Center on transparent canvas
+    final_img = Image.new("RGBA", target_size, (0, 0, 0, 0))
+    paste_x = (target_size[0] - img.width) // 2
+    paste_y = (target_size[1] - img.height) // 2
+    final_img.paste(img, (paste_x, paste_y), img)
+    return final_img
+
+
+def keep_largest_component(img: Image.Image) -> Image.Image:
+    """Retains only the largest connected foreground component to remove stray diffusion border artifacts."""
+    arr = np.array(img).copy()
+    alpha = arr[:, :, 3]
+    binary = alpha > 20
+    h, w = binary.shape
+    visited = np.zeros((h, w), dtype=bool)
+    components = []
+
+    for y in range(h):
+        for x in range(w):
+            if binary[y, x] and not visited[y, x]:
+                comp = []
+                queue = [(y, x)]
+                visited[y, x] = True
+                while queue:
+                    cy, cx = queue.pop()
+                    comp.append((cy, cx))
+                    for ny, nx in [(cy - 1, cx), (cy + 1, cx), (cy, cx - 1), (cy, cx + 1)]:
+                        if 0 <= ny < h and 0 <= nx < w and binary[ny, nx] and not visited[ny, nx]:
+                            visited[ny, nx] = True
+                            queue.append((ny, nx))
+                components.append(comp)
+
+    if not components:
+        return img
+
+    largest = max(components, key=len)
+    keep_mask = np.zeros((h, w), dtype=bool)
+    for y, x in largest:
+        keep_mask[y, x] = True
+
+    arr[~keep_mask, 3] = 0
+    return Image.fromarray(arr)
+
+
+def run_prompt_to_prompt_generation(
+    crop_id: str,
+    output_dir: Path,
+    device: str = "cuda",
+    model_id: str = "runwayml/stable-diffusion-v1-5",
+    num_inference_steps: int = 50,
+    guidance_scale: float = 7.5,
+):
+    """
+    Runs the complete Prompt-to-Prompt pipeline for a specified crop using
+    Google's reference architecture (init_latent broadcast + AttentionRefine + LocalBlend):
+    1. Loads Stable Diffusion pipeline.
+    2. Instantiates LocalBlend for pathology tokens.
+    3. Hooks AttentionRefine controller with Needleman-Wunsch sequence alignment.
+    4. Runs deterministic diffusion loop via run_p2p_diffusion.
+    5. Postprocesses outputs into 800x800 WebP assets and companion WebGL shader masks.
+    """
+    import torch
+    from diffusers import StableDiffusionPipeline, DDIMScheduler
+    from cross_attention_control import AttentionRefine, LocalBlend, run_p2p_diffusion
+
+    spec = DEFAULT_CROP_SPECS[crop_id]
+    prompts = spec["prompts"]
+    seed = spec["seed"]
+    cross_replace = spec["cross_replace_steps"]
+    self_replace = spec["self_replace_steps"]
+    blend_words = spec.get("blend_words", None)
+
+    print(f"\n[+] Starting Prompt-to-Prompt Generation for: {spec['crop_name']} ({spec['disease_name']})")
+    print(f"    Device: {device} | Model: {model_id} | Seed: {seed}")
+    print(f"    Cross Replace Steps: {cross_replace} | Self Replace Steps: {self_replace}")
+    if blend_words:
+        print(f"    LocalBlend Words: {blend_words}")
+
+    generator = torch.Generator(device=device).manual_seed(seed)
+
+    scheduler = DDIMScheduler(
+        beta_start=0.00085,
+        beta_end=0.012,
+        beta_schedule="scaled_linear",
+        clip_sample=False,
+        set_alpha_to_one=False,
+    )
+
+    pipe = StableDiffusionPipeline.from_pretrained(
+        model_id,
+        scheduler=scheduler,
+        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        safety_checker=None,
+        requires_safety_checker=False,
+    ).to(device)
+
+    # Enable memory optimizations defensively
+    if hasattr(pipe, "enable_attention_slicing"):
+        pipe.enable_attention_slicing()
+    if hasattr(pipe, "enable_vae_slicing"):
+        try:
+            pipe.enable_vae_slicing()
+        except Exception:
+            pass
+    elif hasattr(pipe, "vae") and hasattr(pipe.vae, "enable_slicing"):
+        try:
+            pipe.vae.enable_slicing()
+        except Exception:
+            pass
+
+    # 1. Instantiate LocalBlend if words are specified
+    local_blend = None
+    if blend_words is not None:
+        local_blend = LocalBlend(
+            prompts=prompts,
+            words=blend_words,
+            tokenizer=pipe.tokenizer,
+            device=device,
+            threshold=0.3,
+        )
+
+    # 2. Instantiate Google Prompt-to-Prompt Refinement controller
+    controller = AttentionRefine(
+        prompts=prompts,
+        num_steps=num_inference_steps,
+        cross_replace_steps=cross_replace,
+        self_replace_steps=self_replace,
+        tokenizer=pipe.tokenizer,
+        device=device,
+        local_blend=local_blend,
+    )
+
+    # 3. Execute diffusion runner with latent broadcasting and attention injection
+    with torch.autocast(device if device == "cuda" else "cpu"):
+        outputs = run_p2p_diffusion(
+            pipe=pipe,
+            prompts=prompts,
+            controller=controller,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            generator=generator,
+            negative_prompt=UNIVERSAL_NEGATIVE_PROMPT,
+        )
+
+    img_stage0, img_stage1, img_stage2 = outputs[0], outputs[1], outputs[2]
+
+    # Postprocessing
+    crop_out = output_dir / crop_id
+    crop_out.mkdir(parents=True, exist_ok=True)
+
+    print("    Post-processing output assets (800x800 RGBA WebP)...")
+    s0 = normalize_to_target_spec(remove_white_background(img_stage0))
+    s1 = normalize_to_target_spec(remove_white_background(img_stage1))
+    s2 = normalize_to_target_spec(remove_white_background(img_stage2))
+
+    if crop_id == "tomato":
+        s0 = keep_largest_component(s0)
+        s1 = keep_largest_component(s1)
+        s2 = keep_largest_component(s2)
+    elif crop_id == "potato":
+        a0 = np.array(s0)[:, :, 3]
+        arr1 = np.array(s1).copy()
+        arr1[a0 == 0, 3] = 0
+        s1 = Image.fromarray(arr1)
+
+    # Companion difference masks for WebGL shaders (uniforms u_mask1 and u_mask2)
+    mask1 = compute_difference_mask(s0, s1)
+    mask2 = compute_difference_mask(s1, s2)
+
+    s0.save(crop_out / f"{crop_id}_stage0_healthy.webp", "WEBP", quality=90)
+    s1.save(crop_out / f"{crop_id}_stage1_early.webp", "WEBP", quality=90)
+    s2.save(crop_out / f"{crop_id}_stage2_severe.webp", "WEBP", quality=90)
+    mask1.save(crop_out / f"{crop_id}_stage1_mask.webp", "WEBP", quality=85)
+    mask2.save(crop_out / f"{crop_id}_stage2_mask.webp", "WEBP", quality=85)
+
+    print(f"[OK] Saved all 5 assets for {crop_id} in: {crop_out}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Prompt-to-Prompt Disease Progression Asset Generator")
+    parser.add_argument("--crop", type=str, choices=["all", "tomato", "potato", "corn", "apple"], default="all")
+    parser.add_argument("--output-dir", type=str, default="frontend/public/progression")
+    parser.add_argument("--device", type=str, default="cuda" if sys.platform != "darwin" else "cpu")
+    parser.add_argument("--steps", type=int, default=50)
+    args = parser.parse_args()
+
+    out_path = Path(args.output_dir)
+    crops_to_run = list(DEFAULT_CROP_SPECS.keys()) if args.crop == "all" else [args.crop]
+
+    for crop in crops_to_run:
+        run_prompt_to_prompt_generation(
+            crop_id=crop,
+            output_dir=out_path,
+            device=args.device,
+            num_inference_steps=args.steps,
+        )
+
+
+if __name__ == "__main__":
+    main()

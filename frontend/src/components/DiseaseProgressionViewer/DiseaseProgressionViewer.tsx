@@ -22,14 +22,33 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
   showControls = true,
 }) => {
   const [sliderValue, setSliderValue] = useState<number>(initialPercentage);
-  const [rendererLoaded, setRendererLoaded] = useState<boolean>(false);
+  const [prevInitial, setPrevInitial] = useState<number>(initialPercentage);
+  const [loadedCropId, setLoadedCropId] = useState<CropId | null>(null);
   const [compareMode, setCompareMode] = useState<boolean>(false);
+  const [isFallbackMode, setIsFallbackMode] = useState<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<ProgressionShaderRenderer | null>(null);
+  const sliderValueRef = useRef<number>(sliderValue);
+
+  // Adjust state during render when prop changes (React recommended pattern)
+  if (prevInitial !== initialPercentage) {
+    setPrevInitial(initialPercentage);
+    setSliderValue(initialPercentage);
+  }
+
+  useEffect(() => {
+    sliderValueRef.current = sliderValue;
+  }, [sliderValue]);
 
   const { cropData, activeStage, loading: dataLoading, error } = useProgressionData(cropId, sliderValue);
+
+  const stage0Url = cropData?.stages.find((s) => s.stage_order === 0)?.assets.base_image_url;
+  const stage1Url = cropData?.stages.find((s) => s.stage_order === 1)?.assets.base_image_url;
+  const stage2Url = cropData?.stages.find((s) => s.stage_order === 2)?.assets.base_image_url;
+  const mask1Url = cropData?.stages.find((s) => s.stage_order === 1)?.assets.mask_image_url;
+  const mask2Url = cropData?.stages.find((s) => s.stage_order === 2)?.assets.mask_image_url;
 
   // Initialize WebGL/2D renderer
   useEffect(() => {
@@ -37,6 +56,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
 
     const renderer = new ProgressionShaderRenderer(canvasRef.current);
     rendererRef.current = renderer;
+    setIsFallbackMode(!renderer.isAvailable());
 
     return () => {
       renderer.dispose();
@@ -48,39 +68,46 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
   useEffect(() => {
     if (!cropData || !rendererRef.current) return;
 
-    const stages = cropData.stages;
-    const stage0 = stages.find((s) => s.stage_order === 0)?.assets.base_image_url;
-    const stage1 = stages.find((s) => s.stage_order === 1)?.assets.base_image_url;
-    const stage2 = stages.find((s) => s.stage_order === 2)?.assets.base_image_url;
-    const mask1 = stages.find((s) => s.stage_order === 1)?.assets.mask_image_url;
-    const mask2 = stages.find((s) => s.stage_order === 2)?.assets.mask_image_url;
-
-    if (!stage0 || !stage1 || !stage2) return;
+    if (!stage0Url || !stage1Url || !stage2Url) return;
 
     let isMounted = true;
 
     rendererRef.current
       .loadTextures({
-        stage0,
-        stage1,
-        stage2,
-        mask1,
-        mask2,
+        stage0: stage0Url,
+        stage1: stage1Url,
+        stage2: stage2Url,
+        mask1: mask1Url,
+        mask2: mask2Url,
       })
       .then(() => {
         if (isMounted) {
-          setRendererLoaded(true);
-          rendererRef.current?.render(sliderValue / 100.0);
+          setLoadedCropId(cropId);
+          setIsFallbackMode(!rendererRef.current?.isAvailable());
+          rendererRef.current?.render(sliderValueRef.current / 100.0);
         }
       })
       .catch((err) => {
         console.error('[DiseaseProgressionViewer] Failed to load progression textures:', err);
+        if (isMounted) {
+          setIsFallbackMode(true);
+        }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [cropData, sliderValue]);
+  }, [cropData, cropId, stage0Url, stage1Url, stage2Url, mask1Url, mask2Url]);
+
+  const rendererLoaded = loadedCropId === cropId;
+  const isContentReady = rendererLoaded || (isFallbackMode && !!stage0Url);
+
+  // Keep canvas synchronized with slider value
+  useEffect(() => {
+    if (rendererLoaded && rendererRef.current && !isFallbackMode) {
+      rendererRef.current.render(sliderValue / 100.0);
+    }
+  }, [sliderValue, rendererLoaded, isFallbackMode]);
 
   // Handle Resize & DPR compensation with ResizeObserver
   useEffect(() => {
@@ -108,7 +135,6 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
   const handleSliderChange = useCallback(
     (val: number) => {
       setSliderValue(val);
-      rendererRef.current?.render(val / 100.0);
       onPercentageChange?.(val);
     },
     [onPercentageChange]
@@ -120,7 +146,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
     return 'bg-red-500/20 text-red-400 border-red-500/30';
   };
 
-  const healthyBaselineUrl = cropData?.stages.find((s) => s.stage_order === 0)?.assets.base_image_url;
+  const healthyBaselineUrl = stage0Url;
 
   return (
     <div
@@ -136,6 +162,11 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-700/60 text-slate-300 font-mono">
               {cropData?.disease_name || 'Pathology'}
             </span>
+            {isFallbackMode && (
+              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-700/50 text-slate-400 border border-slate-600/40">
+                CSS Engine
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400 italic mt-0.5">
             {cropData?.scientific_name} • {cropData?.pathogen_scientific} ({cropData?.pathogen_type})
@@ -193,7 +224,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
             </div>
           )}
 
-          {/* Panel B: Active Interactive WebGL Progression Canvas */}
+          {/* Panel B: Active Interactive WebGL Progression Canvas / CSS Blend Fallback */}
           <div className="flex flex-col items-center">
             <div
               ref={containerRef}
@@ -204,7 +235,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
               <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
 
               {/* Buffering State */}
-              {(dataLoading || !rendererLoaded) && (
+              {(dataLoading || !isContentReady) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/70 backdrop-blur-xs z-10">
                   <div className="w-10 h-10 border-3 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin" />
                   <span className="text-xs text-slate-400 font-medium mt-3">Buffering high-res leaf textures...</span>
@@ -222,9 +253,44 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
               {/* WebGL Canvas */}
               <canvas
                 ref={canvasRef}
-                className="w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-opacity duration-300"
+                className={`w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-opacity duration-300 ${
+                  isFallbackMode ? 'hidden' : 'block'
+                }`}
                 style={{ opacity: rendererLoaded ? 1 : 0 }}
               />
+
+              {/* Hardware-Accelerated CSS Multi-Layer Cross-Dissolve Fallback */}
+              {isFallbackMode && stage0Url && stage1Url && stage2Url && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  {/* Stage 0: Healthy */}
+                  <img
+                    src={stage0Url}
+                    alt={`${cropData?.crop_name} Stage 0`}
+                    className="absolute inset-0 w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-opacity duration-75"
+                    style={{
+                      opacity: sliderValue <= 50 ? 1 - sliderValue / 50 : 0,
+                    }}
+                  />
+                  {/* Stage 1: Early */}
+                  <img
+                    src={stage1Url}
+                    alt={`${cropData?.crop_name} Stage 1`}
+                    className="absolute inset-0 w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-opacity duration-75"
+                    style={{
+                      opacity: sliderValue <= 50 ? sliderValue / 50 : Math.max(0, 1 - (sliderValue - 50) / 50),
+                    }}
+                  />
+                  {/* Stage 2: Severe */}
+                  <img
+                    src={stage2Url}
+                    alt={`${cropData?.crop_name} Stage 2`}
+                    className="absolute inset-0 w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-opacity duration-75"
+                    style={{
+                      opacity: sliderValue > 50 ? (sliderValue - 50) / 50 : 0,
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Top Banner on Compare Mode */}
               {compareMode && (

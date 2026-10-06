@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { CropId } from './types/progression';
 import { DiseaseProgressionViewer } from './components/DiseaseProgressionViewer';
+import { DiagnosticUploadCard } from './components/DiagnosticScan';
 
 const CROPS: { id: CropId; label: string; icon: string; subtitle: string }[] = [
   { id: 'tomato', label: 'Tomato', icon: '🍅', subtitle: 'Early Blight' },
@@ -12,6 +13,13 @@ const CROPS: { id: CropId; label: string; icon: string; subtitle: string }[] = [
 function App() {
   const [selectedCrop, setSelectedCrop] = useState<CropId>('tomato');
   const [currentProgress, setCurrentProgress] = useState<number>(0);
+  const viewerSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const handleViewProgression = (cropId: CropId, pct: number) => {
+    setSelectedCrop(cropId);
+    setCurrentProgress(pct);
+    viewerSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center py-10 px-4 sm:px-6">
@@ -26,7 +34,7 @@ function App() {
               Precision AgriTech Platform
             </h1>
             <p className="text-xs text-emerald-400 font-medium">
-              Phase 1 • Disease Progression Slider Engine (Feature #1)
+              Phase 1 • Disease Progression Slider Engine & AI Diagnostics
             </p>
           </div>
         </div>
@@ -52,19 +60,25 @@ function App() {
       </header>
 
       {/* Main Feature Container */}
-      <main className="max-w-4xl w-full space-y-6">
-        <DiseaseProgressionViewer
-          cropId={selectedCrop}
-          initialPercentage={currentProgress}
-          onPercentageChange={setCurrentProgress}
-        />
+      <main className="max-w-4xl w-full space-y-8">
+        {/* Diagnostic Scan & Quick Analysis Section */}
+        <DiagnosticUploadCard onViewProgression={handleViewProgression} />
+
+        {/* Core WebGL Disease Progression Viewer Section */}
+        <div ref={viewerSectionRef} className="pt-2">
+          <DiseaseProgressionViewer
+            cropId={selectedCrop}
+            initialPercentage={currentProgress}
+            onPercentageChange={setCurrentProgress}
+          />
+        </div>
 
         {/* Architectural Context & Teammate Info Footer */}
         <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="font-semibold text-slate-300">Feature #1: WebGL Morphological Blend Engine</div>
             <p className="text-slate-500">
-              Biologically registered WebP leaf plates with localized chlorosis and necrotic edge reveal shaders.
+              Biologically registered Prompt-to-Prompt WebP leaf plates with localized chlorosis and necrotic edge reveal shaders.
             </p>
           </div>
           <div className="flex gap-2">
