@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-10-06T20:05:32Z",
+  "criteria": {
+    "artifact_size_under_25mb": true,
+    "median_latency_under_85ms": true,
+    "probability_parity_under_1e_minus_3": true,
+    "all_criteria_met": true
+  },
+  "artifacts": {
+    "fp32_path": "models\\agritech_classifier.onnx",
+    "fp32_size_mb": 5.846268653869629,
+    "int8_path": "models\\agritech_classifier_quantized.onnx",
+    "int8_size_mb": 1.6239900588989258
+  },
+  "parity": {
+    "test_samples_evaluated": 20,
+    "max_probability_delta": 5.960464477539062e-07,
+    "threshold": 0.001,
+    "passed": true
+  },
+  "benchmarks": {
+    "fp32": {
+      "model_type": "FP32 (Standard)",
+      "num_runs": 100,
+      "median_ms": 4.552050027996302,
+      "mean_ms": 4.855977003462613,
+      "p95_ms": 7.017459982307627,
+      "p99_ms": 8.325257940450683,
+      "min_ms": 3.912400105036795,
+      "max_ms": 8.400299935601652,
+      "std_ms": 0.9432446409009696
+    },
+    "int8": {
+      "model_type": "INT8 (Quantized)",
+      "num_runs": 100,
+      "median_ms": 68.16964998142794,
+      "mean_ms": 69.70883400179446,
+      "p95_ms": 80.07783506182022,
+      "p99_ms": 82.27584809879785,
+      "min_ms": 64.36590000521392,
+      "max_ms": 105.94159993343055,
+      "std_ms": 5.380332556873942
+    }
+  }
+}

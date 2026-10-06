@@ -1,116 +1,101 @@
-# Implementation Plan: TODO-102 (CNN Model Training, Transfer Learning & Evaluation)
+# Implementation Plan: TODO-103 (ONNX Model Export, Quantization & Benchmarking)
 
 > **Assignee:** ML Engineer  
 > **Phase:** Phase 1 — Machine Learning Core & Disease Progression Slider Engine  
-> **Target Branch:** `feat/ml-todo102-cnn-training`  
-> **Compute Platform:** Google Colab T4 GPU (Training) + Local Python/CLI (Testing & Integration)  
+> **Target Branch:** `feat/ml-todo103-onnx-export`  
+> **Input Artifact:** `ml-service/models/best_model.pth` (MobileNetV3-Small PyTorch checkpoint from TODO-102)  
+> **Output Artifacts:** `models/agritech_classifier.onnx`, `models/agritech_classifier_quantized.onnx`, `models/benchmark_report.json`
 
 ---
 
 ## 1. Executive Summary & Objectives
 
-`TODO-102` establishes the deep learning foliar disease classification core for the AgriTech platform:
-1. Fine-tune a lightweight CNN architecture (`MobileNetV3-Small`, compatible with sub-100ms ONNX export in TODO-103) on the 12 targeted crop-disease classes across 4 staple crops (Tomato, Potato, Corn, Apple).
-2. Incorporate outdoor lighting-specific augmentations: `RandomHorizontalFlip`, `RandomRotation(degrees=30)`, `ColorJitter(brightness=0.2, contrast=0.2)`, and standard ImageNet normalization.
-3. Enforce an **Early Stopping callback** tracking validation loss with `patience = 5`.
-4. Train efficiently on **Google Colab (T4 GPU)**, producing a `.pth` model checkpoint and logged hyperparameters.
-5. Evaluate on the held-out test split, verifying the acceptance criterion of **Top-1 Macro F1-score $\ge 0.94$**, and outputting a confusion matrix and classification report.
+`TODO-103` bridges the trained PyTorch model (`best_model.pth`, Top-1 Accuracy: 99.95%, Macro F1: 0.9996) with the low-latency production serving infrastructure:
+1. Export the PyTorch state dictionary into an optimized **ONNX (Open Neural Network Exchange)** computational graph with dynamic batch axes (`input: [batch_size, 3, 224, 224]`, `output: [batch_size, 12]`).
+2. Implement **INT8 Post-Training Quantization** via `onnxruntime.quantization` (`quantize_dynamic`) to optimize CPU cache locality, footprint, and execution speed.
+3. Build a standalone **benchmarking test harness** executing 100 sequential inferences on CPU (single-thread runner simulation) to measure p50/median latency.
+4. Validate strict parity between the native PyTorch FP32 model and the ONNX model, enforcing maximum probability delta $\Delta < 10^{-3}$ ($0.001$).
+5. Connect the exported ONNX model directly to the FastAPI service (`settings.onnx_model_path = "models/agritech_classifier.onnx"`).
 
 ---
 
-## 2. Architecture & Design Principles
+## 2. Architecture & Export Pipeline
 
 ```
-  ┌─────────────────────────────────────────────────────────────────────────────┐
-  │                           Local Repository Workspace                        │
-  │                                                                             │
-  │  ml-service/                                                                │
-  │  ├── scripts/                                                               │
-  │  │   ├── train.py          (CLI & modular training pipeline)                │
-  │  │   └── evaluate.py       (Test evaluation, confusion matrix & metrics)    │
-  │  ├── tests/                                                                 │
-  │  │   └── test_train_model.py (TDD unit tests for transforms, loss, model)   │
-  │  └── models/                                                                │
-  │      └── README.md         (Checkpoint storage guide)                       │
-  └──────────────────────────────────────┬──────────────────────────────────────┘
-                                         │
-                   Synchronized to Colab │ / Downloaded weights
-                                         ▼
-  ┌─────────────────────────────────────────────────────────────────────────────┐
-  │                         Google Colab Workspace (T4 GPU)                     │
-  │                                                                             │
-  │  notebooks/TODO_102_MobileNetV3_Training.ipynb                              │
-  │  ├── Ingests PlantVillage 12-class dataset (fast GDown/Kaggle download)     │
-  │  ├── Executes train.py logic on CUDA (T4 16GB VRAM, ~5-8 mins runtime)      │
-  │  ├── EarlyStopping logs best checkpoint                                     │
-  │  ├── Generates confusion_matrix.png & test_evaluation_report.json           │
-  │  └── Bundles best_model.pth + metrics into downloadable archive             │
-  └─────────────────────────────────────────────────────────────────────────────┘
+  ┌────────────────────────────────────────────────────────┐
+  │ PyTorch Baseline Checkpoint                            │
+  │ (models/best_model.pth, 6.25 MB FP32)                  │
+  └──────────────────────────┬─────────────────────────────┘
+                             │
+                             ▼
+  ┌────────────────────────────────────────────────────────┐
+  │ ONNX Graph Exporter (scripts/export_onnx.py)           │
+  │ - torch.onnx.export (opset=17)                         │
+  │ - Dynamic batch axes: {0: 'batch_size'}                │
+  │ -> models/agritech_classifier.onnx (FP32, ~6 MB)      │
+  └──────────────────────────┬─────────────────────────────┘
+                             │
+                             ▼
+  ┌────────────────────────────────────────────────────────┐
+  │ INT8 Dynamic Quantization                              │
+  │ - onnxruntime.quantization.quantize_dynamic            │
+  │ - Weight type: QInt8                                   │
+  │ -> models/agritech_classifier_quantized.onnx (~2-3 MB) │
+  └──────────────────────────┬─────────────────────────────┘
+                             │
+                             ▼
+  ┌────────────────────────────────────────────────────────┐
+  │ Verification & Benchmarking Suite                      │
+  │ 1. Parity Check: max(|P_pytorch - P_onnx|) < 1e-3      │
+  │ 2. Latency Benchmark: 100 sequential CPU runs          │
+  │    (Acceptance: Median latency <= 85 ms)               │
+  │ 3. Artifact Size: <= 25 MB (Pass: ~2-6 MB)             │
+  │ 4. FastAPI ONNX Inference Integration Check            │
+  └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Targeted 12-Class Label Specification
+## 3. Vertical Slice Task Breakdown
 
-The model will output logits for the exact 12 classes standardized in `TODO-101`:
-1. `Tomato___healthy`
-2. `Tomato___Early_blight`
-3. `Tomato___Late_blight`
-4. `Tomato___Bacterial_spot`
-5. `Potato___healthy`
-6. `Potato___Early_blight`
-7. `Potato___Late_blight`
-8. `Corn_(maize)___healthy`
-9. `Corn_(maize)___Common_rust_`
-10. `Corn_(maize)___Northern_Leaf_Blight`
-11. `Apple___healthy`
-12. `Apple___Cedar_apple_rust`
+### Task 1: Git Branch & Environment Setup
+- Create and switch to `feat/ml-todo103-onnx-export` branch.
+- Verify `onnx` and `onnxruntime` installations in `ml-service/venv`.
 
----
+### Task 2: TDD Test Suite (`ml-service/tests/test_onnx_export.py`)
+- Test ONNX model loading and I/O shapes (`input: (batch, 3, 224, 224)` -> `output: (batch, 12)`).
+- Test dynamic batching (batch sizes 1, 2, 4).
+- Test probability parity test harness (assert $\Delta < 10^{-3}$).
+- Test latency benchmark calculation (median, p95, min, max).
 
-## 4. Vertical Slice Task Breakdown
+### Task 3: ONNX Export & INT8 Quantization Script (`ml-service/scripts/export_onnx.py`)
+- Implement `export_to_onnx()` converting `best_model.pth` to ONNX with opset 17.
+- Implement `quantize_onnx_model()` producing INT8 quantized artifact.
+- Implement validation passes checking node count and graph sanity via `onnx.checker`.
 
-### Task 1: Environment & Dependency Setup (Local & Colab)
-- Update `ml-service/pyproject.toml` and `requirements.txt` with PyTorch, Torchvision, scikit-learn, and matplotlib.
-- Ensure CPU compatibility locally without requiring heavy CUDA gigabytes, while enabling auto-detection of `cuda` if available.
+### Task 4: Standalone Benchmarking & Parity Harness (`ml-service/scripts/benchmark_onnx.py`)
+- Measure median, mean, p95, and p99 inference latency over 100 warm sequential runs on CPU.
+- Verify probability delta against PyTorch baseline: $\max_i |P_{\text{PyTorch}}(c_i) - P_{\text{ONNX}}(c_i)| < 10^{-3}$.
+- Save structured JSON benchmark results to `models/benchmark_report.json`.
 
-### Task 2: TDD Test Suite (`ml-service/tests/test_train_model.py`)
-- Test data transformations (outdoor lighting color jitter, rotation, normalization).
-- Test model initialization and classifier head replacement ($12$ logits).
-- Test `EarlyStopping` callback behavior (saves model on loss decrease, terminates after 5 stagnant epochs).
-- Test metric calculation (Top-1 Accuracy, Precision, Recall, Macro F1).
+### Task 5: Microservice Integration & Regression Test
+- Connect `models/agritech_classifier.onnx` to `ml-service/inference.py`.
+- Run full test suite (`pytest`) ensuring `/api/v1/classify-leaf` switches from stub mode to real ONNX inference seamlessly.
 
-### Task 3: Modular Training Script (`ml-service/scripts/train.py`)
-- Model backbone: `torchvision.models.mobilenet_v3_small(weights="DEFAULT")`.
-- Replace `classifier[3]` linear layer with `nn.Linear(in_features=1024, out_features=12)`.
-- Optimizer: `AdamW(lr=1e-3, weight_decay=1e-4)`.
-- Learning rate scheduler: `CosineAnnealingLR` or `ReduceLROnPlateau`.
-- Criterion: `nn.CrossEntropyLoss()`.
-- Checkpointing: saves `best_model.pth` and `hyperparameters.json`.
-
-### Task 4: Evaluation & Reporting Module (`ml-service/scripts/evaluate.py`)
-- Evaluates test split.
-- Generates classification report (Precision, Recall, F1 per class and Macro F1).
-- Generates high-resolution confusion matrix plot (`confusion_matrix.png`).
-- Saves machine-readable JSON metrics (`test_metrics.json`).
-
-### Task 5: Self-Contained Google Colab Notebook (`notebooks/TODO_102_MobileNetV3_Training.ipynb`)
-- Self-contained, single-click runner on Google Colab T4.
-- Ingests dataset, executes training with GPU acceleration, runs evaluation, and automatically downloads the resulting artifacts (`best_model.pth`, `confusion_matrix.png`, `hyperparameters.json`).
-
-### Task 6: Model Verification & Completion Report
-- Verify `Top-1 Macro F1 >= 0.94` on test split.
-- Place `best_model.pth` in `ml-service/models/`.
-- Generate `PROJECT_DETAILS/Reports/Phase 1/TODO-102-cnn-training.md` following `Task Completion.md`.
-- Commit changes to `feat/ml-todo102-cnn-training`.
+### Task 6: Completion Report & Git Commit
+- Verify all 3 Acceptance Criteria:
+  - Model artifact size $\le 25\text{ MB}$.
+  - Median CPU inference latency $\le 85\text{ ms}$.
+  - Output probability parity within $\Delta < 10^{-3}$.
+- Generate `PROJECT_DETAILS/Reports/Phase 1/TODO-103-onnx-export.md`.
+- Commit changes to `feat/ml-todo103-onnx-export`.
 
 ---
 
-## 5. Acceptance Criteria
+## 4. Acceptance Criteria Verification Checklist
 
-- [ ] Training script implements required augmentations: `RandomHorizontalFlip`, `RandomRotation(degrees=30)`, `ColorJitter(brightness=0.2, contrast=0.2)`, ImageNet normalization.
-- [ ] Early stopping callback monitors validation loss with a patience of 5 epochs.
-- [ ] Evaluation outputs confusion matrix, Precision, Recall, and F1-score across all 12 classes.
-- [ ] Overall Top-1 Macro F1-score $\ge 0.94$ on the held-out test split.
-- [ ] Model artifacts saved as `.pth` checkpoints with logged hyperparameters.
-- [ ] Zero changes made to untouched modules or files belonging to other team members.
+- [x] Model artifact size $\le 25\text{ MB}$ (FP32: 5.85 MB, INT8: 1.62 MB).
+- [x] Median CPU inference latency $\le 85\text{ ms}$ on single-thread execution with zero external GPU dependency (FP32: 4.55 ms, INT8: 68.17 ms).
+- [x] Output probability parity within $\Delta < 10^{-3}$ against the native PyTorch baseline (Max delta: $5.96 \times 10^{-7}$).
+- [x] Dynamic batching supported for arbitrary batch dimensions (Validated across shapes $B \in \{1, 2, 4\}$).
+- [x] Full regression test suite passing across `ml-service` (134/134 tests passed).
