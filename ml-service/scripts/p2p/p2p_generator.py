@@ -175,6 +175,42 @@ def normalize_to_target_spec(img: Image.Image, target_size: Tuple[int, int] = (8
     return final_img
 
 
+def keep_largest_component(img: Image.Image) -> Image.Image:
+    """Retains only the largest connected foreground component to remove stray diffusion border artifacts."""
+    arr = np.array(img).copy()
+    alpha = arr[:, :, 3]
+    binary = alpha > 20
+    h, w = binary.shape
+    visited = np.zeros((h, w), dtype=bool)
+    components = []
+
+    for y in range(h):
+        for x in range(w):
+            if binary[y, x] and not visited[y, x]:
+                comp = []
+                queue = [(y, x)]
+                visited[y, x] = True
+                while queue:
+                    cy, cx = queue.pop()
+                    comp.append((cy, cx))
+                    for ny, nx in [(cy - 1, cx), (cy + 1, cx), (cy, cx - 1), (cy, cx + 1)]:
+                        if 0 <= ny < h and 0 <= nx < w and binary[ny, nx] and not visited[ny, nx]:
+                            visited[ny, nx] = True
+                            queue.append((ny, nx))
+                components.append(comp)
+
+    if not components:
+        return img
+
+    largest = max(components, key=len)
+    keep_mask = np.zeros((h, w), dtype=bool)
+    for y, x in largest:
+        keep_mask[y, x] = True
+
+    arr[~keep_mask, 3] = 0
+    return Image.fromarray(arr)
+
+
 def run_prompt_to_prompt_generation(
     crop_id: str,
     output_dir: Path,
@@ -227,6 +263,20 @@ def run_prompt_to_prompt_generation(
         requires_safety_checker=False,
     ).to(device)
 
+    # Enable memory optimizations defensively
+    if hasattr(pipe, "enable_attention_slicing"):
+        pipe.enable_attention_slicing()
+    if hasattr(pipe, "enable_vae_slicing"):
+        try:
+            pipe.enable_vae_slicing()
+        except Exception:
+            pass
+    elif hasattr(pipe, "vae") and hasattr(pipe.vae, "enable_slicing"):
+        try:
+            pipe.vae.enable_slicing()
+        except Exception:
+            pass
+
     # 1. Instantiate LocalBlend if words are specified
     local_blend = None
     if blend_words is not None:
@@ -272,6 +322,16 @@ def run_prompt_to_prompt_generation(
     s1 = normalize_to_target_spec(remove_white_background(img_stage1))
     s2 = normalize_to_target_spec(remove_white_background(img_stage2))
 
+    if crop_id == "tomato":
+        s0 = keep_largest_component(s0)
+        s1 = keep_largest_component(s1)
+        s2 = keep_largest_component(s2)
+    elif crop_id == "potato":
+        a0 = np.array(s0)[:, :, 3]
+        arr1 = np.array(s1).copy()
+        arr1[a0 == 0, 3] = 0
+        s1 = Image.fromarray(arr1)
+
     # Companion difference masks for WebGL shaders (uniforms u_mask1 and u_mask2)
     mask1 = compute_difference_mask(s0, s1)
     mask2 = compute_difference_mask(s1, s2)
@@ -282,7 +342,7 @@ def run_prompt_to_prompt_generation(
     mask1.save(crop_out / f"{crop_id}_stage1_mask.webp", "WEBP", quality=85)
     mask2.save(crop_out / f"{crop_id}_stage2_mask.webp", "WEBP", quality=85)
 
-    print(f"[✓] Saved all 5 assets for {crop_id} in: {crop_out}")
+    print(f"[OK] Saved all 5 assets for {crop_id} in: {crop_out}")
 
 
 def main():
