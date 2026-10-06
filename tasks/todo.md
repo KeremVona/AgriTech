@@ -1,43 +1,38 @@
-# TODO-102: CNN Model Training, Transfer Learning & Evaluation (Task List)
+# TODO-103: ONNX Model Export, Quantization & Benchmarking (Task List)
 
-## Current Status: COMPLETED (TODO-102 DONE)
-**Branch:** `feat/ml-todo102-cnn-training`  
-**Target:** Phase 1 — Machine Learning Core (TODO-102)
+## Current Status: COMPLETED (READY FOR PR / MERGE)
+**Branch:** `feat/ml-todo103-onnx-export`  
+**Target:** Phase 1 — Machine Learning Core (TODO-103)  
+**Input Checkpoint:** `ml-service/models/best_model.pth` (TODO-102 output)
 
 ---
 
-- [x] **Task 1: Git Branch & Dependencies Setup**
-  - Create and switch to `feat/ml-todo102-cnn-training`.
-  - Add `torch`, `torchvision`, `scikit-learn`, `matplotlib`, `seaborn` to `ml-service/pyproject.toml` and `requirements.txt`.
-  - Verify local virtual environment installation.
+- [x] **Task 1: Git Branch & Environment Setup**
+  - Create and switch to `feat/ml-todo103-onnx-export`.
+  - Install `onnx` in `ml-service/venv`.
+  - Verify `onnxruntime` and `onnx` are ready.
 
-- [x] **Task 2: TDD Test Suite (`ml-service/tests/test_train_model.py`)**
-  - Implement tests for augmentation transforms (`RandomHorizontalFlip`, `RandomRotation(30)`, `ColorJitter(0.2, 0.2)`, ImageNet normalization).
-  - Implement test for `EarlyStopping` logic (patience=5 trigger and best model checkpointing).
-  - Implement test for `MobileNetV3-Small` architecture modification (12-class classifier head).
-  - Implement test for Top-1 Accuracy and Macro F1 metric calculations.
-  - Verify tests run and fail/pass cleanly (TDD RED -> GREEN).
+- [x] **Task 2: TDD Test Suite (`ml-service/tests/test_onnx_export.py`)**
+  - Test ONNX model export function outputs valid graph.
+  - Test dynamic batching works across shapes `[1, 3, 224, 224]`, `[2, 3, 224, 224]`, `[4, 3, 224, 224]`.
+  - Test parity check logic verifies $\Delta < 10^{-3}$ against PyTorch model.
+  - Test latency benchmark helper accurately computes statistics (median, mean, p95).
 
-- [x] **Task 3: Modular Training Script (`ml-service/scripts/train.py`)**
-  - Implement CLI argument parsing (`--data-dir`, `--epochs`, `--batch-size`, `--lr`, `--patience`, `--device`).
-  - Implement transfer learning model builder with pretrained `MobileNetV3-Small`.
-  - Implement training and validation loops with loss logging.
-  - Implement `EarlyStopping` callback saving `best_model.pth` and `hyperparameters.json`.
+- [x] **Task 3: ONNX Export & INT8 Quantization Script (`ml-service/scripts/export_onnx.py`)**
+  - Implement `export_to_onnx()` from `best_model.pth` with dynamic axes.
+  - Implement `quantize_onnx_model()` using `onnxruntime.quantization.quantize_dynamic`.
+  - Validate models with `onnx.checker.check_model()`.
 
-- [x] **Task 4: Evaluation & Reporting Script (`ml-service/scripts/evaluate.py`)**
-  - Implement evaluation loop computing confusion matrix, Precision, Recall, F1 across 12 classes.
-  - Implement `plot_confusion_matrix` generating `confusion_matrix.png`.
-  - Implement JSON report generator (`test_metrics.json`).
+- [x] **Task 4: Standalone Benchmarking & Parity Harness (`ml-service/scripts/benchmark_onnx.py`)**
+  - Implement 100 sequential CPU runs latency measuring harness.
+  - Verify acceptance criterion: Median CPU latency $\le 85\text{ ms}$.
+  - Verify acceptance criterion: Maximum probability difference $\Delta < 10^{-3}$.
+  - Save `models/benchmark_report.json`.
 
-- [x] **Task 5: Standalone Google Colab T4 Notebook (`notebooks/TODO_102_MobileNetV3_Training.ipynb`)**
-  - Create single-click Google Colab notebook utilizing T4 GPU.
-  - Add automated PlantVillage 12-class dataset download and preparation via `prepare_dataset.py`.
-  - Wire GPU training loop with progress bars and real-time loss/accuracy plots.
-  - Run evaluation on held-out test split, verifying Top-1 Macro F1 $\ge 0.94$.
-  - Package `best_model.pth`, `hyperparameters.json`, `confusion_matrix.png`, and `test_metrics.json` into a downloadable zip file.
+- [x] **Task 5: FastAPI Service Integration & Regression Suite**
+  - Validate that `inference.py` loads the exported ONNX model (`settings.onnx_model_path`).
+  - Run full pytest test suite across `ml-service` to ensure zero regressions.
 
-- [x] **Task 6: Local Verification, Completion Report & Git Commit**
-  - Validate model checkpoints in `ml-service/models/`.
-  - Run regression test suite on `ml-service` (ensure all existing tests still pass).
-  - Generate `PROJECT_DETAILS/Reports/Phase 1/TODO-102-cnn-training.md` following `Task Completion.md`.
-  - Commit changes following Conventional Commits format (`feat(ml): ...`).
+- [x] **Task 6: Completion Report & Git Commit**
+  - Generate `PROJECT_DETAILS/Reports/Phase 1/TODO-103-onnx-export.md`.
+  - Commit all changes following Conventional Commits format (`feat(ml): ...`).
