@@ -40,8 +40,15 @@ void main() {
     vec4 col1 = texture2D(u_stage1, uv);
     vec4 col2 = texture2D(u_stage2, uv);
 
-    float m1 = u_has_mask1 > 0.5 ? texture2D(u_mask1, uv).r : 0.5;
-    float m2 = u_has_mask2 > 0.5 ? texture2D(u_mask2, uv).r : 0.5;
+    float m1 = 0.5;
+    if (u_has_mask1 > 0.5) {
+        m1 = texture2D(u_mask1, uv).r;
+    }
+
+    float m2 = 0.5;
+    if (u_has_mask2 > 0.5) {
+        m2 = texture2D(u_mask2, uv).r;
+    }
 
     vec4 finalColor;
 
@@ -123,13 +130,25 @@ export class ProgressionShaderRenderer {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
+    if (this.canvas.width <= 0 || this.canvas.height <= 0) {
+      this.canvas.width = 800;
+      this.canvas.height = 800;
+    }
     this.canvas.addEventListener('webglcontextlost', this.handleContextLost, false);
     this.initContext();
+  }
+
+  /**
+   * Returns true if WebGL pipeline initialized and active.
+   */
+  public isAvailable(): boolean {
+    return this.isWebGL && !!this.program && !this.gl?.isContextLost();
   }
 
   private handleContextLost = (e: Event) => {
     e.preventDefault();
     this.isWebGL = false;
+    this.program = null;
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
@@ -138,38 +157,49 @@ export class ProgressionShaderRenderer {
 
   private initContext() {
     try {
-      const gl = this.canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: true });
-      if (gl) {
+      const gl =
+        this.canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: true }) ||
+        (this.canvas.getContext('experimental-webgl') as WebGLRenderingContext | null);
+
+      if (gl && !gl.isContextLost()) {
         this.gl = gl;
         this.isWebGL = true;
         this.initWebGLPipeline();
-        return;
+        if (this.isWebGL) return;
       }
     } catch {
       // Fallback
     }
 
-    // 2D context fallback
-    this.ctx2d = this.canvas.getContext('2d');
     this.isWebGL = false;
+    try {
+      this.ctx2d = this.canvas.getContext('2d');
+    } catch {
+      this.ctx2d = null;
+    }
   }
 
   private initWebGLPipeline() {
-    if (!this.gl) return;
+    if (!this.gl || this.gl.isContextLost()) {
+      this.isWebGL = false;
+      return;
+    }
     const gl = this.gl;
 
     const vertShader = this.compileShader(gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
     const fragShader = this.compileShader(gl.FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
 
     if (!vertShader || !fragShader) {
-      console.warn('[ProgressionShaderRenderer] Shader compilation failed, falling back to 2D canvas');
+      console.warn('[ProgressionShaderRenderer] Shader compilation failed, WebGL pipeline inactive');
       this.isWebGL = false;
-      this.ctx2d = this.canvas.getContext('2d');
       return;
     }
 
     const program = gl.createProgram();
-    if (!program) return;
+    if (!program) {
+      this.isWebGL = false;
+      return;
+    }
 
     gl.attachShader(program, vertShader);
     gl.attachShader(program, fragShader);
@@ -178,7 +208,6 @@ export class ProgressionShaderRenderer {
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       console.warn('[ProgressionShaderRenderer] Shader link failed:', gl.getProgramInfoLog(program));
       this.isWebGL = false;
-      this.ctx2d = this.canvas.getContext('2d');
       return;
     }
 
@@ -215,10 +244,13 @@ export class ProgressionShaderRenderer {
     this.texCoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   }
 
   private compileShader(type: number, source: string): WebGLShader | null {
-    if (!this.gl) return null;
+    if (!this.gl || this.gl.isContextLost()) return null;
     const shader = this.gl.createShader(type);
     if (!shader) return null;
 
@@ -226,7 +258,10 @@ export class ProgressionShaderRenderer {
     this.gl.compileShader(shader);
 
     if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-      console.error('[Shader Error]:', this.gl.getShaderInfoLog(shader));
+      const info = this.gl.getShaderInfoLog(shader);
+      if (info) {
+        console.error('[Shader Error]:', info);
+      }
       this.gl.deleteShader(shader);
       return null;
     }
@@ -257,7 +292,7 @@ export class ProgressionShaderRenderer {
     this.imgStage1 = img1;
     this.imgStage2 = img2;
 
-    if (this.isWebGL && this.gl) {
+    if (this.isWebGL && this.gl && !this.gl.isContextLost()) {
       const gl = this.gl;
       if (this.texStage0) gl.deleteTexture(this.texStage0);
       if (this.texStage1) gl.deleteTexture(this.texStage1);
@@ -326,7 +361,7 @@ export class ProgressionShaderRenderer {
   }
 
   private renderWebGL() {
-    if (!this.gl || !this.program || !this.locations) return;
+    if (!this.gl || !this.program || !this.locations || this.gl.isContextLost()) return;
     const gl = this.gl;
     const locs = this.locations;
 
@@ -434,7 +469,7 @@ export class ProgressionShaderRenderer {
       this.animFrameId = null;
     }
 
-    if (this.gl) {
+    if (this.gl && !this.gl.isContextLost()) {
       const gl = this.gl;
       if (this.texStage0) gl.deleteTexture(this.texStage0);
       if (this.texStage1) gl.deleteTexture(this.texStage1);
@@ -444,13 +479,11 @@ export class ProgressionShaderRenderer {
       if (this.positionBuffer) gl.deleteBuffer(this.positionBuffer);
       if (this.texCoordBuffer) gl.deleteBuffer(this.texCoordBuffer);
       if (this.program) gl.deleteProgram(this.program);
-
-      // Explicitly trigger WebGL context loss to prevent hitting browser context pool limit
-      const loseExt = gl.getExtension('WEBGL_lose_context');
-      loseExt?.loseContext();
-
-      this.gl = null;
+      // Note: Do NOT call loseExt?.loseContext() here. In React 19 / StrictMode,
+      // unmount is immediately followed by remount on the same canvas DOM node.
+      // Calling loseContext() permanently kills the context for the remounted component.
     }
+    this.gl = null;
 
     this.locations = null;
     this.program = null;
