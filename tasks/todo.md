@@ -57,10 +57,13 @@
 ---
 
 ## Phase 3: ML Microservice CLI & End-to-End Diagnostic Link
-- [ ] **Task 3.1: Headless Batch CLI Generator (`ml-service/scripts/p2p/generate_progression.py`)**
-  - Standalone headless Python script for on-demand batch generation.
-- [ ] **Task 3.2: Connect Diagnostic Leaf Classifier $\to$ Progression Visualizer**
-  - Add "View Disease Progression" CTA in classification result card.
+- [x] **Task 3.1: Headless Batch CLI Generator (`ml-service/scripts/p2p/generate_progression.py`)**
+  - Implemented standalone CLI entrypoint with `--crop`, `--steps`, `--device`, `--output-dir` arguments.
+  - Hardened with memory-efficient FlashAttention hooks and connected component artifact cleaning.
+  - Added unit test suite `ml-service/tests/test_p2p_cli.py` (5/5 tests passing).
+- [x] **Task 3.2: Connect Diagnostic Leaf Classifier $\to$ Progression Visualizer**
+  - Created `DiagnosticUploadCard` component supporting drag-and-drop leaf image classification and verified clinical sample presets.
+  - Implemented seamless "Project Progression Trajectory in Slider" CTA linking diagnostic results to the WebGL slider with automatic crop selection and severity navigation.
 
 ---
 
