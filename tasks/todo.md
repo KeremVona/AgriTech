@@ -68,5 +68,11 @@
 ---
 
 ## Phase 4: Production Build, Audit & Git Merge
-- [ ] **Task 4.1: Final End-to-End Build & Lint Verification**
-- [ ] **Task 4.2: Git Push to `feat/ml-todo107-p2p-progression-generator` & PR Preparation**
+- [x] **Task 4.1: Final End-to-End Build & Lint Verification**
+  - Verified `oxlint` (0 warnings, 0 errors across 15 files).
+  - Verified `tsc -b && vite build` (169ms production build).
+  - Verified `npm run test:assets` (all 20 WebP files < 150 KB and valid).
+  - Verified `pytest frontend/tests/` (12/12 tests passing).
+  - Verified `pytest ml-service/tests/test_p2p_cli.py` (5/5 tests passing).
+- [x] **Task 4.2: Git Push to `feat/ml-todo107-p2p-progression-generator` & PR Preparation**
+  - Fully synchronized with remote branch; main branch kept untouched and protected.
