@@ -10,26 +10,32 @@ Key design decisions for TODO-104:
   descriptive 400/422 JSON errors before any inference is attempted.
 - All heavy I/O (file.read()) is awaited; inference runs synchronously in a
   threadpool via run_in_executor so the async event loop is never blocked.
+
+Updates for TODO-105:
+- Advisory engine (advisory.py) integrated into classify-leaf response.
+- Low-confidence path (<60%) returns ClassifyLeafLowConfidenceResponse
+  with operator rescan instructions instead of a potentially unreliable advisory.
+- /health/ready now reports advisory KB status alongside model status.
 """
 
 import asyncio
-import io
 import logging
 import uuid
 from contextlib import asynccontextmanager
+from typing import Union
 
 from fastapi import FastAPI, File, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from advisory import get_advisory, get_kb_version, get_kb_class_count, is_kb_loaded
 from config import settings
 from inference import get_class_meta, inference_engine
 from schemas import (
-    AgronomicAdvisory,
+    ClassifyLeafLowConfidenceResponse,
     ClassifyLeafResponse,
     ErrorDetail,
     PredictionDetail,
-    TelemetryLinkageHints,
     TopProbability,
 )
 
@@ -65,6 +71,19 @@ async def lifespan(app: FastAPI):
             "ONNX model NOT loaded — running in STUB mode. "
             "Complete ML-102 and ML-103, then place the model at: %s",
             settings.onnx_model_path,
+        )
+
+    # Advisory KB is loaded at advisory.py import time; log its status here
+    if is_kb_loaded():
+        logger.info(
+            "Advisory knowledge base loaded: %d classes (version %s)",
+            get_kb_class_count(),
+            get_kb_version(),
+        )
+    else:
+        logger.error(
+            "Advisory knowledge base FAILED to load. "
+            "Ensure ml-service/data/disease_advisories.json exists."
         )
 
     yield  # Application runs here
@@ -109,7 +128,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 # ---------------------------------------------------------------------------
-# Health endpoints (TODO-106 will extend these; basic versions provided here)
+# Health endpoints
 # ---------------------------------------------------------------------------
 
 @app.get("/health/live", tags=["Health"])
@@ -121,13 +140,18 @@ async def health_live():
 @app.get("/health/ready", tags=["Health"])
 async def health_ready():
     """
-    Readiness probe — reports whether the ONNX model is resident in memory.
+    Readiness probe — reports ONNX model and advisory knowledge base status.
     Returns 200 in both LIVE and STUB modes; clients should inspect model_loaded.
     """
     return {
         "status": "ready",
         "model_loaded": inference_engine.is_loaded(),
         "mode": "LIVE" if inference_engine.is_loaded() else "STUB",
+        "advisory_kb": {
+            "loaded": is_kb_loaded(),
+            "version": get_kb_version(),
+            "class_count": get_kb_class_count(),
+        },
         "note": (
             None
             if inference_engine.is_loaded()
@@ -148,7 +172,7 @@ async def health_check():
 
 @app.post(
     "/api/v1/classify-leaf",
-    response_model=ClassifyLeafResponse,
+    response_model=Union[ClassifyLeafResponse, ClassifyLeafLowConfidenceResponse],
     responses={
         400: {"model": ErrorDetail, "description": "Malformed or unsupported image file"},
         413: {"description": "File exceeds the 10 MB upload limit"},
@@ -157,16 +181,21 @@ async def health_check():
     tags=["Inference"],
     summary="Classify leaf disease from an uploaded image",
 )
-async def classify_leaf(request: Request, file: UploadFile = File(...)):
+async def classify_leaf(
+    request: Request, file: UploadFile = File(...)
+) -> Union[ClassifyLeafResponse, ClassifyLeafLowConfidenceResponse]:
     """
     Ingests a multipart leaf image, preprocesses it with Pillow, runs ONNX
-    inference, and returns a fully-typed diagnostic response.
+    inference, enriches the result with agronomic advisory data from the
+    knowledge base, and returns a fully-typed diagnostic response.
 
     Validation layers (in order):
     1. MIME type check  → 400 if not image/jpeg, image/png, or image/webp
     2. File size check  → 413 if > 10 MB
-    3. Pillow decodability → 400 if bytes cannot be decoded as an image
-    4. Inference         → 500 if model raises an unexpected runtime error
+    3. Empty file check → 400
+    4. Pillow decodability → 400 if bytes cannot be decoded
+    5. Inference → threadpool (run_in_executor, non-blocking)
+    6. Advisory lookup → O(1) in-memory dict; low-confidence path if score < 60%
     """
 
     # ------------------------------------------------------------------
@@ -187,7 +216,7 @@ async def classify_leaf(request: Request, file: UploadFile = File(...)):
         )
 
     # ------------------------------------------------------------------
-    # Layer 2: File size validation (read into memory with cap)
+    # Layer 2: File size validation
     # ------------------------------------------------------------------
     image_bytes = await file.read()
     if len(image_bytes) > settings.max_upload_bytes:
@@ -198,12 +227,15 @@ async def classify_leaf(request: Request, file: UploadFile = File(...)):
                 "error": "file_too_large",
                 "message": (
                     f"Uploaded file is {size_mb:.1f} MB. "
-                    f"Maximum allowed size is {settings.max_upload_bytes // (1024*1024)} MB."
+                    f"Maximum allowed size is {settings.max_upload_bytes // (1024 * 1024)} MB."
                 ),
                 "field": "file",
             },
         )
 
+    # ------------------------------------------------------------------
+    # Layer 3: Empty file check
+    # ------------------------------------------------------------------
     if len(image_bytes) == 0:
         return JSONResponse(
             status_code=400,
@@ -215,14 +247,12 @@ async def classify_leaf(request: Request, file: UploadFile = File(...)):
         )
 
     # ------------------------------------------------------------------
-    # Layer 3 + 4: Preprocessing & Inference (offloaded to threadpool)
-    # Keeps the async event loop unblocked during CPU-bound work.
+    # Layer 4 + 5: Preprocessing & Inference (offloaded to threadpool)
     # ------------------------------------------------------------------
     loop = asyncio.get_running_loop()
     try:
         result = await loop.run_in_executor(None, inference_engine.run, image_bytes)
     except ValueError as exc:
-        # Raised by preprocess_image() when Pillow cannot decode the bytes
         return JSONResponse(
             status_code=400,
             content={
@@ -233,60 +263,69 @@ async def classify_leaf(request: Request, file: UploadFile = File(...)):
         )
 
     # ------------------------------------------------------------------
-    # Build response
+    # Layer 6: Advisory lookup (includes low-confidence fallback)
     # ------------------------------------------------------------------
-    top_label = result["top_label"]
-    meta = get_class_meta(top_label)
-    is_high_moisture_risk = meta.get("pathogen") in ("FUNGAL", "BACTERIAL")
+    top_label: str = result["top_label"]
+    confidence: float = result["confidence"]
+    inference_id: str = str(uuid.uuid4())
 
-    # Stub agronomic advisory (TODO-105 will populate a real knowledge base)
-    advisory = AgronomicAdvisory(
-        immediate_action=(
-            "Isolate affected perimeter; restrict overhead irrigation."
-            if meta["condition"] != "Healthy"
-            else "No immediate action required. Continue routine monitoring."
-        ),
-        fungicide_treatments=(
-            ["Copper-based preventative spray", "Mancozeb or Chlorothalonil application"]
-            if meta.get("pathogen") == "FUNGAL"
-            else []
-        ),
-        environmental_risk_factors=(
-            "High humidity (>85%) with moderate temperatures (15°C–24°C)."
-            if is_high_moisture_risk
-            else "No significant environmental risk factors identified."
-        ),
-    )
+    top_probs = [
+        TopProbability(label=p["label"], probability=p["probability"])
+        for p in result["top_probabilities"]
+    ]
+
+    advisory, telemetry_hints, low_conf = get_advisory(top_label, confidence)
+
+    # ------------------------------------------------------------------
+    # Low-confidence path: return rescan advisory instead of prediction
+    # ------------------------------------------------------------------
+    if low_conf is not None:
+        logger.info(
+            "classify-leaf | LOW_CONFIDENCE | label=%s confidence=%.4f time=%.1fms",
+            top_label,
+            confidence,
+            result["execution_time_ms"],
+        )
+        return ClassifyLeafLowConfidenceResponse(
+            inference_id=inference_id,
+            requires_rescan=True,
+            low_confidence_advisory=low_conf,
+            top_probabilities=top_probs,
+            execution_time_ms=result["execution_time_ms"],
+            model_version=result["model_version"],
+            model_loaded=result["model_loaded"],
+        )
+
+    # ------------------------------------------------------------------
+    # High-confidence path: full diagnostic response
+    # ------------------------------------------------------------------
+    meta = get_class_meta(top_label)
 
     response = ClassifyLeafResponse(
-        inference_id=str(uuid.uuid4()),
+        inference_id=inference_id,
         prediction=PredictionDetail(
             crop=meta["crop"],
             condition=meta["condition"],
             scientific_name=meta.get("scientific_name"),
-            confidence_score=result["confidence"],
+            confidence_score=confidence,
             severity_index=meta["severity"],
         ),
-        top_probabilities=[
-            TopProbability(label=p["label"], probability=p["probability"])
-            for p in result["top_probabilities"]
-        ],
+        top_probabilities=top_probs,
         agronomic_advisory=advisory,
-        telemetry_linkage_hints=TelemetryLinkageHints(
-            leaf_wetness_threshold_hours=6 if is_high_moisture_risk else 0,
-            moisture_risk=is_high_moisture_risk,
-        ),
+        telemetry_linkage_hints=telemetry_hints,
         execution_time_ms=result["execution_time_ms"],
         model_version=result["model_version"],
         model_loaded=result["model_loaded"],
+        low_confidence=None,
     )
 
     logger.info(
-        "classify-leaf | label=%s confidence=%.4f time=%.1fms model_loaded=%s",
+        "classify-leaf | label=%s confidence=%.4f time=%.1fms model_loaded=%s advisory_kb=%s",
         top_label,
-        result["confidence"],
+        confidence,
         result["execution_time_ms"],
         result["model_loaded"],
+        get_kb_version(),
     )
     return response
 
