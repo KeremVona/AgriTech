@@ -40,8 +40,15 @@ void main() {
     vec4 col1 = texture2D(u_stage1, uv);
     vec4 col2 = texture2D(u_stage2, uv);
 
-    float m1 = u_has_mask1 > 0.5 ? texture2D(u_mask1, uv).r : 0.5;
-    float m2 = u_has_mask2 > 0.5 ? texture2D(u_mask2, uv).r : 0.5;
+    float m1 = 0.5;
+    if (u_has_mask1 > 0.5) {
+        m1 = texture2D(u_mask1, uv).r;
+    }
+
+    float m2 = 0.5;
+    if (u_has_mask2 > 0.5) {
+        m2 = texture2D(u_mask2, uv).r;
+    }
 
     vec4 finalColor;
 
@@ -79,13 +86,28 @@ export interface TextureSources {
   mask2?: string | null;
 }
 
+interface ShaderLocations {
+  a_position: number;
+  a_texCoord: number;
+  u_stage0: WebGLUniformLocation | null;
+  u_stage1: WebGLUniformLocation | null;
+  u_stage2: WebGLUniformLocation | null;
+  u_mask1: WebGLUniformLocation | null;
+  u_mask2: WebGLUniformLocation | null;
+  u_has_mask1: WebGLUniformLocation | null;
+  u_has_mask2: WebGLUniformLocation | null;
+  u_progress: WebGLUniformLocation | null;
+}
+
 export class ProgressionShaderRenderer {
   private canvas: HTMLCanvasElement;
   private gl: WebGLRenderingContext | null = null;
   private ctx2d: CanvasRenderingContext2D | null = null;
   private isWebGL = false;
+  private isDisposed = false;
 
   private program: WebGLProgram | null = null;
+  private locations: ShaderLocations | null = null;
   private positionBuffer: WebGLBuffer | null = null;
   private texCoordBuffer: WebGLBuffer | null = null;
 
@@ -104,46 +126,80 @@ export class ProgressionShaderRenderer {
   private currentProgress = 0.0;
   private isLoaded = false;
   private animFrameId: number | null = null;
+  private currentLoadId = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
+    if (this.canvas.width <= 0 || this.canvas.height <= 0) {
+      this.canvas.width = 800;
+      this.canvas.height = 800;
+    }
+    this.canvas.addEventListener('webglcontextlost', this.handleContextLost, false);
     this.initContext();
   }
 
+  /**
+   * Returns true if WebGL pipeline initialized and active.
+   */
+  public isAvailable(): boolean {
+    return this.isWebGL && !!this.program && !this.gl?.isContextLost();
+  }
+
+  private handleContextLost = (e: Event) => {
+    e.preventDefault();
+    this.isWebGL = false;
+    this.program = null;
+    if (this.animFrameId !== null) {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
+    }
+  };
+
   private initContext() {
     try {
-      const gl = this.canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: true });
-      if (gl) {
+      const gl =
+        this.canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: true }) ||
+        (this.canvas.getContext('experimental-webgl') as WebGLRenderingContext | null);
+
+      if (gl && !gl.isContextLost()) {
         this.gl = gl;
         this.isWebGL = true;
         this.initWebGLPipeline();
-        return;
+        if (this.isWebGL) return;
       }
     } catch {
       // Fallback
     }
 
-    // 2D context fallback
-    this.ctx2d = this.canvas.getContext('2d');
     this.isWebGL = false;
+    try {
+      this.ctx2d = this.canvas.getContext('2d');
+    } catch {
+      this.ctx2d = null;
+    }
   }
 
   private initWebGLPipeline() {
-    if (!this.gl) return;
+    if (!this.gl || this.gl.isContextLost()) {
+      this.isWebGL = false;
+      return;
+    }
     const gl = this.gl;
 
     const vertShader = this.compileShader(gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
     const fragShader = this.compileShader(gl.FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
 
     if (!vertShader || !fragShader) {
-      console.warn('[ProgressionShaderRenderer] Shader compilation failed, falling back to 2D canvas');
+      console.warn('[ProgressionShaderRenderer] Shader compilation failed, WebGL pipeline inactive');
       this.isWebGL = false;
-      this.ctx2d = this.canvas.getContext('2d');
       return;
     }
 
     const program = gl.createProgram();
-    if (!program) return;
+    if (!program) {
+      this.isWebGL = false;
+      return;
+    }
 
     gl.attachShader(program, vertShader);
     gl.attachShader(program, fragShader);
@@ -152,11 +208,30 @@ export class ProgressionShaderRenderer {
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       console.warn('[ProgressionShaderRenderer] Shader link failed:', gl.getProgramInfoLog(program));
       this.isWebGL = false;
-      this.ctx2d = this.canvas.getContext('2d');
       return;
     }
 
+    // Detach and clean up individual shaders post-linking to free driver memory
+    gl.detachShader(program, vertShader);
+    gl.detachShader(program, fragShader);
+    gl.deleteShader(vertShader);
+    gl.deleteShader(fragShader);
+
     this.program = program;
+
+    // Cache hot uniform and attribute locations to avoid string hashing on 60 FPS scrub
+    this.locations = {
+      a_position: gl.getAttribLocation(program, 'a_position'),
+      a_texCoord: gl.getAttribLocation(program, 'a_texCoord'),
+      u_stage0: gl.getUniformLocation(program, 'u_stage0'),
+      u_stage1: gl.getUniformLocation(program, 'u_stage1'),
+      u_stage2: gl.getUniformLocation(program, 'u_stage2'),
+      u_mask1: gl.getUniformLocation(program, 'u_mask1'),
+      u_mask2: gl.getUniformLocation(program, 'u_mask2'),
+      u_has_mask1: gl.getUniformLocation(program, 'u_has_mask1'),
+      u_has_mask2: gl.getUniformLocation(program, 'u_has_mask2'),
+      u_progress: gl.getUniformLocation(program, 'u_progress'),
+    };
 
     // Full screen quad geometry
     const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
@@ -169,10 +244,13 @@ export class ProgressionShaderRenderer {
     this.texCoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   }
 
   private compileShader(type: number, source: string): WebGLShader | null {
-    if (!this.gl) return null;
+    if (!this.gl || this.gl.isContextLost()) return null;
     const shader = this.gl.createShader(type);
     if (!shader) return null;
 
@@ -180,7 +258,10 @@ export class ProgressionShaderRenderer {
     this.gl.compileShader(shader);
 
     if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-      console.error('[Shader Error]:', this.gl.getShaderInfoLog(shader));
+      const info = this.gl.getShaderInfoLog(shader);
+      if (info) {
+        console.error('[Shader Error]:', info);
+      }
       this.gl.deleteShader(shader);
       return null;
     }
@@ -188,9 +269,10 @@ export class ProgressionShaderRenderer {
   }
 
   /**
-   * Loads all required images and initializes textures concurrently.
+   * Loads all required images and initializes textures concurrently with race-condition cancellation.
    */
   public async loadTextures(sources: TextureSources): Promise<void> {
+    const loadId = ++this.currentLoadId;
     this.isLoaded = false;
 
     const [img0, img1, img2, m1, m2] = await Promise.all([
@@ -201,12 +283,23 @@ export class ProgressionShaderRenderer {
       sources.mask2 ? this.loadImage(sources.mask2) : Promise.resolve(null),
     ]);
 
+    // Discard stale out-of-order responses or disposed instance
+    if (this.isDisposed || loadId !== this.currentLoadId) {
+      return;
+    }
+
     this.imgStage0 = img0;
     this.imgStage1 = img1;
     this.imgStage2 = img2;
 
-    if (this.isWebGL && this.gl) {
+    if (this.isWebGL && this.gl && !this.gl.isContextLost()) {
       const gl = this.gl;
+      if (this.texStage0) gl.deleteTexture(this.texStage0);
+      if (this.texStage1) gl.deleteTexture(this.texStage1);
+      if (this.texStage2) gl.deleteTexture(this.texStage2);
+      if (this.texMask1) gl.deleteTexture(this.texMask1);
+      if (this.texMask2) gl.deleteTexture(this.texMask2);
+
       this.texStage0 = this.createGLTexture(gl, img0);
       this.texStage1 = this.createGLTexture(gl, img1);
       this.texStage2 = this.createGLTexture(gl, img2);
@@ -251,7 +344,7 @@ export class ProgressionShaderRenderer {
   public render(progress: number) {
     this.currentProgress = Math.max(0.0, Math.min(1.0, progress));
 
-    if (!this.isLoaded) return;
+    if (!this.isLoaded || this.isDisposed) return;
 
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
@@ -268,8 +361,9 @@ export class ProgressionShaderRenderer {
   }
 
   private renderWebGL() {
-    if (!this.gl || !this.program) return;
+    if (!this.gl || !this.program || !this.locations || this.gl.isContextLost()) return;
     const gl = this.gl;
+    const locs = this.locations;
 
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
@@ -277,52 +371,50 @@ export class ProgressionShaderRenderer {
 
     gl.useProgram(this.program);
 
-    // Bind Attributes
-    const posLoc = gl.getAttribLocation(this.program, 'a_position');
-    gl.enableVertexAttribArray(posLoc);
+    // Bind Attributes using cached locations
+    gl.enableVertexAttribArray(locs.a_position);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(locs.a_position, 2, gl.FLOAT, false, 0, 0);
 
-    const texLoc = gl.getAttribLocation(this.program, 'a_texCoord');
-    gl.enableVertexAttribArray(texLoc);
+    gl.enableVertexAttribArray(locs.a_texCoord);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);
-    gl.vertexAttribPointer(texLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(locs.a_texCoord, 2, gl.FLOAT, false, 0, 0);
 
     // Bind Textures to Units 0 - 4
-    if (this.texStage0) {
+    if (this.texStage0 && locs.u_stage0) {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, this.texStage0);
-      gl.uniform1i(gl.getUniformLocation(this.program, 'u_stage0'), 0);
+      gl.uniform1i(locs.u_stage0, 0);
     }
-    if (this.texStage1) {
+    if (this.texStage1 && locs.u_stage1) {
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, this.texStage1);
-      gl.uniform1i(gl.getUniformLocation(this.program, 'u_stage1'), 1);
+      gl.uniform1i(locs.u_stage1, 1);
     }
-    if (this.texStage2) {
+    if (this.texStage2 && locs.u_stage2) {
       gl.activeTexture(gl.TEXTURE2);
       gl.bindTexture(gl.TEXTURE_2D, this.texStage2);
-      gl.uniform1i(gl.getUniformLocation(this.program, 'u_stage2'), 2);
+      gl.uniform1i(locs.u_stage2, 2);
     }
-    if (this.texMask1) {
+    if (this.texMask1 && locs.u_mask1) {
       gl.activeTexture(gl.TEXTURE3);
       gl.bindTexture(gl.TEXTURE_2D, this.texMask1);
-      gl.uniform1i(gl.getUniformLocation(this.program, 'u_mask1'), 3);
-      gl.uniform1f(gl.getUniformLocation(this.program, 'u_has_mask1'), 1.0);
+      gl.uniform1i(locs.u_mask1, 3);
+      gl.uniform1f(locs.u_has_mask1, 1.0);
     } else {
-      gl.uniform1f(gl.getUniformLocation(this.program, 'u_has_mask1'), 0.0);
+      gl.uniform1f(locs.u_has_mask1, 0.0);
     }
-    if (this.texMask2) {
+    if (this.texMask2 && locs.u_mask2) {
       gl.activeTexture(gl.TEXTURE4);
       gl.bindTexture(gl.TEXTURE_2D, this.texMask2);
-      gl.uniform1i(gl.getUniformLocation(this.program, 'u_mask2'), 4);
-      gl.uniform1f(gl.getUniformLocation(this.program, 'u_has_mask2'), 1.0);
+      gl.uniform1i(locs.u_mask2, 4);
+      gl.uniform1f(locs.u_has_mask2, 1.0);
     } else {
-      gl.uniform1f(gl.getUniformLocation(this.program, 'u_has_mask2'), 0.0);
+      gl.uniform1f(locs.u_has_mask2, 0.0);
     }
 
     // Set Progress Uniform
-    gl.uniform1f(gl.getUniformLocation(this.program, 'u_progress'), this.currentProgress);
+    gl.uniform1f(locs.u_progress, this.currentProgress);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
@@ -336,16 +428,16 @@ export class ProgressionShaderRenderer {
     ctx.clearRect(0, 0, w, h);
 
     if (this.currentProgress <= 0.5) {
-      const alpha = this.currentProgress / 0.5;
+      const t = this.currentProgress / 0.5;
       ctx.globalAlpha = 1.0;
       ctx.drawImage(this.imgStage0, 0, 0, w, h);
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = t;
       ctx.drawImage(this.imgStage1, 0, 0, w, h);
     } else {
-      const alpha = (this.currentProgress - 0.5) / 0.5;
+      const t = (this.currentProgress - 0.5) / 0.5;
       ctx.globalAlpha = 1.0;
       ctx.drawImage(this.imgStage1, 0, 0, w, h);
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = t;
       ctx.drawImage(this.imgStage2, 0, 0, w, h);
     }
 
@@ -353,24 +445,31 @@ export class ProgressionShaderRenderer {
   }
 
   public resize(width: number, height: number, dpr = window.devicePixelRatio || 1) {
-    this.canvas.width = Math.floor(width * dpr);
-    this.canvas.height = Math.floor(height * dpr);
-    this.canvas.style.width = `${width}px`;
-    this.canvas.style.height = `${height}px`;
+    const w = Math.floor(width * dpr);
+    const h = Math.floor(height * dpr);
+    if (this.canvas.width !== w || this.canvas.height !== h) {
+      this.canvas.width = w;
+      this.canvas.height = h;
+    }
 
     this.render(this.currentProgress);
   }
 
   /**
-   * Cleans up GPU buffers, textures, and event loops.
+   * Cleans up GPU buffers, textures, context loss, and event loops.
    */
   public dispose() {
+    this.isDisposed = true;
+    this.currentLoadId++;
+
+    this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
+
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
 
-    if (this.gl) {
+    if (this.gl && !this.gl.isContextLost()) {
       const gl = this.gl;
       if (this.texStage0) gl.deleteTexture(this.texStage0);
       if (this.texStage1) gl.deleteTexture(this.texStage1);
@@ -380,7 +479,21 @@ export class ProgressionShaderRenderer {
       if (this.positionBuffer) gl.deleteBuffer(this.positionBuffer);
       if (this.texCoordBuffer) gl.deleteBuffer(this.texCoordBuffer);
       if (this.program) gl.deleteProgram(this.program);
+      // Note: Do NOT call loseExt?.loseContext() here. In React 19 / StrictMode,
+      // unmount is immediately followed by remount on the same canvas DOM node.
+      // Calling loseContext() permanently kills the context for the remounted component.
     }
+    this.gl = null;
+
+    this.locations = null;
+    this.program = null;
+    this.positionBuffer = null;
+    this.texCoordBuffer = null;
+    this.texStage0 = null;
+    this.texStage1 = null;
+    this.texStage2 = null;
+    this.texMask1 = null;
+    this.texMask2 = null;
 
     this.imgStage0 = null;
     this.imgStage1 = null;
