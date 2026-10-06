@@ -139,3 +139,71 @@ def test_get_class_meta_unknown_label():
     meta = get_class_meta("UnknownCrop___UnknownDisease")
     assert meta["crop"] == "Unknown"
     assert meta["condition"] == "UnknownCrop___UnknownDisease"
+
+
+# ---------------------------------------------------------------------------
+# Live ONNX Model Inference Tests (TODO-103)
+# ---------------------------------------------------------------------------
+
+def test_inference_engine_loads_onnx_model():
+    """Verify InferenceEngine correctly loads the exported ONNX model artifact."""
+    from pathlib import Path
+    from config import settings
+
+    model_path = Path(settings.onnx_model_path)
+    if not model_path.exists():
+        pytest.skip(f"ONNX model file not found at {model_path}")
+
+    engine = InferenceEngine()
+    engine.load(str(model_path))
+
+    assert engine.is_loaded() is True
+    assert engine._model_version == model_path.stem
+    assert engine._session is not None
+    assert engine._input_name is not None
+
+
+def test_inference_engine_live_prediction():
+    """Verify live ONNX model runs full inference and adheres to sub-85ms latency."""
+    from pathlib import Path
+    from config import settings
+
+    model_path = Path(settings.onnx_model_path)
+    if not model_path.exists():
+        pytest.skip(f"ONNX model file not found at {model_path}")
+
+    engine = InferenceEngine()
+    engine.load(str(model_path))
+
+    img_bytes = _make_jpeg_bytes(224, 224)
+    result = engine.run(img_bytes)
+
+    assert result["model_loaded"] is True
+    assert result["model_version"] == "agritech_classifier"
+    assert result["top_label"] in CLASS_LABELS
+    assert 0.0 <= result["confidence"] <= 1.0
+    assert len(result["top_probabilities"]) == 3
+    assert len(result["all_probabilities"]) == 12
+    # Latency of single inference on CPU within full pipeline
+    assert result["execution_time_ms"] < 85.0
+
+
+def test_inference_engine_quantized_int8_model():
+    """Verify INT8 quantized ONNX model can also be loaded and executed."""
+    from pathlib import Path
+
+    int8_path = Path("models/agritech_classifier_quantized.onnx")
+    if not int8_path.exists():
+        pytest.skip(f"INT8 ONNX model not found at {int8_path}")
+
+    engine = InferenceEngine()
+    engine.load(str(int8_path))
+
+    assert engine.is_loaded() is True
+    img_bytes = _make_jpeg_bytes(224, 224)
+    result = engine.run(img_bytes)
+
+    assert result["model_loaded"] is True
+    assert result["top_label"] in CLASS_LABELS
+    assert 0.0 <= result["confidence"] <= 1.0
+
