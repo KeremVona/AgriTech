@@ -354,3 +354,52 @@ async def test_classify_leaf_concurrent_load():
         assert elapsed_ms <= 150.0, (
             f"Request took {elapsed_ms:.1f} ms — exceeds 150 ms acceptance criterion"
         )
+
+
+# ---------------------------------------------------------------------------
+# Live ONNX Service Integration Tests (TODO-103)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.anyio
+async def test_classify_leaf_live_onnx_service_execution():
+    """Verify FastAPI service handles /api/v1/classify-leaf with live ONNX model loaded."""
+    from pathlib import Path
+    from config import settings
+    from inference import inference_engine
+
+    model_path = Path(settings.onnx_model_path)
+    if not model_path.exists():
+        pytest.skip(f"ONNX model file not found at {model_path}")
+
+    # Explicitly load ONNX model as lifespan does at application startup
+    inference_engine.load(str(model_path))
+    assert inference_engine.is_loaded() is True
+
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+            # 1. Check readiness probe reports LIVE mode
+            ready_resp = await c.get("/health/ready")
+            assert ready_resp.status_code == 200
+            ready_data = ready_resp.json()
+            assert ready_data["model_loaded"] is True
+            assert ready_data["mode"] == "LIVE"
+
+            # 2. Check leaf classification with live model
+            jpeg_bytes = _make_jpeg_bytes()
+            resp = await c.post(
+                "/api/v1/classify-leaf",
+                files={"file": ("leaf.jpg", jpeg_bytes, "image/jpeg")},
+            )
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["model_loaded"] is True
+            assert data["model_version"] == "agritech_classifier"
+            assert "prediction" in data
+            assert "agronomic_advisory" in data
+            assert data["execution_time_ms"] > 0
+    finally:
+        # Reset engine state to stub mode to maintain isolated test environments
+        inference_engine._session = None
+        inference_engine._model_loaded = False
+        inference_engine._model_version = "stub_no_model"
+
