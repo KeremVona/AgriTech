@@ -207,7 +207,9 @@ class AttentionStore(AttentionControl):
 
     def forward(self, attn: torch.Tensor, is_cross: bool, place_in_unet: str) -> torch.Tensor:
         key = f"{place_in_unet}_{'cross' if is_cross else 'self'}"
-        if attn.shape[1] <= 32 ** 2:
+        # Only cache cross-attention maps at resolution <= 32x32 (what LocalBlend actually reads)
+        # to prevent caching multi-gigabyte self-attention tensors in VRAM
+        if is_cross and attn.shape[1] <= 32 ** 2:
             self.step_store[key].append(attn)
         return attn
 
@@ -370,6 +372,24 @@ def register_attention_control(model, controller: AttentionControl):
             key = key.view(batch_size, -1, attn_module.heads, head_dim).transpose(1, 2)
             value = value.view(batch_size, -1, attn_module.heads, head_dim).transpose(1, 2)
 
+            # MEMORY OPTIMIZATION:
+            # Self-attention at resolutions > 16x16 (i.e. 32x32=1024, 64x64=4096) is never modified
+            # by Prompt-to-Prompt (replace_self_attention only operates at <= 16x16) and never stored.
+            # Materializing the (batch, heads, 4096, 4096) matrix requires 1.5 GiB per layer and causes CUDA OOM.
+            # Using PyTorch F.scaled_dot_product_attention computes this in O(1) memory via FlashAttention.
+            if not is_cross and sequence_length > 16 ** 2:
+                if hasattr(F, "scaled_dot_product_attention"):
+                    hidden_states = F.scaled_dot_product_attention(query, key, value)
+                    hidden_states = hidden_states.transpose(1, 2).reshape(batch_size, -1, attn_module.heads * head_dim)
+                    hidden_states = attn_module.to_out[0](hidden_states)
+                    hidden_states = attn_module.to_out[1](hidden_states)
+                    controller.cur_att_layer += 1
+                    if controller.num_att_layers > 0 and controller.cur_att_layer == controller.num_att_layers:
+                        controller.cur_att_layer = 0
+                        controller.cur_step += 1
+                        controller.between_steps()
+                    return hidden_states
+
             scale = 1.0 / (head_dim ** 0.5)
             scores = torch.matmul(query, key.transpose(-1, -2)) * scale
             attn_probs = scores.softmax(dim=-1)
@@ -421,6 +441,7 @@ def run_p2p_diffusion(
     4. Decodes latents into PIL RGBA images.
     """
     device = pipe.device
+    controller.reset()
     register_attention_control(pipe, controller)
     batch_size = len(prompts)
 
