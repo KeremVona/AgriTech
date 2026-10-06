@@ -1,78 +1,43 @@
-# Precision AgriTech Platform - Prompt-to-Prompt Disease Progression Roadmap
+# TODO-102: CNN Model Training, Transfer Learning & Evaluation (Task List)
 
-## ML Notebook & Generation Adaptation (TODO-107)
-- [x] **Task 1: Environment & Self-Contained Module Setup**
-  - Strip obsolete paper demo cells and 22 MB outputs from `prompt-to-prompt_stable.ipynb`.
-  - Add safe library installs (`diffusers`, `transformers`, `accelerate`).
-  - Embed `seq_aligner.py` and `cross_attention_control.py` persistence.
-  - Switch model loading to public `runwayml/stable-diffusion-v1-5` with `DDIMScheduler` (no auth token required).
-
-- [x] **Task 2: Multi-Stage Algorithm Adaptation (`LocalBlend` & `AttentionRefine`)**
-  - Upgrade `LocalBlend` to handle 3 prompt stages ($N=3$) without tensor broadcast errors.
-  - Implement single noise latent broadcasting (`init_latent`) across all 3 stages.
-  - Configure `AttentionRefine` with Needleman-Wunsch sequence alignment.
-
-- [x] **Task 3: Agronomic Prompt Calibration & Anti-Macro Framing**
-  - Retain validated configurations for Potato (`seed: 108`) and Apple (`seed: 312`).
-  - Calibrate Tomato prompt with anti-macro framing directives (`"isolated whole single leaf blade, full leaf margins visible, ample white background space"`).
-  - Calibrate Corn prompt with anti-macro framing directives (`"isolated long leaf blade, full tip visible, centered"`).
-  - Define pathology `blend_words` for all 4 crops.
-
-- [x] **Task 4: Zero-Dependency Matte, Mask Extraction & Asset Packaging**
-  - Implement pure NumPy corner-sampling background segmentation.
-  - Add $800 \times 800$ RGBA WebP normalization.
-  - Generate companion difference masks (`u_mask1`, `u_mask2`) for WebGL fragment shaders.
-  - Package assets into `p2p_progression_assets_v5.zip` with automatic download.
-
-- [x] **Task 5: Colab Execution & Asset Verification**
-  - User runs adapted notebook in Google Colab with FlashAttention memory optimization.
-  - Run quantitative audit on `p2p_progression_assets_v5.zip` verifying $\text{IoU} \ge 0.97$, transparency, and WebGL shader readiness.
+## Current Status: COMPLETED (TODO-102 DONE)
+**Branch:** `feat/ml-todo102-cnn-training`  
+**Target:** Phase 1 — Machine Learning Core (TODO-102)
 
 ---
 
-## Phase 1: Asset Polish & Ingestion into Frontend
-- [x] **Task 1.1: Tomato & Potato Asset Micro-Polish**
-  - Cleaned thin frame artifact at $x \ge 626$ on Tomato using largest connected component filter.
-  - Cleaned 15-pixel apex spur on Potato Stage 1 to ensure bounding box delta $\Delta < 2.0\%$.
-- [x] **Task 1.2: Ingest Photorealistic P2P Assets into `frontend/public/progression/`**
-  - Replaced prototype vector assets with real diffusion-generated leaf plates and companion difference masks across all 4 crops.
-- [x] **Task 1.3: Run Asset Conformance & Regression Tests**
-  - Verified `npm run test:assets` (all 20 files compliant).
-  - Verified `pytest frontend/tests/` (12/12 tests passing).
-  - Verified `npm run build` and `npm run lint` (0 errors, 0 warnings).
+- [x] **Task 1: Git Branch & Dependencies Setup**
+  - Create and switch to `feat/ml-todo102-cnn-training`.
+  - Add `torch`, `torchvision`, `scikit-learn`, `matplotlib`, `seaborn` to `ml-service/pyproject.toml` and `requirements.txt`.
+  - Verify local virtual environment installation.
 
----
+- [x] **Task 2: TDD Test Suite (`ml-service/tests/test_train_model.py`)**
+  - Implement tests for augmentation transforms (`RandomHorizontalFlip`, `RandomRotation(30)`, `ColorJitter(0.2, 0.2)`, ImageNet normalization).
+  - Implement test for `EarlyStopping` logic (patience=5 trigger and best model checkpointing).
+  - Implement test for `MobileNetV3-Small` architecture modification (12-class classifier head).
+  - Implement test for Top-1 Accuracy and Macro F1 metric calculations.
+  - Verify tests run and fail/pass cleanly (TDD RED -> GREEN).
 
-## Phase 2: Frontend WebGL Engine & UI Verification
-- [x] **Task 2.1: WebGL Engine Performance & Lifecycle Hardening**
-  - Cached uniform and attribute locations in `ProgressionShaderRenderer.ts` to eliminate CPU string-hashing overhead on 60 FPS scrub.
-  - Added `loadRequestId` to cancel out-of-order texture resolution on rapid crop switching.
-  - Handled WebGL context disposal with `WEBGL_lose_context` and `webglcontextlost` event listeners.
-  - Decoupled slider scrubbing from texture loading, eliminating double-render thrashing.
-  - Verified all static endpoints and WebP assets return 200 OK via Vite preview server.
-- [x] **Task 2.2: Dynamic Agronomic Card & Compare Controls**
-  - Verified `CompareHealthyToggle` A/B comparison against Stage 0 baseline.
-  - Verified `DiagnosticOverlayCard` dynamic stage and symptom updates.
+- [x] **Task 3: Modular Training Script (`ml-service/scripts/train.py`)**
+  - Implement CLI argument parsing (`--data-dir`, `--epochs`, `--batch-size`, `--lr`, `--patience`, `--device`).
+  - Implement transfer learning model builder with pretrained `MobileNetV3-Small`.
+  - Implement training and validation loops with loss logging.
+  - Implement `EarlyStopping` callback saving `best_model.pth` and `hyperparameters.json`.
 
----
+- [x] **Task 4: Evaluation & Reporting Script (`ml-service/scripts/evaluate.py`)**
+  - Implement evaluation loop computing confusion matrix, Precision, Recall, F1 across 12 classes.
+  - Implement `plot_confusion_matrix` generating `confusion_matrix.png`.
+  - Implement JSON report generator (`test_metrics.json`).
 
-## Phase 3: ML Microservice CLI & End-to-End Diagnostic Link
-- [x] **Task 3.1: Headless Batch CLI Generator (`ml-service/scripts/p2p/generate_progression.py`)**
-  - Implemented standalone CLI entrypoint with `--crop`, `--steps`, `--device`, `--output-dir` arguments.
-  - Hardened with memory-efficient FlashAttention hooks and connected component artifact cleaning.
-  - Added unit test suite `ml-service/tests/test_p2p_cli.py` (5/5 tests passing).
-- [x] **Task 3.2: Connect Diagnostic Leaf Classifier $\to$ Progression Visualizer**
-  - Created `DiagnosticUploadCard` component supporting drag-and-drop leaf image classification and verified clinical sample presets.
-  - Implemented seamless "Project Progression Trajectory in Slider" CTA linking diagnostic results to the WebGL slider with automatic crop selection and severity navigation.
+- [x] **Task 5: Standalone Google Colab T4 Notebook (`notebooks/TODO_102_MobileNetV3_Training.ipynb`)**
+  - Create single-click Google Colab notebook utilizing T4 GPU.
+  - Add automated PlantVillage 12-class dataset download and preparation via `prepare_dataset.py`.
+  - Wire GPU training loop with progress bars and real-time loss/accuracy plots.
+  - Run evaluation on held-out test split, verifying Top-1 Macro F1 $\ge 0.94$.
+  - Package `best_model.pth`, `hyperparameters.json`, `confusion_matrix.png`, and `test_metrics.json` into a downloadable zip file.
 
----
-
-## Phase 4: Production Build, Audit & Git Merge
-- [x] **Task 4.1: Final End-to-End Build & Lint Verification**
-  - Verified `oxlint` (0 warnings, 0 errors across 15 files).
-  - Verified `tsc -b && vite build` (169ms production build).
-  - Verified `npm run test:assets` (all 20 WebP files < 150 KB and valid).
-  - Verified `pytest frontend/tests/` (12/12 tests passing).
-  - Verified `pytest ml-service/tests/test_p2p_cli.py` (5/5 tests passing).
-- [x] **Task 4.2: Git Push to `feat/ml-todo107-p2p-progression-generator` & PR Preparation**
-  - Fully synchronized with remote branch; main branch kept untouched and protected.
+- [x] **Task 6: Local Verification, Completion Report & Git Commit**
+  - Validate model checkpoints in `ml-service/models/`.
+  - Run regression test suite on `ml-service` (ensure all existing tests still pass).
+  - Generate `PROJECT_DETAILS/Reports/Phase 1/TODO-102-cnn-training.md` following `Task Completion.md`.
+  - Commit changes following Conventional Commits format (`feat(ml): ...`).
