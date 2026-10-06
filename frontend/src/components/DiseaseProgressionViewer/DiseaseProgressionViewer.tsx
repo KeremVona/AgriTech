@@ -22,12 +22,19 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
   showControls = true,
 }) => {
   const [sliderValue, setSliderValue] = useState<number>(initialPercentage);
-  const [rendererLoaded, setRendererLoaded] = useState<boolean>(false);
+  const [loadedCropId, setLoadedCropId] = useState<CropId | null>(null);
   const [compareMode, setCompareMode] = useState<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<ProgressionShaderRenderer | null>(null);
+  const sliderValueRef = useRef<number>(sliderValue);
+
+  useEffect(() => {
+    sliderValueRef.current = sliderValue;
+  }, [sliderValue]);
+
+  const rendererLoaded = loadedCropId === cropId;
 
   const { cropData, activeStage, loading: dataLoading, error } = useProgressionData(cropId, sliderValue);
 
@@ -69,8 +76,8 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
       })
       .then(() => {
         if (isMounted) {
-          setRendererLoaded(true);
-          rendererRef.current?.render(sliderValue / 100.0);
+          setLoadedCropId(cropId);
+          rendererRef.current?.render(sliderValueRef.current / 100.0);
         }
       })
       .catch((err) => {
@@ -80,7 +87,14 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
     return () => {
       isMounted = false;
     };
-  }, [cropData, sliderValue]);
+  }, [cropData, cropId]);
+
+  // Keep canvas synchronized with slider value
+  useEffect(() => {
+    if (rendererLoaded && rendererRef.current) {
+      rendererRef.current.render(sliderValue / 100.0);
+    }
+  }, [sliderValue, rendererLoaded]);
 
   // Handle Resize & DPR compensation with ResizeObserver
   useEffect(() => {
@@ -108,7 +122,6 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
   const handleSliderChange = useCallback(
     (val: number) => {
       setSliderValue(val);
-      rendererRef.current?.render(val / 100.0);
       onPercentageChange?.(val);
     },
     [onPercentageChange]

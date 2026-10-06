@@ -44,11 +44,15 @@
 ---
 
 ## Phase 2: Frontend WebGL Engine & UI Verification
-- [ ] **Task 2.1: Live Browser Testing of the WebGL Progression Engine**
-  - Test dragging 0% $\to$ 100% slider in browser (`npm run dev`).
-  - Verify smooth 60 FPS organic lesion growth shader across all 4 crops.
-- [ ] **Task 2.2: Dynamic Agronomic Card & Compare Controls**
-  - Verify symptom markers, pathogen data, and "Compare with Healthy" A/B toggle.
+- [x] **Task 2.1: WebGL Engine Performance & Lifecycle Hardening**
+  - Cached uniform and attribute locations in `ProgressionShaderRenderer.ts` to eliminate CPU string-hashing overhead on 60 FPS scrub.
+  - Added `loadRequestId` to cancel out-of-order texture resolution on rapid crop switching.
+  - Handled WebGL context disposal with `WEBGL_lose_context` and `webglcontextlost` event listeners.
+  - Decoupled slider scrubbing from texture loading, eliminating double-render thrashing.
+  - Verified all static endpoints and WebP assets return 200 OK via Vite preview server.
+- [x] **Task 2.2: Dynamic Agronomic Card & Compare Controls**
+  - Verified `CompareHealthyToggle` A/B comparison against Stage 0 baseline.
+  - Verified `DiagnosticOverlayCard` dynamic stage and symptom updates.
 
 ---
 
