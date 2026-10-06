@@ -1,5 +1,6 @@
-# Prompt-to-Prompt Notebook Adaptation Checklist
+# Precision AgriTech Platform - Prompt-to-Prompt Disease Progression Roadmap
 
+## ML Notebook & Generation Adaptation (TODO-107)
 - [x] **Task 1: Environment & Self-Contained Module Setup**
   - Strip obsolete paper demo cells and 22 MB outputs from `prompt-to-prompt_stable.ipynb`.
   - Add safe library installs (`diffusers`, `transformers`, `accelerate`).
@@ -23,6 +24,42 @@
   - Generate companion difference masks (`u_mask1`, `u_mask2`) for WebGL fragment shaders.
   - Package assets into `p2p_progression_assets_v5.zip` with automatic download.
 
-- [ ] **Task 5: Colab Execution & Asset Verification**
-  - User runs adapted notebook in Google Colab.
-  - Run quantitative audit on `p2p_progression_assets_v5.zip` verifying $\text{IoU} \ge 0.95$, transparency, and WebGL shader readiness.
+- [x] **Task 5: Colab Execution & Asset Verification**
+  - User runs adapted notebook in Google Colab with FlashAttention memory optimization.
+  - Run quantitative audit on `p2p_progression_assets_v5.zip` verifying $\text{IoU} \ge 0.97$, transparency, and WebGL shader readiness.
+
+---
+
+## Phase 1: Asset Polish & Ingestion into Frontend
+- [x] **Task 1.1: Tomato & Potato Asset Micro-Polish**
+  - Cleaned thin frame artifact at $x \ge 626$ on Tomato using largest connected component filter.
+  - Cleaned 15-pixel apex spur on Potato Stage 1 to ensure bounding box delta $\Delta < 2.0\%$.
+- [x] **Task 1.2: Ingest Photorealistic P2P Assets into `frontend/public/progression/`**
+  - Replaced prototype vector assets with real diffusion-generated leaf plates and companion difference masks across all 4 crops.
+- [x] **Task 1.3: Run Asset Conformance & Regression Tests**
+  - Verified `npm run test:assets` (all 20 files compliant).
+  - Verified `pytest frontend/tests/` (12/12 tests passing).
+  - Verified `npm run build` and `npm run lint` (0 errors, 0 warnings).
+
+---
+
+## Phase 2: Frontend WebGL Engine & UI Verification
+- [ ] **Task 2.1: Live Browser Testing of the WebGL Progression Engine**
+  - Test dragging 0% $\to$ 100% slider in browser (`npm run dev`).
+  - Verify smooth 60 FPS organic lesion growth shader across all 4 crops.
+- [ ] **Task 2.2: Dynamic Agronomic Card & Compare Controls**
+  - Verify symptom markers, pathogen data, and "Compare with Healthy" A/B toggle.
+
+---
+
+## Phase 3: ML Microservice CLI & End-to-End Diagnostic Link
+- [ ] **Task 3.1: Headless Batch CLI Generator (`ml-service/scripts/p2p/generate_progression.py`)**
+  - Standalone headless Python script for on-demand batch generation.
+- [ ] **Task 3.2: Connect Diagnostic Leaf Classifier $\to$ Progression Visualizer**
+  - Add "View Disease Progression" CTA in classification result card.
+
+---
+
+## Phase 4: Production Build, Audit & Git Merge
+- [ ] **Task 4.1: Final End-to-End Build & Lint Verification**
+- [ ] **Task 4.2: Git Push to `feat/ml-todo107-p2p-progression-generator` & PR Preparation**
