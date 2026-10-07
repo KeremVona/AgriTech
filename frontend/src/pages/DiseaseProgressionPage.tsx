@@ -1,25 +1,28 @@
-import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import type { CropId } from '../types/progression';
-import { DiseaseProgressionViewer } from '../components/DiseaseProgressionViewer';
-import { DiagnosticUploadCard } from '../components/DiagnosticScan';
+import { useState, useRef } from "react";
+import { Link } from "react-router-dom";
+import type { CropId } from "../types/progression";
+import { DiseaseProgressionViewer } from "../components/DiseaseProgressionViewer";
+import { DiagnosticUploadCard } from "../components/DiagnosticScan";
 
 const CROPS: { id: CropId; label: string; icon: string; subtitle: string }[] = [
-  { id: 'tomato', label: 'Tomato', icon: '🍅', subtitle: 'Early Blight' },
-  { id: 'potato', label: 'Potato', icon: '🥔', subtitle: 'Late Blight' },
-  { id: 'corn', label: 'Corn (Maize)', icon: '🌽', subtitle: 'Common Rust' },
-  { id: 'apple', label: 'Apple', icon: '🍏', subtitle: 'Apple Scab' },
+  { id: "tomato", label: "Tomato", icon: "🍅", subtitle: "Early Blight" },
+  { id: "potato", label: "Potato", icon: "🥔", subtitle: "Late Blight" },
+  { id: "corn", label: "Corn (Maize)", icon: "🌽", subtitle: "Common Rust" },
+  { id: "apple", label: "Apple", icon: "🍏", subtitle: "Apple Scab" },
 ];
 
 export function DiseaseProgressionPage() {
-  const [selectedCrop, setSelectedCrop] = useState<CropId>('tomato');
+  const [selectedCrop, setSelectedCrop] = useState<CropId>("tomato");
   const [currentProgress, setCurrentProgress] = useState<number>(0);
   const viewerSectionRef = useRef<HTMLDivElement | null>(null);
 
   const handleViewProgression = (cropId: CropId, pct: number) => {
     setSelectedCrop(cropId);
     setCurrentProgress(pct);
-    viewerSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    viewerSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   return (
@@ -35,7 +38,9 @@ export function DiseaseProgressionPage() {
               to="/"
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white hover:border-emerald-500/40 transition-all cursor-pointer group"
             >
-              <span className="group-hover:-translate-x-0.5 transition-transform">←</span>
+              <span className="group-hover:-translate-x-0.5 transition-transform">
+                ←
+              </span>
               <span>Home</span>
             </Link>
 
@@ -86,7 +91,8 @@ export function DiseaseProgressionPage() {
               Target Crop Pathology
             </h2>
             <p className="text-xs text-slate-400">
-              Switch between standardized agricultural staples to inspect continuous symptom progression.
+              Switch between standardized agricultural staples to inspect
+              continuous symptom progression.
             </p>
           </div>
 
@@ -99,14 +105,16 @@ export function DiseaseProgressionPage() {
                 onClick={() => setSelectedCrop(crop.id)}
                 className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                   selectedCrop === crop.id
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30 ring-1 ring-emerald-400/50'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/30 ring-1 ring-emerald-400/50"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
                 }`}
               >
                 <span className="text-sm">{crop.icon}</span>
                 <div className="text-left">
                   <div className="leading-tight">{crop.label}</div>
-                  <div className="text-[10px] opacity-75 font-mono">{crop.subtitle}</div>
+                  <div className="text-[10px] opacity-75 font-mono">
+                    {crop.subtitle}
+                  </div>
                 </div>
               </button>
             ))}
@@ -123,7 +131,11 @@ export function DiseaseProgressionPage() {
         {/* =====================================================================
             4. WEBGL DISEASE PROGRESSION SLIDER ENGINE
             ===================================================================== */}
-        <section ref={viewerSectionRef} aria-label="WebGL Morphological Progression Viewer" className="pt-2">
+        <section
+          ref={viewerSectionRef}
+          aria-label="WebGL Morphological Progression Viewer"
+          className="pt-2"
+        >
           <DiseaseProgressionViewer
             cropId={selectedCrop}
             initialPercentage={currentProgress}
@@ -143,7 +155,10 @@ export function DiseaseProgressionPage() {
               </span>
             </div>
             <p className="text-slate-400 leading-relaxed">
-              Two-phase fragment interpolation with localized contrast masking. Transitions seamlessly from Stage 0 (Healthy) through Stage 1 (Initial Lesions) to Stage 2 (Severe Necrosis) with zero memory leaks.
+              Two-phase fragment interpolation with localized contrast masking.
+              Transitions seamlessly from Stage 0 (Healthy) through Stage 1
+              (Initial Lesions) to Stage 2 (Severe Necrosis) with zero memory
+              leaks.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
@@ -160,7 +175,10 @@ export function DiseaseProgressionPage() {
       {/* Page Footer */}
       <footer className="w-full border-t border-white/5 py-8 text-center text-xs text-slate-500">
         <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} AgriTech • Precision Crop Health & Disease Progression</p>
+          <p>
+            © {new Date().getFullYear()} AgriTech • Precision Crop Health &
+            Disease Progression
+          </p>
           <div className="flex items-center gap-4">
             <Link to="/" className="hover:text-slate-300 transition-colors">
               Return to Landing Page
