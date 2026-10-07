@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
-interface NavbarProps {
-  onOpenScanner?: () => void;
-  onOpenSlider?: () => void;
-}
-
-export function Navbar({ onOpenScanner, onOpenSlider }: NavbarProps) {
+export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -35,8 +31,8 @@ export function Navbar({ onOpenScanner, onOpenSlider }: NavbarProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
         {/* Left: Brand Identity */}
         <div className="flex items-center gap-3">
-          <a
-            href="#"
+          <Link
+            to="/"
             className="flex items-center gap-2.5 group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded-lg p-1"
             aria-label="AgriTech Homepage"
           >
@@ -58,45 +54,38 @@ export function Navbar({ onOpenScanner, onOpenSlider }: NavbarProps) {
                 Precision Field Ops
               </span>
             </div>
-          </a>
+          </Link>
         </div>
 
         {/* Center: Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-7" aria-label="Main Navigation">
-          <a
-            href="#hero"
+          <Link
+            to="/"
             className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
           >
             Platform
-          </a>
-          <button
-            type="button"
-            onClick={onOpenScanner}
-            className="text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
+          </Link>
+          <Link
+            to="/disease-progression"
+            className="text-sm font-medium text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1.5"
           >
-            Foliage Vision
-          </button>
-          <button
-            type="button"
-            onClick={onOpenSlider}
-            className="text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
-          >
-            Progression Engine
-          </button>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Disease Progression
+          </Link>
           <a
-            href="#features"
+            href="/#features"
             className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
           >
             FAO-56 Irrigation
           </a>
           <a
-            href="#features"
+            href="/#features"
             className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
           >
             Field GIS
           </a>
           <a
-            href="#features"
+            href="/#features"
             className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
           >
             Research & Model
@@ -105,24 +94,23 @@ export function Navbar({ onOpenScanner, onOpenSlider }: NavbarProps) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
-          <a
-            href="#signin"
+          <Link
+            to="/disease-progression"
             className="hidden sm:inline-block text-sm font-medium text-slate-300 hover:text-white px-3 py-1.5 transition-colors"
           >
-            Portal Log in
-          </a>
+            Field Portal
+          </Link>
 
           {/* Primary Pill Button (Codex Style) */}
-          <button
-            type="button"
-            onClick={onOpenScanner || onOpenSlider}
+          <Link
+            to="/disease-progression"
             className="relative inline-flex items-center justify-center gap-2 px-4.5 py-2 rounded-full text-xs sm:text-sm font-semibold text-slate-950 bg-white hover:bg-emerald-50 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95 transition-all duration-200 cursor-pointer group"
           >
-            <span>Launch Station</span>
+            <span>Launch Engine</span>
             <span className="text-xs group-hover:translate-x-0.5 transition-transform duration-200">
               ↗
             </span>
-          </button>
+          </Link>
 
           {/* Mobile menu button */}
           <button
@@ -145,42 +133,29 @@ export function Navbar({ onOpenScanner, onOpenSlider }: NavbarProps) {
       {/* Mobile dropdown menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-slate-950/95 backdrop-blur-2xl border-b border-white/10 px-4 pt-3 pb-5 space-y-2.5">
-          <a
-            href="#hero"
+          <Link
+            to="/"
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800/70"
           >
             Platform
-          </a>
-          <button
-            type="button"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              onOpenScanner?.();
-            }}
-            className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800/70"
+          </Link>
+          <Link
+            to="/disease-progression"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-md text-base font-medium text-emerald-400 hover:bg-slate-800/70"
           >
-            Foliage Vision
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              onOpenSlider?.();
-            }}
-            className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800/70"
-          >
-            Progression Engine
-          </button>
+            🌱 Disease Progression
+          </Link>
           <a
-            href="#features"
+            href="/#features"
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800/70"
           >
             FAO-56 Irrigation
           </a>
           <a
-            href="#features"
+            href="/#features"
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800/70"
           >
