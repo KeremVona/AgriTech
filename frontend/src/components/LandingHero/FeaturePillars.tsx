@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 interface FeaturePillarsProps {
   onSelectFeature?: (feature: 'scanner' | 'slider') => void;
 }
@@ -16,8 +18,8 @@ export function FeaturePillars({ onSelectFeature }: FeaturePillarsProps) {
         </svg>
       ),
       badge: 'ML & WebGL',
-      actionText: 'Launch Progression Slider',
-      action: () => onSelectFeature?.('slider'),
+      actionText: 'Launch Disease Progression Page',
+      link: '/disease-progression',
     },
     {
       title: 'Dynamic FAO-56 Irrigation',
@@ -33,6 +35,7 @@ export function FeaturePillars({ onSelectFeature }: FeaturePillarsProps) {
       ),
       badge: 'Phase 3 Core',
       actionText: 'Explore Telemetry Schema',
+      action: () => onSelectFeature?.('slider'),
     },
     {
       title: 'Spatial GIS & Parcel Boundary',
@@ -48,6 +51,7 @@ export function FeaturePillars({ onSelectFeature }: FeaturePillarsProps) {
       ),
       badge: 'Phase 2 GIS',
       actionText: 'Inspect Spatial Architecture',
+      action: () => onSelectFeature?.('scanner'),
     },
   ];
 
@@ -91,8 +95,16 @@ export function FeaturePillars({ onSelectFeature }: FeaturePillarsProps) {
               </p>
             </div>
 
-            {pillar.action && (
-              <div className="mt-6 pt-4 border-t border-white/5">
+            <div className="mt-6 pt-4 border-t border-white/5">
+              {pillar.link ? (
+                <Link
+                  to={pillar.link}
+                  className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 cursor-pointer group-hover:translate-x-1 transition-all"
+                >
+                  <span>{pillar.actionText}</span>
+                  <span>→</span>
+                </Link>
+              ) : (
                 <button
                   type="button"
                   onClick={pillar.action}
@@ -101,8 +113,8 @@ export function FeaturePillars({ onSelectFeature }: FeaturePillarsProps) {
                   <span>{pillar.actionText}</span>
                   <span>→</span>
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         ))}
       </div>
