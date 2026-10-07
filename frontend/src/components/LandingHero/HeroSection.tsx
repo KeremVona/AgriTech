@@ -16,10 +16,10 @@ export function HeroSection({
   return (
     <section
       id="hero"
-      className="relative min-h-[95vh] flex flex-col justify-between pt-16 sm:pt-24 pb-0 overflow-hidden"
+      className="relative min-h-[95vh] flex flex-col justify-between pt-28 sm:pt-36 pb-0 overflow-hidden"
     >
       {/* Background Video Layer */}
-      <VideoBackground videoSrc="/1.mp4" />
+      <VideoBackground videoSrc="/background_video.mp4" />
 
       {/* Main Hero Container */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">

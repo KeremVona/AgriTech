@@ -1,46 +1,58 @@
-import { useState, useRef } from 'react';
-import type { CropId } from './types/progression';
-import { DiseaseProgressionViewer } from './components/DiseaseProgressionViewer';
-import { DiagnosticUploadCard } from './components/DiagnosticScan';
-import { Navbar } from './components/LandingHero/Navbar';
-import { HeroSection } from './components/LandingHero/HeroSection';
-import { FeaturePillars } from './components/LandingHero/FeaturePillars';
+import { useState, useRef } from "react";
+import type { CropId } from "./types/progression";
+import { DiseaseProgressionViewer } from "./components/DiseaseProgressionViewer";
+import { DiagnosticUploadCard } from "./components/DiagnosticScan";
+import { Navbar } from "./components/LandingHero/Navbar";
+import { HeroSection } from "./components/LandingHero/HeroSection";
+import { FeaturePillars } from "./components/LandingHero/FeaturePillars";
 
 const CROPS: { id: CropId; label: string; icon: string; subtitle: string }[] = [
-  { id: 'tomato', label: 'Tomato', icon: '🍅', subtitle: 'Early Blight' },
-  { id: 'potato', label: 'Potato', icon: '🥔', subtitle: 'Late Blight' },
-  { id: 'corn', label: 'Corn (Maize)', icon: '🌽', subtitle: 'Common Rust' },
-  { id: 'apple', label: 'Apple', icon: '🍏', subtitle: 'Apple Scab' },
+  { id: "tomato", label: "Tomato", icon: "🍅", subtitle: "Early Blight" },
+  { id: "potato", label: "Potato", icon: "🥔", subtitle: "Late Blight" },
+  { id: "corn", label: "Corn (Maize)", icon: "🌽", subtitle: "Common Rust" },
+  { id: "apple", label: "Apple", icon: "🍏", subtitle: "Apple Scab" },
 ];
 
 function App() {
-  const [selectedCrop, setSelectedCrop] = useState<CropId>('tomato');
+  const [selectedCrop, setSelectedCrop] = useState<CropId>("tomato");
   const [currentProgress, setCurrentProgress] = useState<number>(0);
-  
+
   const scannerSectionRef = useRef<HTMLDivElement | null>(null);
   const viewerSectionRef = useRef<HTMLDivElement | null>(null);
   const toolsSectionRef = useRef<HTMLDivElement | null>(null);
 
   const handleScrollToScanner = () => {
-    scannerSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scannerSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   const handleScrollToSlider = () => {
-    viewerSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    viewerSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   const handleScrollToTools = () => {
-    toolsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toolsSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   const handleViewProgression = (cropId: CropId, pct: number) => {
     setSelectedCrop(cropId);
     setCurrentProgress(pct);
-    viewerSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    viewerSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
-  const handleSelectFeaturePillar = (feature: 'scanner' | 'slider') => {
-    if (feature === 'scanner') {
+  const handleSelectFeaturePillar = (feature: "scanner" | "slider") => {
+    if (feature === "scanner") {
       handleScrollToScanner();
     } else {
       handleScrollToSlider();
@@ -55,7 +67,7 @@ function App() {
         onOpenSlider={handleScrollToSlider}
       />
 
-      {/* 2. Hero Section with 1.mp4 Background Video & Central App Badge */}
+      {/* 2. Hero Section with the mp4 Background Video & Central App Badge */}
       <main className="flex-1 w-full">
         <HeroSection
           onExploreClick={handleScrollToTools}
@@ -82,7 +94,8 @@ function App() {
                 Live Disease Inspection & Progression Engine
               </h2>
               <p className="text-sm text-slate-400 mt-1">
-                Select target crop to examine morphological symptoms or upload inspection photos for AI diagnosis.
+                Select target crop to examine morphological symptoms or upload
+                inspection photos for AI diagnosis.
               </p>
             </div>
 
@@ -95,8 +108,8 @@ function App() {
                   onClick={() => setSelectedCrop(crop.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                     selectedCrop === crop.id
-                      ? 'bg-emerald-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      ? "bg-emerald-600 text-white shadow-md"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
                   }`}
                 >
                   <span>{crop.icon}</span>
@@ -123,9 +136,12 @@ function App() {
           {/* Architectural Context Banner */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="font-semibold text-slate-300">Feature #1: WebGL Morphological Blend Engine</div>
+              <div className="font-semibold text-slate-300">
+                Feature #1: WebGL Morphological Blend Engine
+              </div>
               <p className="text-slate-500">
-                Biologically registered Prompt-to-Prompt WebP leaf plates with localized chlorosis and necrotic edge reveal shaders.
+                Biologically registered Prompt-to-Prompt WebP leaf plates with
+                localized chlorosis and necrotic edge reveal shaders.
               </p>
             </div>
             <div className="flex gap-2">
@@ -149,35 +165,100 @@ function App() {
                 <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-sm">
                   🌱
                 </div>
-                <span className="font-display font-extrabold text-base text-white">AgriTech</span>
+                <span className="font-display font-extrabold text-base text-white">
+                  AgriTech
+                </span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Precision agronomy platform marrying foliar computer vision, FAO-56 evapotranspiration models, and GIS spatial management.
+                Precision agronomy platform marrying foliar computer vision,
+                FAO-56 evapotranspiration models, and GIS spatial management.
               </p>
             </div>
 
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 mb-3">Platform Pillars</h4>
+              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 mb-3">
+                Platform Pillars
+              </h4>
               <ul className="space-y-2 text-xs text-slate-400">
-                <li><a href="#features" className="hover:text-emerald-400 transition-colors">Foliage CNN Inference</a></li>
-                <li><a href="#features" className="hover:text-emerald-400 transition-colors">Disease Progression Slider</a></li>
-                <li><a href="#features" className="hover:text-emerald-400 transition-colors">FAO-56 Irrigation Engine</a></li>
-                <li><a href="#features" className="hover:text-emerald-400 transition-colors">PostGIS Spatial Boundary</a></li>
+                <li>
+                  <a
+                    href="#features"
+                    className="hover:text-emerald-400 transition-colors"
+                  >
+                    Foliage CNN Inference
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#features"
+                    className="hover:text-emerald-400 transition-colors"
+                  >
+                    Disease Progression Slider
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#features"
+                    className="hover:text-emerald-400 transition-colors"
+                  >
+                    FAO-56 Irrigation Engine
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#features"
+                    className="hover:text-emerald-400 transition-colors"
+                  >
+                    PostGIS Spatial Boundary
+                  </a>
+                </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 mb-3">Target Crops</h4>
+              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 mb-3">
+                Target Crops
+              </h4>
               <ul className="space-y-2 text-xs text-slate-400">
-                <li><span className="hover:text-emerald-400 cursor-pointer" onClick={() => setSelectedCrop('tomato')}>Tomato (Early & Late Blight)</span></li>
-                <li><span className="hover:text-emerald-400 cursor-pointer" onClick={() => setSelectedCrop('potato')}>Potato (Late Blight)</span></li>
-                <li><span className="hover:text-emerald-400 cursor-pointer" onClick={() => setSelectedCrop('corn')}>Corn (Common Rust)</span></li>
-                <li><span className="hover:text-emerald-400 cursor-pointer" onClick={() => setSelectedCrop('apple')}>Apple (Apple Scab)</span></li>
+                <li>
+                  <span
+                    className="hover:text-emerald-400 cursor-pointer"
+                    onClick={() => setSelectedCrop("tomato")}
+                  >
+                    Tomato (Early & Late Blight)
+                  </span>
+                </li>
+                <li>
+                  <span
+                    className="hover:text-emerald-400 cursor-pointer"
+                    onClick={() => setSelectedCrop("potato")}
+                  >
+                    Potato (Late Blight)
+                  </span>
+                </li>
+                <li>
+                  <span
+                    className="hover:text-emerald-400 cursor-pointer"
+                    onClick={() => setSelectedCrop("corn")}
+                  >
+                    Corn (Common Rust)
+                  </span>
+                </li>
+                <li>
+                  <span
+                    className="hover:text-emerald-400 cursor-pointer"
+                    onClick={() => setSelectedCrop("apple")}
+                  >
+                    Apple (Apple Scab)
+                  </span>
+                </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 mb-3">System Runtime</h4>
+              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 mb-3">
+                System Runtime
+              </h4>
               <div className="space-y-2 text-xs text-slate-400 font-mono">
                 <div className="flex items-center justify-between">
                   <span>Inference:</span>
@@ -200,11 +281,20 @@ function App() {
           </div>
 
           <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <p>© {new Date().getFullYear()} AgriTech Platform. Precision Field Operations & Crop Health.</p>
+            <p>
+              © {new Date().getFullYear()} AgriTech Platform. Precision Field
+              Operations & Crop Health.
+            </p>
             <div className="flex items-center gap-6">
-              <a href="#" className="hover:text-slate-300 transition-colors">Documentation</a>
-              <a href="#" className="hover:text-slate-300 transition-colors">Agronomy Standards</a>
-              <a href="#" className="hover:text-slate-300 transition-colors">Privacy & Terms</a>
+              <a href="#" className="hover:text-slate-300 transition-colors">
+                Documentation
+              </a>
+              <a href="#" className="hover:text-slate-300 transition-colors">
+                Agronomy Standards
+              </a>
+              <a href="#" className="hover:text-slate-300 transition-colors">
+                Privacy & Terms
+              </a>
             </div>
           </div>
         </div>

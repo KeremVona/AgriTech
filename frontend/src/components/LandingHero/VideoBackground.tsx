@@ -4,7 +4,9 @@ interface VideoBackgroundProps {
   videoSrc?: string;
 }
 
-export function VideoBackground({ videoSrc = '/1.mp4' }: VideoBackgroundProps) {
+export function VideoBackground({
+  videoSrc = '/background_video.mp4',
+}: VideoBackgroundProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -12,8 +14,11 @@ export function VideoBackground({ videoSrc = '/1.mp4' }: VideoBackgroundProps) {
     }
     return true;
   });
-  const [hasError, setHasError] = useState<boolean>(false);
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [errorSrc, setErrorSrc] = useState<string | null>(null);
+
+  const isLoaded = loadedSrc === videoSrc;
+  const hasError = errorSrc === videoSrc;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -27,27 +32,6 @@ export function VideoBackground({ videoSrc = '/1.mp4' }: VideoBackgroundProps) {
       });
     }
   }, [isPlaying, isLoaded]);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleLoadedData = () => {
-      setIsLoaded(true);
-    };
-
-    const handleError = () => {
-      setHasError(true);
-    };
-
-    video.addEventListener('loadeddata', handleLoadedData);
-    video.addEventListener('error', handleError);
-
-    return () => {
-      video.removeEventListener('loadeddata', handleLoadedData);
-      video.removeEventListener('error', handleError);
-    };
-  }, []);
 
   const togglePlayback = () => {
     const video = videoRef.current;
@@ -67,20 +51,25 @@ export function VideoBackground({ videoSrc = '/1.mp4' }: VideoBackgroundProps) {
       {/* Fallback & Atmospheric Botanic Gradient Base */}
       <div className="absolute inset-0 bg-[#040d09] bg-[radial-gradient(circle_at_50%_35%,#0d2f1f_0%,#06170e_60%,#020604_100%)]" />
 
-      {/* Video Element */}
+      {/* Video Element with key and direct src for rock-solid reload support */}
       {!hasError && (
         <video
           ref={videoRef}
+          key={videoSrc}
+          src={videoSrc}
           autoPlay
           loop
           muted
           playsInline
           preload="auto"
+          onLoadedData={() => setLoadedSrc(videoSrc)}
+          onCanPlay={() => setLoadedSrc(videoSrc)}
+          onError={() => setErrorSrc(videoSrc)}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
             isLoaded ? 'opacity-85' : 'opacity-0'
           }`}
         >
-          <source src={videoSrc} type="video/mp4" />
+          <source src={videoSrc} type="video/mp4" onError={() => setErrorSrc(videoSrc)} />
         </video>
       )}
 

@@ -47,7 +47,6 @@ build/
 .turbo/
 *.tsbuildinfo
 .eslintcache
-*.mp4
 *.webm
 
 # ------------------------------------------
