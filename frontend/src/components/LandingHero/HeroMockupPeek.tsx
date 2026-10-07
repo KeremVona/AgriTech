@@ -1,9 +1,6 @@
-interface HeroMockupPeekProps {
-  onScrollToTools?: () => void;
-  onSelectCrop?: (cropId: 'tomato' | 'potato' | 'corn' | 'apple') => void;
-}
+import { Link } from 'react-router-dom';
 
-export function HeroMockupPeek({ onScrollToTools }: HeroMockupPeekProps) {
+export function HeroMockupPeek() {
   return (
     <div className="w-full max-w-5xl mx-auto px-4 mt-12 sm:mt-16 animate-hero-fade [animation-delay:500ms]">
       {/* Mockup Window Container */}
@@ -85,14 +82,13 @@ export function HeroMockupPeek({ onScrollToTools }: HeroMockupPeekProps) {
               <span className="text-emerald-400 font-bold">●</span>
               <span>Feature #1 Morphological Progression & AI Diagnostic Scanner ready below</span>
             </div>
-            <button
-              type="button"
-              onClick={onScrollToTools}
+            <Link
+              to="/disease-progression"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 text-xs font-medium transition-all cursor-pointer group"
             >
-              <span>Explore Interactive Controls</span>
-              <span className="group-hover:translate-y-0.5 transition-transform duration-200">↓</span>
-            </button>
+              <span>Launch Disease Progression Engine</span>
+              <span className="group-hover:translate-x-0.5 transition-transform duration-200">→</span>
+            </Link>
           </div>
         </div>
 

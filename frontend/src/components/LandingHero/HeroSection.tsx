@@ -1,18 +1,9 @@
+import { Link } from "react-router-dom";
 import { VideoBackground } from "./VideoBackground";
 import { PartnerLogos } from "./PartnerLogos";
 import { HeroMockupPeek } from "./HeroMockupPeek";
 
-interface HeroSectionProps {
-  onExploreClick?: () => void;
-  onScannerClick?: () => void;
-  onSliderClick?: () => void;
-}
-
-export function HeroSection({
-  onExploreClick,
-  onScannerClick,
-  onSliderClick,
-}: HeroSectionProps) {
+export function HeroSection() {
   return (
     <section
       id="hero"
@@ -60,25 +51,23 @@ export function HeroSection({
         {/* CTA Buttons (Codex Pill Style) */}
         <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 w-full sm:w-auto animate-hero-fade [animation-delay:350ms]">
           {/* Primary Action Button */}
-          <button
-            type="button"
-            onClick={onExploreClick || onSliderClick}
+          <Link
+            to="/disease-progression"
             className="w-full sm:w-auto px-7 py-3 rounded-full text-sm sm:text-base font-semibold text-white bg-slate-950/90 hover:bg-slate-900 border border-white/20 hover:border-emerald-500/50 shadow-xl hover:shadow-emerald-500/10 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 group"
           >
-            <span>Explore Live Platform</span>
+            <span>Disease Progression Engine</span>
             <span className="text-emerald-400 group-hover:translate-x-1 transition-transform duration-200">
               →
             </span>
-          </button>
+          </Link>
 
           {/* Secondary Action Button */}
-          <button
-            type="button"
-            onClick={onScannerClick}
+          <a
+            href="#features"
             className="w-full sm:w-auto px-7 py-3 rounded-full text-sm sm:text-base font-semibold text-white bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-white/40 shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
           >
-            <span>AI Foliage Scanner</span>
-          </button>
+            <span>Explore Architecture</span>
+          </a>
         </div>
 
         {/* Social Proof / Partner Logos */}
@@ -87,7 +76,7 @@ export function HeroSection({
 
       {/* Codex-Style Application Mockup Window Peeking from the Bottom */}
       <div className="relative z-10 w-full mt-6">
-        <HeroMockupPeek onScrollToTools={onExploreClick || onSliderClick} />
+        <HeroMockupPeek />
       </div>
     </section>
   );
