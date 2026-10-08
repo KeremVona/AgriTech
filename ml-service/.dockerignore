@@ -1,0 +1,72 @@
+# Precision AgriTech - ML Service .dockerignore
+# Keeps the production Docker image lean by excluding development,
+# training-time, and test artefacts from the build context.
+
+# ── Python Cache ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# ── Virtual Environments ────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Tests (not needed in production container) ──────────────────────
+tests/
+
+# ── Training & Dataset Scripts (runtime not needed) ─────────────────
+scripts/
+
+# ── Notebooks ────────────────────────────────────────────────────────
+notebooks/
+*.ipynb
+
+# ── Build Artefacts ─────────────────────────────────────────────────
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Development & QA Tools ──────────────────────────────────────────
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+pytest.ini
+pyproject.toml
+
+# ── Secrets & Local Config ──────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── IDE & OS Files ──────────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ── Git ──────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Full requirements.txt (prod-only version copied separately) ──────
+requirements.txt
+
+# ── Training-Time Model Artefacts (not needed at runtime) ───────────
+models/confusion_matrix.png
+models/diagnostic_test_results.json
+models/raw_test_results.json
+models/hyperparameters.json
+models/benchmark_report.json
+
+# ── CLI Prediction Tool (not needed in API container) ───────────────
+predict.py
+
+# ── Task Tracking ────────────────────────────────────────────────────
+tasks/
