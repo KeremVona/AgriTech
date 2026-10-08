@@ -37,6 +37,53 @@ services:
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
 
+  # -------------------------------------------------------------
+  # 3. AgriTech ML & Vision Inference Service (TODO-106)
+  #
+  # Build:  docker compose build ml-service
+  # Start:  docker compose up ml-service
+  # Logs:   docker compose logs -f ml-service
+  # Docs:   http://localhost:8000/docs
+  # -------------------------------------------------------------
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: agritech_ml_service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # ONNX model path inside the container (matches config.py default)
+      ONNX_MODEL_PATH: models/agritech_classifier.onnx
+      # Set to true for verbose request/startup logging during development
+      DEBUG: ${ML_DEBUG:-false}
+      # Comma-separated CORS origins (frontend dev server + production URL)
+      CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
+    volumes:
+      # Mount the local models directory so the ONNX artifact can be
+      # updated without rebuilding the image (useful during ML-102/103 iterations)
+      - ./ml-service/models:/app/models:ro
+    healthcheck:
+      # Polls /health/ready which reports ONNX model memory residency
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - >
+          import urllib.request, sys;
+          r = urllib.request.urlopen('http://localhost:8000/health/ready', timeout=4);
+          sys.exit(0 if r.status == 200 else 1)
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    # Informational ordering: ml-service does not technically depend on postgres
+    # but listing it here makes intent clear for future DB logging (Phase 2+)
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
     name: agritech_postgres_data
@@ -44,3 +91,4 @@ volumes:
     name: agritech_mosquitto_data
   mosquitto_log:
     name: agritech_mosquitto_log
+
