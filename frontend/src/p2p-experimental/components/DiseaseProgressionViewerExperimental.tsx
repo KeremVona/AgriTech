@@ -20,10 +20,10 @@ import {
   captureAndDownloadCanvasSnapshot,
   triggerFileDownload,
 } from '../utils/timelapseRecorder';
-import { useProgressionData } from '../../hooks/useProgressionData';
+import { useExperimentalProgressionData } from '../hooks/useExperimentalProgressionData.ts';
 import { ProgressionShaderRenderer } from '../../components/DiseaseProgressionViewer/ProgressionShaderRenderer';
 import { CompareHealthyToggle } from '../../components/DiseaseProgressionViewer/CompareHealthyToggle';
-import { DiagnosticOverlayCard } from '../../components/DiseaseProgressionViewer/DiagnosticOverlayCard';
+import { DiagnosticOverlayCardExperimental } from './DiagnosticOverlayCardExperimental';
 import { MicroclimateControlPanel } from './MicroclimateControlPanel';
 import { AgronomicTimelineSlider } from './AgronomicTimelineSlider';
 import { LeafHotspotOverlay } from './LeafHotspotOverlay';
@@ -103,7 +103,7 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<ProgressionShaderRenderer | null>(null);
 
-  const { cropData, activeStage, loading: dataLoading, error } = useProgressionData(cropId, sliderValue);
+  const { cropData, activeStage, loading: dataLoading, error } = useExperimentalProgressionData(cropId, sliderValue);
 
   const stage0Url = cropData?.stages.find((s) => s.stage_order === 0)?.assets.base_image_url;
   const stage1Url = cropData?.stages.find((s) => s.stage_order === 1)?.assets.base_image_url;
@@ -734,7 +734,7 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
             />
 
             {/* 5. Diagnostic & Agronomic Advisory Card */}
-            <DiagnosticOverlayCard
+            <DiagnosticOverlayCardExperimental
               cropData={cropData}
               activeStage={activeStage}
               sliderPercentage={effectiveRenderSeverity}

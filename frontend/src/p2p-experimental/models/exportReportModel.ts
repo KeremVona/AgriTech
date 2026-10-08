@@ -250,5 +250,33 @@ function getCulturalControls(cropId: SupportedCropId): string[] {
         'Apply protective copper spray at green tip stage prior to first spring ascospore release.',
         'Flail mow orchard floor post-harvest to chop overwintering Venturia pseudothecia.',
       ];
+    case 'grape':
+      return [
+        'Perform aggressive shoot thinning, suckering, and leaf pulling in the fruit zone to reduce leaf wetness duration.',
+        'Mechanically remove and destroy all mummified grape clusters clinging to trellises during winter dormant pruning.',
+        'Cultivate or bury fallen mummies and vine leaf litter with shallow spring disking to prevent raindrop splash dispersal.',
+        'Maintain highest vigilance from pre-bloom through 4-5 weeks post-bloom, the peak susceptibility window.',
+      ];
+    case 'pepper':
+      return [
+        'Use hot-water-treated seed (50°C for 25 min) and certified disease-free transplants to prevent seedborne transmission.',
+        'Completely eliminate overhead irrigation; use drip irrigation exclusively to prevent aerosolized bacterial spread.',
+        'Disk crop residues deeply immediately after harvest; prohibit worker and tractor traffic while foliage is wet.',
+        'Select bell pepper cultivars with hypersensitive resistance genes (Bs1-Bs4); rotate away from Solanaceous crops for 3 years.',
+      ];
+    case 'peach':
+      return [
+        'Select resistant cultivars and plant evergreen windbreaks to minimize blowing sand micro-abrasions during storms.',
+        'Prune out blighted terminal twigs and spring cankers during dry summer weather; avoid excess nitrogen fertilization.',
+        'Apply protective copper spray in late autumn when 50% of leaves have fallen to seal exposed leaf scars.',
+        'Use strictly micro-rates of copper post-bloom to avoid severe copper phytotoxicity leaf injury.',
+      ];
+    case 'squash':
+      return [
+        'Select squash hybrids possessing homozygous powdery mildew resistance (PMR / IR).',
+        'Increase in-row and between-row spacing (1.5–1.8 m) aligned with prevailing winds to reduce canopy humidity.',
+        'Use drip irrigation exclusively; maintain consistent soil moisture to prevent drought stress predispositions.',
+        'Plow under crop residues immediately after final harvest to eliminate inoculum reservoirs for adjacent plantings.',
+      ];
   }
 }
