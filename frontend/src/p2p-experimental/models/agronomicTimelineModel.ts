@@ -12,9 +12,16 @@
  * 5. Full epidemiological parameters for Tomato, Potato, Corn, and Apple.
  */
 
-import type { CropId } from '../../types/progression';
 
-export type SupportedCropId = CropId;
+export type SupportedCropId =
+  | 'tomato'
+  | 'potato'
+  | 'corn'
+  | 'apple'
+  | 'grape'
+  | 'pepper'
+  | 'peach'
+  | 'squash';
 
 export interface CardinalTemperatures {
   min: number;   // T_min: biological lower threshold below which development ceases (°C)
@@ -220,6 +227,162 @@ export const AGRONOMIC_CALIBRATION_REGISTRY: Record<SupportedCropId, AgronomicPa
         minSliderPct: 70.01,
         maxSliderPct: 100.0,
         pathologyMarker: 'Thickened corky necrotic patches, severe puckering, cracking, and premature leaf drop.',
+      },
+    ],
+  },
+  grape: {
+    cropId: 'grape',
+    cropName: 'Grape',
+    scientificName: 'Vitis vinifera',
+    diseaseName: 'Black Rot',
+    pathogenScientific: 'Guignardia bidwellii / Phyllosticta ampelicida',
+    cardinals: { min: 10.0, opt: 26.5, max: 32.0 },
+    humidity: { min: 65.0, crit: 85.0, opt: 95.0 },
+    baselineDays: {
+      stage0_incubation: 7.0,
+      stage1_spread: 14.0,
+      stage2_severe: 24.0,
+      totalOptimalDays: 24.0,
+    },
+    degreeDays: { baseTemp: 10.0, cutoffTemp: 32.0, degreeDaysTotal: 380.0 },
+    milestones: [
+      {
+        stageOrder: 0,
+        label: 'Inoculation & Subcuticular Infection',
+        minSliderPct: 0.0,
+        maxSliderPct: 30.0,
+        pathologyMarker: 'Appressorial penetration peg breaches cuticle; microscopic translucent pinhead flecks.',
+      },
+      {
+        stageOrder: 1,
+        label: 'Chocolate Lesions & Pycnidial Rings',
+        minSliderPct: 30.01,
+        maxSliderPct: 70.0,
+        pathologyMarker: 'Reddish-brown lesions with dark brown borders and concentric rings of black pycnidia.',
+      },
+      {
+        stageOrder: 2,
+        label: 'Foliar Blight & Berry Mummification',
+        minSliderPct: 70.01,
+        maxSliderPct: 100.0,
+        pathologyMarker: 'Coalescent foliar necrotic scorch and petiole girdling; berries shrivel into black mummies.',
+      },
+    ],
+  },
+  pepper: {
+    cropId: 'pepper',
+    cropName: 'Pepper Bell',
+    scientificName: 'Capsicum annuum',
+    diseaseName: 'Bacterial Spot',
+    pathogenScientific: 'Xanthomonas euvesicatoria',
+    cardinals: { min: 10.0, opt: 28.0, max: 36.0 },
+    humidity: { min: 70.0, crit: 85.0, opt: 95.0 },
+    baselineDays: {
+      stage0_incubation: 4.0,
+      stage1_spread: 9.0,
+      stage2_severe: 16.0,
+      totalOptimalDays: 16.0,
+    },
+    degreeDays: { baseTemp: 10.0, cutoffTemp: 35.0, degreeDaysTotal: 288.0 },
+    milestones: [
+      {
+        stageOrder: 0,
+        label: 'Stomatal Ingress & Hydropic Flecks',
+        minSliderPct: 0.0,
+        maxSliderPct: 30.0,
+        pathologyMarker: 'Substomatal cavity colonization via rain-splash; abaxial water-soaked pinpoint macules.',
+      },
+      {
+        stageOrder: 1,
+        label: 'Angular Necrotic Spots & Yellow Halos',
+        minSliderPct: 30.01,
+        maxSliderPct: 70.0,
+        pathologyMarker: 'Vein-limited angular purplish-brown lesions with chlorotic halos and bacterial streaming.',
+      },
+      {
+        stageOrder: 2,
+        label: 'Greasy Blight & Abscission Defoliation',
+        minSliderPct: 70.01,
+        maxSliderPct: 100.0,
+        pathologyMarker: 'Severe petiole abscission layer dissolution causing leaf dropping and fruit sunscald.',
+      },
+    ],
+  },
+  peach: {
+    cropId: 'peach',
+    cropName: 'Peach',
+    scientificName: 'Prunus persica',
+    diseaseName: 'Bacterial Spot',
+    pathogenScientific: 'Xanthomonas arboricola pv. pruni',
+    cardinals: { min: 5.0, opt: 28.9, max: 35.0 },
+    humidity: { min: 70.0, crit: 85.0, opt: 95.0 },
+    baselineDays: {
+      stage0_incubation: 6.0,
+      stage1_spread: 14.0,
+      stage2_severe: 25.0,
+      totalOptimalDays: 25.0,
+    },
+    degreeDays: { baseTemp: 7.0, cutoffTemp: 34.0, degreeDaysTotal: 450.0 },
+    milestones: [
+      {
+        stageOrder: 0,
+        label: 'Substomatal Invasion & Abaxial Flecks',
+        minSliderPct: 0.0,
+        maxSliderPct: 30.0,
+        pathologyMarker: 'Wind-blown rain splash ingress; polygonal pale-green water-soaked spots on leaf underside.',
+      },
+      {
+        stageOrder: 1,
+        label: 'Shot-Hole Abscission Perforations',
+        minSliderPct: 30.01,
+        maxSliderPct: 70.0,
+        pathologyMarker: 'Purplish-black angular spots whose necrotic centers drop out, creating shot-holes.',
+      },
+      {
+        stageOrder: 2,
+        label: 'Apical Defoliation & Spring Cankers',
+        minSliderPct: 70.01,
+        maxSliderPct: 100.0,
+        pathologyMarker: 'Tip-to-base foliar leaf shed leaving tufted shoots; sunken oozing twig cankers and pitted fruit.',
+      },
+    ],
+  },
+  squash: {
+    cropId: 'squash',
+    cropName: 'Squash',
+    scientificName: 'Cucurbita pepo',
+    diseaseName: 'Powdery Mildew',
+    pathogenScientific: 'Podosphaera xanthii',
+    cardinals: { min: 10.0, opt: 25.0, max: 35.0 },
+    humidity: { min: 50.0, crit: 75.0, opt: 90.0 },
+    baselineDays: {
+      stage0_incubation: 3.5,
+      stage1_spread: 7.0,
+      stage2_severe: 12.0,
+      totalOptimalDays: 12.0,
+    },
+    degreeDays: { baseTemp: 10.0, cutoffTemp: 32.0, degreeDaysTotal: 180.0 },
+    milestones: [
+      {
+        stageOrder: 0,
+        label: 'Ectophytic Infection & Haustoria',
+        minSliderPct: 0.0,
+        maxSliderPct: 30.0,
+        pathologyMarker: 'Dry conidia germination without free water; initial white talcum specks on shaded foliage.',
+      },
+      {
+        stageOrder: 1,
+        label: 'Confluent Powdery Mats & Conidiophores',
+        minSliderPct: 30.01,
+        maxSliderPct: 70.0,
+        pathologyMarker: 'Talc-like colonies merge across leaf lamina; erect conidiophore chains with fibrosin bodies.',
+      },
+      {
+        stageOrder: 2,
+        label: 'Parchment Desiccation & Canopy Collapse',
+        minSliderPct: 70.01,
+        maxSliderPct: 100.0,
+        pathologyMarker: 'Complete foliar yellowing and brittle parchment drying; petiole collapse and fruit sunscald.',
       },
     ],
   },

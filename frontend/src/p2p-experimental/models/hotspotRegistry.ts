@@ -270,6 +270,242 @@ export const SYMPTOM_HOTSPOTS_REGISTRY: Record<SupportedCropId, SymptomHotspot[]
         'Autumn post-harvest 5% urea foliar spray and shredded leaf sanitation to accelerate winter leaf breakdown.',
     },
   ],
+  grape: [
+    {
+      id: 'grape-subcuticular-fleck',
+      cropId: 'grape',
+      title: 'Subcuticular Translucent Pinhead Fleck',
+      subtitle: 'Guignardia bidwellii Appressorial Ingress',
+      xPct: 50,
+      yPct: 40,
+      minSliderPct: 15.0,
+      stageOrder: 0,
+      badgeLabel: 'Stage 0 • Incipient Infection',
+      badgeColor: 'emerald',
+      pathogenStructure: 'Melanized appressorium and sub-cuticular bulbous infection hypha.',
+      anatomicalDescription:
+        'Minute translucent chlorotic dot breaching the waxy cuticle of young expanding leaves between minor veins.',
+      physiologicalImpact:
+        'Localized disruption of upper epidermal cells prior to mesophyll lysis; cuticle integrity compromised.',
+      treatmentAdvisory:
+        'Preventative multi-site contact protectant (Mancozeb FRAC M03) before rainfall; 72h kickback DMI if wet.',
+    },
+    {
+      id: 'grape-chocolate-ring-lesion',
+      cropId: 'grape',
+      title: 'Chocolate-Brown Lesion with Pycnidial Rings',
+      subtitle: 'Phyllosticta ampelicida Conidiogenesis',
+      xPct: 45,
+      yPct: 55,
+      minSliderPct: 35.0,
+      stageOrder: 1,
+      badgeLabel: 'Stage 1 • Diagnostic Key',
+      badgeColor: 'amber',
+      pathogenStructure: 'Subepidermal ostiolate pycnidia exuding mucilaginous single-celled Phyllosticta conidia cirrhi.',
+      anatomicalDescription:
+        'Reddish-brown necrotic spot with sharp dark borders and a distinct concentric ring of raised black pycnidia.',
+      physiologicalImpact:
+        'Palisade parenchyma necrosis; secondary rain-splash conidia discharge into surrounding canopy cluster zones.',
+      treatmentAdvisory:
+        'Curative DMI (Difenoconazole FRAC 3) + Strobilurin (Azoxystrobin FRAC 11) to arrest mycelial growth and sporulation.',
+    },
+    {
+      id: 'grape-coalescent-blight-mummy',
+      cropId: 'grape',
+      title: 'Coalescent Foliar Blight & Berry Mummies',
+      subtitle: 'Terminal Necrosis & Pseudothecia Stroma',
+      xPct: 35,
+      yPct: 65,
+      minSliderPct: 75.0,
+      stageOrder: 2,
+      badgeLabel: 'Stage 2 • Severe Blight',
+      badgeColor: 'red',
+      pathogenStructure: 'Dense stroma forming overwintering pseudothecia in desiccated fruit pericarps.',
+      anatomicalDescription:
+        'Lamina blight, petiole girdling, and complete shriveling of berries into hard, wrinkled black mummies.',
+      physiologicalImpact:
+        'Complete loss of photosynthetic capacity; vascular bundle occlusion; total destruction of harvestable cluster yield.',
+      treatmentAdvisory:
+        'Eradicant strobilurin combination + mandatory winter vineyard sanitation and removal of hanging mummies.',
+    },
+  ],
+  pepper: [
+    {
+      id: 'pepper-abaxial-water-soaked',
+      cropId: 'pepper',
+      title: 'Abaxial Water-Soaked Pinpoint Macule',
+      subtitle: 'Xanthomonas euvesicatoria Substomatal Colonization',
+      xPct: 52,
+      yPct: 38,
+      minSliderPct: 15.0,
+      stageOrder: 0,
+      badgeLabel: 'Stage 0 • Stomatal Ingress',
+      badgeColor: 'emerald',
+      pathogenStructure: 'Motile flagellated bacteria colonizing substomatal apoplastic cavities.',
+      anatomicalDescription:
+        'Tiny water-soaked greasy translucent flecks on the lower leaf surface, appearing before upper epidermal symptoms.',
+      physiologicalImpact:
+        'Type III secretion system effectors stimulate apoplastic electrolyte and water leakage across mesophyll cells.',
+      treatmentAdvisory:
+        'Apply systemic SAR inducer (Actigard FRAC P01) or AgriPhage bacteriophages; avoid overhead irrigation.',
+    },
+    {
+      id: 'pepper-angular-necrotic-halo',
+      cropId: 'pepper',
+      title: 'Angular Brown Spot with Chlorotic Halo',
+      subtitle: 'Apoplastic Lysis & Bacterial Streaming',
+      xPct: 46,
+      yPct: 52,
+      minSliderPct: 35.0,
+      stageOrder: 1,
+      badgeLabel: 'Stage 1 • Diagnostic Key',
+      badgeColor: 'amber',
+      pathogenStructure: 'Dense bacterial populations exhibiting streaming ooze from ruptured vascular boundaries.',
+      anatomicalDescription:
+        'Vein-limited angular dark brown lesions surrounded by a diffuse bright yellow chlorotic margin.',
+      physiologicalImpact:
+        'Destruction of mesophyll chloroplasts; high bacterial multiplication and aerosolized rain-splash dispersal.',
+      treatmentAdvisory:
+        'Copper Hydroxide (FRAC M01) + Mancozeb (FRAC M03) synergistic tank-mix to overcome copper-tolerant strains.',
+    },
+    {
+      id: 'pepper-abscission-defoliation',
+      cropId: 'pepper',
+      title: 'Greasy Blight & Toxic Petiole Abscission',
+      subtitle: 'Ethylene-Induced Leaf Drop & Sunscald',
+      xPct: 38,
+      yPct: 70,
+      minSliderPct: 72.0,
+      stageOrder: 2,
+      badgeLabel: 'Stage 2 • Severe Defoliation',
+      badgeColor: 'red',
+      pathogenStructure: 'Vascular necrosis and petiole abscission layer degradation.',
+      anatomicalDescription:
+        'Lesions coalesce into ragged dead areas; leaves turn bright yellow and drop in mass from plant canopies.',
+      physiologicalImpact:
+        'Catastrophic canopy loss exposes pepper fruit to irreversible sunscald and severe marketable yield loss.',
+      treatmentAdvisory:
+        'Sanitize dropped leaf litter; apply protectants to guard emerging vegetative flushes and fruit calyxes.',
+    },
+  ],
+  peach: [
+    {
+      id: 'peach-polygonal-water-soaked',
+      cropId: 'peach',
+      title: 'Polygonal Abaxial Water-Soaked Fleck',
+      subtitle: 'Xanthomonas arboricola pv. pruni Entry',
+      xPct: 48,
+      yPct: 35,
+      minSliderPct: 15.0,
+      stageOrder: 0,
+      badgeLabel: 'Stage 0 • Spongy Parenchyma Entry',
+      badgeColor: 'emerald',
+      pathogenStructure: 'Epiphytic bacteria entering stomata via wind-blown water droplets.',
+      anatomicalDescription:
+        'Pale green-to-yellow polygonal water-soaked spots along the midrib and leaf tip on the foliar underside.',
+      physiologicalImpact:
+        'Intercellular bacterial division in spongy parenchyma with early electrolyte leakage and stomatal dysfunction.',
+      treatmentAdvisory:
+        'Delayed-dormant fixed copper at bud-swell; low-rate copper or oxytetracycline starting at petal fall.',
+    },
+    {
+      id: 'peach-shot-hole-perforation',
+      cropId: 'peach',
+      title: 'Shot-Hole Abscission Perforation',
+      subtitle: 'Host Periderm Defense & Tissue Drop-out',
+      xPct: 54,
+      yPct: 50,
+      minSliderPct: 35.0,
+      stageOrder: 1,
+      badgeLabel: 'Stage 1 • Diagnostic Key',
+      badgeColor: 'amber',
+      pathogenStructure: 'Necrotic bacterial pocket walled off by host suberin/lignin periderm abscission zone.',
+      anatomicalDescription:
+        'Purplish-black angular spots whose dead centers dry, crack, and drop out, leaving clean circular perforations.',
+      physiologicalImpact:
+        'Loss of functional photosynthetic lamina area; localized tissue senescence; secondary bacterial cankers on twigs.',
+      treatmentAdvisory:
+        'Oxytetracycline (FRAC 41) or weekly micro-rate copper hydroxide (FRAC M01) from shuck split to pit hardening.',
+    },
+    {
+      id: 'peach-apical-defoliation-canker',
+      cropId: 'peach',
+      title: 'Apical Shoot Defoliation & Twig Cankers',
+      subtitle: 'Canopy Stripping & Bacterial Gum Exudate',
+      xPct: 32,
+      yPct: 68,
+      minSliderPct: 75.0,
+      stageOrder: 2,
+      badgeLabel: 'Stage 2 • Severe Blight',
+      badgeColor: 'red',
+      pathogenStructure: 'Cortical twig necrosis and vascular petiole occlusion.',
+      anatomicalDescription:
+        'Leaves shed heavily from twig bases leaving tufted tips; twigs develop sunken gummy cankers with pitted fruit.',
+      physiologicalImpact:
+        'Severe reduction in carbohydrate storage and marketability of pocked fruit; weakened scaffold branches.',
+      treatmentAdvisory:
+        'Prune out blighted twigs during dry weather; apply post-harvest copper at 50% autumn leaf fall.',
+    },
+  ],
+  squash: [
+    {
+      id: 'squash-shaded-talcum-speck',
+      cropId: 'squash',
+      title: 'Shaded Abaxial Talcum Speck',
+      subtitle: 'Podosphaera xanthii Epiphytic Germination',
+      xPct: 50,
+      yPct: 42,
+      minSliderPct: 15.0,
+      stageOrder: 0,
+      badgeLabel: 'Stage 0 • Primary Colony',
+      badgeColor: 'emerald',
+      pathogenStructure: 'Conidial germ tube with globose haustoria in epidermal cells.',
+      anatomicalDescription:
+        'Faint circular white powdery specks on the lower leaf surface and interior crown leaves without free water.',
+      physiologicalImpact:
+        'Parasitism of host epidermal cells for carbohydrate absorption; suppression of localized defense responses.',
+      treatmentAdvisory:
+        'Horticultural stylet oil or translaminar DMI fungicide at first detection of lower-surface colonies.',
+    },
+    {
+      id: 'squash-powdery-conidial-mat',
+      cropId: 'squash',
+      title: 'Coalescing Powdery Pustule Mats',
+      subtitle: 'Active Airborne Conidiogenesis',
+      xPct: 46,
+      yPct: 56,
+      minSliderPct: 35.0,
+      stageOrder: 1,
+      badgeLabel: 'Stage 1 • Diagnostic Key',
+      badgeColor: 'amber',
+      pathogenStructure: 'Dense erect conidiophores with barrel-shaped conidia containing fibrosin bodies.',
+      anatomicalDescription:
+        'Talcum-like white fungal mats expanding over upper and lower leaf surfaces, petioles, and main runners.',
+      physiologicalImpact:
+        'Severe chlorophyll shading and reduction in net photosynthetic assimilation; accelerated foliar respiration.',
+      treatmentAdvisory:
+        'Rotate Cyflufenamid (FRAC U06), Fluopyram (FRAC 7), or Potassium Bicarbonate to prevent resistance.',
+    },
+    {
+      id: 'squash-parchment-canopy-collapse',
+      cropId: 'squash',
+      title: 'Parchment Lamina Desiccation & Collapse',
+      subtitle: 'Terminal Canopy Scorch & Fruit Sunscald',
+      xPct: 36,
+      yPct: 68,
+      minSliderPct: 75.0,
+      stageOrder: 2,
+      badgeLabel: 'Stage 2 • Terminal Blight',
+      badgeColor: 'red',
+      pathogenStructure: 'Exhausted mycelial felt; optional overwintering dark chasmothecia.',
+      anatomicalDescription:
+        'Lamina becomes pale yellow, brown, and brittle like parchment paper; petiole collapses completely.',
+      physiologicalImpact:
+        'Total foliar senescence; unshaded squash fruit suffer sunburn, cracking, and premature ripening.',
+      treatmentAdvisory:
+        'Maintain drip irrigation; apply protectants to emerging crown foliage; disk residue immediately after harvest.',
+    },
+  ],
 };
 
 /**

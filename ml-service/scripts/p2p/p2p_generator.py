@@ -96,6 +96,78 @@ DEFAULT_CROP_SPECS = {
         "cross_replace_steps": 0.75,
         "self_replace_steps": 0.60,
     },
+    "grape": {
+        "crop_name": "Grape",
+        "disease_name": "Black Rot",
+        "pathogen_scientific": "Guignardia bidwellii",
+        "seed": 418,
+        "prompts": [
+            "botanical specimen photograph of a single palmate healthy green leaf blade of a grape vine (Vitis vinifera foliage), distinct 5-lobed outline with toothed leaf margins and radiating veins, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single palmate green leaf blade of a grape vine with small reddish-brown circular spots and dark margins, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single palmate decaying leaf blade of a grape vine with coalescing dark brown black rot lesions, black pycnidia rings, and shriveled leaf margins, centered, flat lay, pure solid white background, sharp focus, 8k",
+        ],
+        "blend_words": [
+            [],
+            ["reddish-brown", "spots"],
+            ["coalescing", "black", "rot", "pycnidia", "shriveled"],
+        ],
+        "cross_replace_steps": 0.75,
+        "self_replace_steps": 0.60,
+    },
+    "pepper": {
+        "crop_name": "Pepper Bell",
+        "disease_name": "Bacterial Spot",
+        "pathogen_scientific": "Xanthomonas euvesicatoria",
+        "seed": 522,
+        "prompts": [
+            "botanical specimen photograph of a single glossy smooth ovate healthy green leaf blade of a bell pepper plant (Capsicum annuum foliage), entire smooth margins, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single glossy ovate green leaf blade of a bell pepper plant with small angular water-soaked dark brown spots and yellow chlorotic halos, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single distressed ovate leaf blade of a bell pepper plant with coalescing necrotic ragged brown patches, perforated shot holes, and severe yellowing, centered, flat lay, pure solid white background, sharp focus, 8k",
+        ],
+        "blend_words": [
+            [],
+            ["angular", "water-soaked", "spots", "halos"],
+            ["coalescing", "necrotic", "ragged", "holes", "yellowing"],
+        ],
+        "cross_replace_steps": 0.75,
+        "self_replace_steps": 0.60,
+    },
+    "peach": {
+        "crop_name": "Peach",
+        "disease_name": "Bacterial Spot",
+        "pathogen_scientific": "Xanthomonas arboricola pv. pruni",
+        "seed": 634,
+        "prompts": [
+            "botanical specimen photograph of a single lanceolate healthy green leaf blade of a peach tree (Prunus persica foliage), finely serrate margins and tapered leaf tip, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single lanceolate green leaf blade of a peach tree with small angular purplish-black spots and drop-out shot-hole perforations, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single distressed lanceolate leaf blade of a peach tree with dense shot-hole perforations, necrotic tip scorch, and severe foliar yellowing, centered, flat lay, pure solid white background, sharp focus, 8k",
+        ],
+        "blend_words": [
+            [],
+            ["purplish-black", "spots", "shot-hole"],
+            ["dense", "shot-hole", "scorch", "yellowing"],
+        ],
+        "cross_replace_steps": 0.75,
+        "self_replace_steps": 0.60,
+    },
+    "squash": {
+        "crop_name": "Squash",
+        "disease_name": "Powdery Mildew",
+        "pathogen_scientific": "Podosphaera xanthii",
+        "seed": 746,
+        "prompts": [
+            "botanical specimen photograph of a single broad lobed healthy green leaf blade of a squash plant (Cucurbita pepo foliage), palmate venation and rough textured lamina, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single broad lobed green leaf blade of a squash plant with scattered circular white powdery mildew talc patches on the leaf surface, centered, flat lay, pure solid white background, sharp focus, 8k",
+            "botanical specimen photograph of a single broad withered leaf blade of a squash plant with confluent dense white powdery fungal mats, severe chlorosis, and crisp brown parchment margins, centered, flat lay, pure solid white background, sharp focus, 8k",
+        ],
+        "blend_words": [
+            [],
+            ["circular", "white", "powdery", "patches"],
+            ["confluent", "dense", "powdery", "mats", "parchment"],
+        ],
+        "cross_replace_steps": 0.75,
+        "self_replace_steps": 0.60,
+    },
 }
 
 
