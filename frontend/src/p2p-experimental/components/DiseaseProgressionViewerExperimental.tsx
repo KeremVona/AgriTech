@@ -23,13 +23,9 @@ import {
 import { useExperimentalProgressionData } from '../hooks/useExperimentalProgressionData.ts';
 import { ProgressionShaderRenderer } from '../../components/DiseaseProgressionViewer/ProgressionShaderRenderer';
 import { CompareHealthyToggle } from '../../components/DiseaseProgressionViewer/CompareHealthyToggle';
-import { DiagnosticOverlayCardExperimental } from './DiagnosticOverlayCardExperimental';
-import { MicroclimateControlPanel } from './MicroclimateControlPanel';
 import { AgronomicTimelineSlider } from './AgronomicTimelineSlider';
 import { LeafHotspotOverlay } from './LeafHotspotOverlay';
-import { TreatmentBranchingControls } from './TreatmentBranchingControls';
-import { TreatmentOutcomeCard } from './TreatmentOutcomeCard';
-import { ExportToolbar } from './ExportToolbar';
+import { StudioInspectorRail } from './StudioInspectorRail';
 import { DiagnosticPdfReportModal } from './DiagnosticPdfReportModal';
 
 export type TrajectoryViewMode = 'treated' | 'untreated' | 'split';
@@ -459,13 +455,19 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
         </div>
       )}
 
-      {/* Main Presentation Viewport: Single, Healthy-Compare, or Trajectory-Split Mode */}
-      <div className="p-6 flex flex-col items-center">
-        <div
-          className={`w-full max-w-4xl grid gap-6 ${
-            isDualView ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 max-w-[540px]'
-          }`}
-        >
+      {/* =========================================================================
+          MAIN STUDIO VIEWPORT: 2-COLUMN RESPONSIVE LAYOUT
+          Left: Sticky Canvas Hero Stage + Docked Scrubber + Quick Action Bar
+          Right: Tabbed Studio Inspector Rail
+          ========================================================================= */}
+      <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Hero Stage (~58% width, lg:col-span-7) */}
+        <div className="lg:col-span-7 flex flex-col space-y-4 lg:sticky lg:top-20">
+          <div
+            className={`w-full grid gap-4 ${
+              isDualView ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
+            }`}
+          >
           {/* Panel A: Left Side in Dual View */}
           {/* Case 1: Healthy Baseline Comparison */}
           {compareMode && !treatmentActive && (
@@ -669,75 +671,91 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
               </span>
             )}
           </div>
+          </div>
+
+          {/* DOCKED PRIMARY TIMELINE SCRUBBER: Glued Directly Beneath Canvas */}
+          <AgronomicTimelineSlider
+            cropId={cropId}
+            sliderPercentage={sliderValue}
+            onSliderPercentageChange={handleSliderChange}
+            dynamicOutput={dynamicOutput}
+          />
+
+          {/* QUICK STUDIO ACTION DOCK */}
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl text-xs backdrop-blur-xs">
+            <span className="text-slate-400 font-semibold flex items-center gap-1.5">
+              <span>⚡</span> Quick Studio Actions:
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleStartRecording}
+                disabled={isRecording}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
+                  isRecording
+                    ? 'bg-rose-950/80 border border-rose-600/70 text-rose-300'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-950/40'
+                }`}
+                title="Record automated 60 FPS progression video sweep"
+              >
+                <span>🎬</span>
+                <span>{isRecording ? `Recording ${recordingProgress}%` : 'Timelapse'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenReportModal}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 cursor-pointer active:scale-[0.97] transition-all duration-150 ease-out"
+                title="Generate printable agronomic field advisory PDF"
+              >
+                <span>📄</span>
+                <span>Advisory PDF</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSnapImage}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 flex items-center gap-1.5 cursor-pointer active:scale-[0.97] transition-all duration-150 ease-out"
+                title="Save instantaneous high-resolution PNG snapshot"
+              >
+                <span>📸</span>
+                <span>Snap PNG</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Controls Section */}
+        {/* Right Column: Tabbed Studio Inspector Rail (~42% width, lg:col-span-5) */}
         {showControls && (
-          <div className="w-full max-w-[580px] mt-6 space-y-6">
-            {/* 0. Field Export Toolbar (Tier 1, Feature 4) */}
-            <ExportToolbar
-              isRecording={isRecording}
-              recordingProgress={recordingProgress}
-              onStartRecording={handleStartRecording}
-              onOpenReportModal={handleOpenReportModal}
-              onSnapImage={handleSnapImage}
-            />
-
-            {/* 1. Microclimate Environmental Modifiers (Tier 1, Feature 1) */}
-            <MicroclimateControlPanel
+          <div className="lg:col-span-5 flex flex-col">
+            <StudioInspectorRail
               cropId={cropId}
+              cropData={cropData}
+              activeStage={activeStage}
+              effectiveRenderSeverity={effectiveRenderSeverity}
+              sliderValue={sliderValue}
+              currentScrubDay={currentScrubDay}
               temperature={temperature}
               humidity={humidity}
               onTemperatureChange={setTemperature}
               onHumidityChange={setHumidity}
-              diagnostics={dynamicOutput.microclimate}
-            />
-
-            {/* 2. Bi-directional Calendar Timeline Slider (Tier 1, Feature 1) */}
-            <AgronomicTimelineSlider
-              cropId={cropId}
-              sliderPercentage={sliderValue}
-              onSliderPercentageChange={handleSliderChange}
               dynamicOutput={dynamicOutput}
-            />
-
-            {/* 3. Pathology Treatment Branching Controls (Tier 1, Feature 3) */}
-            <TreatmentBranchingControls
-              cropId={cropId}
               treatmentActive={treatmentActive}
               onToggleTreatment={setTreatmentActive}
               interventionSeverity={interventionSeverity}
-              interventionDay={interventionDays}
-              currentScrubDay={currentScrubDay}
-              currentScrubSeverity={sliderValue}
+              interventionDays={interventionDays}
               onSetInterventionSeverity={setInterventionSeverity}
               onPinCurrentScrub={handlePinCurrentScrub}
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
               selectedProductId={effectiveProductId}
-              onSelectProduct={setSelectedProductId}
+              onSelectProductId={setSelectedProductId}
               efficacyResult={efficacyResult}
-            />
-
-            {/* 4. Agronomic Impact & Pathology Outcome Card (Tier 1, Feature 3) */}
-            <TreatmentOutcomeCard
-              cropId={cropId}
-              treatmentActive={treatmentActive}
-              interventionSeverity={interventionSeverity}
-              interventionDay={interventionDays}
-              currentScrubDay={currentScrubDay}
-              currentTreatedSeverity={effectiveRenderSeverity}
-              plateauSeverity={treatedOutput.plateauSeverityPct}
               yieldAnalytics={yieldAnalytics}
-              efficacyResult={efficacyResult}
-              selectedCategory={selectedCategory}
-            />
-
-            {/* 5. Diagnostic & Agronomic Advisory Card */}
-            <DiagnosticOverlayCardExperimental
-              cropData={cropData}
-              activeStage={activeStage}
-              sliderPercentage={effectiveRenderSeverity}
+              treatedOutput={treatedOutput}
+              isRecording={isRecording}
+              recordingProgress={recordingProgress}
+              onStartRecording={handleStartRecording}
+              onOpenReportModal={handleOpenReportModal}
+              onSnapImage={handleSnapImage}
             />
           </div>
         )}
