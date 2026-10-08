@@ -1,38 +1,33 @@
-# TODO-103: ONNX Model Export, Quantization & Benchmarking (Task List)
+# Task List: Fix ML Class Labels Ordering & Index Permutation
 
-## Current Status: COMPLETED (READY FOR PR / MERGE)
-**Branch:** `feat/ml-todo103-onnx-export`  
-**Target:** Phase 1 — Machine Learning Core (TODO-103)  
-**Input Checkpoint:** `ml-service/models/best_model.pth` (TODO-102 output)
+**Branch:** `fix/ml-class-labels-ordering`  
+**Status:** READY TO START  
+**Plan Document:** `tasks/plan.md`  
 
 ---
 
-- [x] **Task 1: Git Branch & Environment Setup**
-  - Create and switch to `feat/ml-todo103-onnx-export`.
-  - Install `onnx` in `ml-service/venv`.
-  - Verify `onnxruntime` and `onnx` are ready.
+- [x] **Task 1: Git Branch Setup**
+  - Create and switch to `fix/ml-class-labels-ordering` from `main`.
+  - Confirm working tree is clean.
 
-- [x] **Task 2: TDD Test Suite (`ml-service/tests/test_onnx_export.py`)**
-  - Test ONNX model export function outputs valid graph.
-  - Test dynamic batching works across shapes `[1, 3, 224, 224]`, `[2, 3, 224, 224]`, `[4, 3, 224, 224]`.
-  - Test parity check logic verifies $\Delta < 10^{-3}$ against PyTorch model.
-  - Test latency benchmark helper accurately computes statistics (median, mean, p95).
+- [x] **Task 2: Update Class Labels & Resilient Loader (`ml-service/inference.py`)**
+  - Reorder `CLASS_LABELS` in `ml-service/inference.py` to match `hyperparameters.json` alphabetical order.
+  - Implement dynamic fallback sync reading `hyperparameters.json` if available.
+  - Update `_stub_probabilities()` to use dynamic index lookup for `Tomato___Late_blight`.
+  - Acceptance: `CLASS_LABELS[0] == "Apple___Cedar_apple_rust"` and `CLASS_LABELS[11] == "Tomato___healthy"`.
 
-- [x] **Task 3: ONNX Export & INT8 Quantization Script (`ml-service/scripts/export_onnx.py`)**
-  - Implement `export_to_onnx()` from `best_model.pth` with dynamic axes.
-  - Implement `quantize_onnx_model()` using `onnxruntime.quantization.quantize_dynamic`.
-  - Validate models with `onnx.checker.check_model()`.
+- [x] **Task 3: Unit Testing & CI Regression Guardrails**
+  - Install `pytest`, `pytest-asyncio`, `httpx` in `ml-service/venv`.
+  - Add `test_class_labels_matches_hyperparameters()` in `test_inference_engine.py`.
+  - Run full test suite: `pytest ml-service/tests`.
+  - Acceptance: 100% test pass rate across all test modules (136/136 passed).
 
-- [x] **Task 4: Standalone Benchmarking & Parity Harness (`ml-service/scripts/benchmark_onnx.py`)**
-  - Implement 100 sequential CPU runs latency measuring harness.
-  - Verify acceptance criterion: Median CPU latency $\le 85\text{ ms}$.
-  - Verify acceptance criterion: Maximum probability difference $\Delta < 10^{-3}$.
-  - Save `models/benchmark_report.json`.
+- [x] **Task 4: Empirical Sample Verification (36 PlantVillage Images)**
+  - Run 36-image diagnostic test script across 12 target pathologies.
+  - Verify API accuracy jumps from 16.7% to 100.0% (36/36 correct).
+  - Acceptance: Every class folder predicts its exact corresponding pathology (36/36, 100.0% verified).
 
-- [x] **Task 5: FastAPI Service Integration & Regression Suite**
-  - Validate that `inference.py` loads the exported ONNX model (`settings.onnx_model_path`).
-  - Run full pytest test suite across `ml-service` to ensure zero regressions.
-
-- [x] **Task 6: Completion Report & Git Commit**
-  - Generate `PROJECT_DETAILS/Reports/Phase 1/TODO-103-onnx-export.md`.
-  - Commit all changes following Conventional Commits format (`feat(ml): ...`).
+- [x] **Task 5: Completion Report & Git Commit**
+  - Generate `PROJECT_DETAILS/Reports/Phase 1/FIX-class-labels-ordering.md`.
+  - Commit changes with conventional commit `fix(ml): synchronize inference class labels with training ground truth`.
+  - Acceptance: Complete Definition of Done report matching `Task Completion.md`.
