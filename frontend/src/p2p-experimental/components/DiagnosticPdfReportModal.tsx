@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import type { AgronomicFieldReportData } from '../models/exportReportModel';
 
 export interface DiagnosticPdfReportModalProps {
@@ -12,6 +12,27 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
   isOpen,
   onClose,
 }) => {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    window.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, handleKeyDown]);
+
   if (!isOpen || !reportData) return null;
 
   const handlePrint = () => {
@@ -21,7 +42,15 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
   const { telemetry, foliar, treatment, culturalControls, canvasSnapshotDataUrl } = reportData;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto print:p-0 print:bg-white print:static animate-in fade-in duration-150">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pdf-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto print:p-0 print:bg-white print:static animate-in fade-in duration-150"
+    >
       {/* Print Stylesheet overrides */}
       <style>{`
         @media print {
@@ -55,7 +84,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
         <div className="no-print flex items-center justify-between px-6 py-4 bg-slate-800/90 border-b border-slate-700 shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-lg">📄</span>
-            <h3 className="text-base font-bold text-white tracking-wide">
+            <h3 id="pdf-modal-title" className="text-base font-bold text-white tracking-wide">
               Field Diagnostic & Advisory PDF Preview
             </h3>
           </div>

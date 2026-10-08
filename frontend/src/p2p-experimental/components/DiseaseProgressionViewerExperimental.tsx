@@ -691,7 +691,7 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
                 type="button"
                 onClick={handleStartRecording}
                 disabled={isRecording}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] disabled:active:scale-100 disabled:pointer-events-none ${
                   isRecording
                     ? 'bg-rose-950/80 border border-rose-600/70 text-rose-300'
                     : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-950/40'
@@ -704,7 +704,8 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
               <button
                 type="button"
                 onClick={handleOpenReportModal}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 cursor-pointer active:scale-[0.97] transition-all duration-150 ease-out"
+                disabled={isRecording}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 cursor-pointer active:scale-[0.97] transition-all duration-150 ease-out disabled:active:scale-100 disabled:pointer-events-none disabled:opacity-50"
                 title="Generate printable agronomic field advisory PDF"
               >
                 <span>📄</span>
@@ -713,7 +714,8 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
               <button
                 type="button"
                 onClick={handleSnapImage}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 flex items-center gap-1.5 cursor-pointer active:scale-[0.97] transition-all duration-150 ease-out"
+                disabled={isRecording}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 flex items-center gap-1.5 cursor-pointer active:scale-[0.97] transition-all duration-150 ease-out disabled:active:scale-100 disabled:pointer-events-none disabled:opacity-50"
                 title="Save instantaneous high-resolution PNG snapshot"
               >
                 <span>📸</span>
