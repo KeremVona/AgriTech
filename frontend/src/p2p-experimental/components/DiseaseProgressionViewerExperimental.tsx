@@ -13,6 +13,13 @@ import {
   evaluateYieldRetention,
   getTreatmentProducts,
 } from '../models/treatmentBranchingModel';
+import type { AgronomicFieldReportData } from '../models/exportReportModel';
+import { assembleFieldReportData, generateExportFilename } from '../models/exportReportModel';
+import {
+  recordProgressionTimelapse,
+  captureAndDownloadCanvasSnapshot,
+  triggerFileDownload,
+} from '../utils/timelapseRecorder';
 import { useProgressionData } from '../../hooks/useProgressionData';
 import { ProgressionShaderRenderer } from '../../components/DiseaseProgressionViewer/ProgressionShaderRenderer';
 import { CompareHealthyToggle } from '../../components/DiseaseProgressionViewer/CompareHealthyToggle';
@@ -22,6 +29,8 @@ import { AgronomicTimelineSlider } from './AgronomicTimelineSlider';
 import { LeafHotspotOverlay } from './LeafHotspotOverlay';
 import { TreatmentBranchingControls } from './TreatmentBranchingControls';
 import { TreatmentOutcomeCard } from './TreatmentOutcomeCard';
+import { ExportToolbar } from './ExportToolbar';
+import { DiagnosticPdfReportModal } from './DiagnosticPdfReportModal';
 
 export type TrajectoryViewMode = 'treated' | 'untreated' | 'split';
 
@@ -53,6 +62,12 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
   const [selectedCategory, setSelectedCategory] = useState<FungicideCategory>('systemic_curative');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [trajectoryView, setTrajectoryView] = useState<TrajectoryViewMode>('treated');
+
+  // Export and Media state (Tier 1, Feature 4)
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingProgress, setRecordingProgress] = useState<number>(0);
+  const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
+  const [assembledReport, setAssembledReport] = useState<AgronomicFieldReportData | null>(null);
 
   // Derive active product id based on crop and category during render
   const availableProducts = useMemo(
@@ -236,6 +251,109 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
   const handlePinCurrentScrub = useCallback(() => {
     setInterventionSeverity(sliderValue);
   }, [sliderValue]);
+
+  // Handle timelapse 60 FPS recording sweep
+  const handleStartRecording = useCallback(async () => {
+    if (!canvasRef.current || isRecording) return;
+
+    const savedSliderValue = sliderValue;
+    setIsRecording(true);
+    setRecordingProgress(0);
+
+    const targetMax =
+      treatmentActive && trajectoryView === 'treated' && isPostTreatment
+        ? treatedOutput.plateauSeverityPct
+        : 100.0;
+
+    try {
+      const blob = await recordProgressionTimelapse({
+        canvas: canvasRef.current,
+        targetMaxPercentage: targetMax,
+        totalDurationMs: 4500,
+        fps: 30,
+        onSetSliderPercentage: (pct) => setSliderValue(pct),
+        onProgress: (prog) => setRecordingProgress(prog),
+      });
+
+      const filename = generateExportFilename(
+        cropData?.crop_name || cropId,
+        cropData?.disease_name || 'pathology',
+        'webm'
+      );
+      triggerFileDownload(blob, filename);
+    } catch (err) {
+      console.error('[ExperimentalViewer] Timelapse recording failed:', err);
+    } finally {
+      setSliderValue(savedSliderValue);
+      setIsRecording(false);
+      setRecordingProgress(0);
+    }
+  }, [
+    cropData?.crop_name,
+    cropData?.disease_name,
+    cropId,
+    isPostTreatment,
+    isRecording,
+    sliderValue,
+    trajectoryView,
+    treatedOutput.plateauSeverityPct,
+    treatmentActive,
+  ]);
+
+  // Handle foliar canvas snapshot
+  const handleSnapImage = useCallback(() => {
+    if (!canvasRef.current) return;
+    const filename = generateExportFilename(
+      cropData?.crop_name || cropId,
+      cropData?.disease_name || 'pathology',
+      'png'
+    );
+    captureAndDownloadCanvasSnapshot(canvasRef.current, filename);
+  }, [cropData?.crop_name, cropData?.disease_name, cropId]);
+
+  // Handle opening PDF report modal
+  const handleOpenReportModal = useCallback(() => {
+    const snapshotUrl = canvasRef.current ? canvasRef.current.toDataURL('image/png') : null;
+    const report = assembleFieldReportData({
+      cropId,
+      cropName: cropData?.crop_name || cropId.toUpperCase(),
+      diseaseName: cropData?.disease_name || 'Unknown Pathology',
+      pathogenScientific: cropData?.pathogen_scientific || 'Pathogen species',
+      pathogenType: cropData?.pathogen_type || 'Foliar Infection',
+      currentSeverityPct: effectiveRenderSeverity,
+      dynamicOutput,
+      temperatureC: temperature,
+      humidityPct: humidity,
+      stageOrder: activeStage?.stage_order ?? 0,
+      stageLabel: activeStage?.stage_label ?? 'Initial Observation',
+      treatmentActive,
+      interventionSeverity,
+      interventionDays,
+      selectedCategory,
+      selectedProductId: effectiveProductId,
+      efficacyResult,
+      yieldAnalytics,
+      canvasSnapshotDataUrl: snapshotUrl,
+    });
+
+    setAssembledReport(report);
+    setIsReportModalOpen(true);
+  }, [
+    activeStage,
+    cropData,
+    cropId,
+    dynamicOutput,
+    effectiveProductId,
+    effectiveRenderSeverity,
+    efficacyResult,
+    humidity,
+    interventionDays,
+    interventionSeverity,
+    selectedCategory,
+    temperature,
+    treatmentActive,
+    yieldAnalytics,
+  ]);
 
   const getStageColorBadge = (order: number) => {
     if (order === 0) return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
@@ -556,6 +674,15 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
         {/* Controls Section */}
         {showControls && (
           <div className="w-full max-w-[580px] mt-6 space-y-6">
+            {/* 0. Field Export Toolbar (Tier 1, Feature 4) */}
+            <ExportToolbar
+              isRecording={isRecording}
+              recordingProgress={recordingProgress}
+              onStartRecording={handleStartRecording}
+              onOpenReportModal={handleOpenReportModal}
+              onSnapImage={handleSnapImage}
+            />
+
             {/* 1. Microclimate Environmental Modifiers (Tier 1, Feature 1) */}
             <MicroclimateControlPanel
               cropId={cropId}
@@ -615,6 +742,13 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
           </div>
         )}
       </div>
+
+      {/* Field Diagnostic PDF Report Modal (Tier 1, Feature 4) */}
+      <DiagnosticPdfReportModal
+        reportData={assembledReport}
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      />
     </div>
   );
 };

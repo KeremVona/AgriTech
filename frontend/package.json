@@ -11,6 +11,7 @@
     "test:agronomy": "node --experimental-strip-types scripts/test_agronomic_model.js",
     "test:hotspots": "node --experimental-strip-types scripts/test_hotspot_registry.js",
     "test:treatment": "node --experimental-strip-types scripts/test_treatment_branching.js",
+    "test:export": "node --experimental-strip-types scripts/test_export_utilities.js",
     "preview": "vite preview"
   },
   "dependencies": {

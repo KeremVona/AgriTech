@@ -12,7 +12,7 @@
  * - FRAC (Fungicide Resistance Action Committee) chemical modes of action
  */
 
-import type { SupportedCropId } from './agronomicTimelineModel';
+import type { SupportedCropId } from './agronomicTimelineModel.ts';
 
 export type FungicideCategory = 'systemic_curative' | 'protectant_contact' | 'bio_fungicide';
 
