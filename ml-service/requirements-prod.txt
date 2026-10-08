@@ -1,0 +1,15 @@
+# Precision AgriTech - ML Service Production Dependencies
+# WARNING: This file is used ONLY for the Docker production image.
+#          DO NOT add training-time packages (torch, torchvision, sklearn, etc.)
+#          here — they inflate the image size by 2+ GB.
+#
+# For local development / model training, use requirements.txt instead.
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-multipart>=0.0.9
+pillow>=10.0.0
+numpy>=1.24.0
+onnxruntime>=1.18.0
