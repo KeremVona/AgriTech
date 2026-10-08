@@ -12,7 +12,7 @@
   - Stage diagnostic report `EXTERNAL_TEST_ACCURACY_REPORT.md` and test scripts.
   - Commit: `docs(ml): record external test diagnostic report and initialize todo-110 branch`.
 
-- [ ] **Subtask 2: Hybrid Dataset Merger, Class Mapping & Balancing (`prepare_hybrid_dataset.py`)**
+- [x] **Subtask 2: Hybrid Dataset Merger, Class Mapping & Balancing (`prepare_hybrid_dataset.py`)**
   - Implement `ml-service/scripts/prepare_hybrid_dataset.py` with explicit PlantDoc mapping and class balancing cap.
   - Add deterministic 70/15/15 stratified split and SHA-256 leakage protection.
   - Write test suite `ml-service/tests/test_hybrid_dataset.py`.
