@@ -30,7 +30,7 @@
   - Include dataset downloads, DataLoader, augmentations, training loop, evaluation metrics, and dual-head ONNX export.
   - Commit: `feat(ml): create self-contained Google Colab GPU training and evaluation notebook`.
 
-- [ ] **Subtask 5: Dual-Head ONNX Export & Benchmarking Pipeline (`export_multitask_onnx.py`)**
+- [x] **Subtask 5: Dual-Head ONNX Export & Benchmarking Pipeline (`export_multitask_onnx.py`)**
   - Build export and INT8 quantization script with dual outputs (`crop_logits`, `disease_logits`).
   - Run 100 sequential single-thread CPU benchmarks (verify $\le 25\text{ MB}$, $\le 85\text{ ms}$).
   - Commit: `feat(ml): implement dual-head ONNX export, INT8 quantization and latency benchmarking`.
