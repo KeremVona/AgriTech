@@ -1,0 +1,739 @@
+{
+  "timestamp": "2026-10-08T15:00:54Z",
+  "model_version": "agritech_classifier",
+  "total_images_evaluated": 12,
+  "total_correct": 11,
+  "overall_accuracy_pct": 91.67,
+  "folder_summaries": {
+    "patato early blight": {
+      "expected_class": "Potato___Early_blight",
+      "total_images": 3,
+      "correct_images": 2,
+      "accuracy_pct": 66.67,
+      "items": [
+        {
+          "folder": "patato early blight",
+          "file_name": "3023 (1).jpg",
+          "file_size_kb": 128.12,
+          "resolution": "1024x768",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Early_blight",
+          "predicted_class": "Potato___Early_blight",
+          "confidence": 0.5481936931610107,
+          "confidence_pct": 54.82,
+          "is_correct": true,
+          "expected_prob_pct": 54.82,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Potato___Early_blight",
+              "prob_pct": 54.82
+            },
+            {
+              "label": "Potato___Late_blight",
+              "prob_pct": 42.31
+            },
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 1.25
+            }
+          ],
+          "latency_ms": 1809.62
+        },
+        {
+          "folder": "patato early blight",
+          "file_name": "potato-blight-phytophthora-infestans-close-up-of-upper-surface-of-BMMRXC.jpg",
+          "file_size_kb": 105.53,
+          "resolution": "1300x956",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Early_blight",
+          "predicted_class": "Potato___Late_blight",
+          "confidence": 0.6734222769737244,
+          "confidence_pct": 67.34,
+          "is_correct": false,
+          "expected_prob_pct": 9.06,
+          "expected_rank": 2,
+          "top_probabilities": [
+            {
+              "label": "Potato___Late_blight",
+              "prob_pct": 67.34
+            },
+            {
+              "label": "Potato___Early_blight",
+              "prob_pct": 9.06
+            },
+            {
+              "label": "Potato___healthy",
+              "prob_pct": 8.05
+            }
+          ],
+          "latency_ms": 33.59
+        },
+        {
+          "folder": "patato early blight",
+          "file_name": "potatobd001.jpg",
+          "file_size_kb": 11.86,
+          "resolution": "230x150",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Early_blight",
+          "predicted_class": "Potato___Early_blight",
+          "confidence": 0.9116924405097961,
+          "confidence_pct": 91.17,
+          "is_correct": true,
+          "expected_prob_pct": 91.17,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Potato___Early_blight",
+              "prob_pct": 91.17
+            },
+            {
+              "label": "Potato___Late_blight",
+              "prob_pct": 6.58
+            },
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 1.58
+            }
+          ],
+          "latency_ms": 13.69
+        }
+      ]
+    },
+    "patato late blight": {
+      "expected_class": "Potato___Late_blight",
+      "total_images": 3,
+      "correct_images": 3,
+      "accuracy_pct": 100.0,
+      "items": [
+        {
+          "folder": "patato late blight",
+          "file_name": "20090710-lateblight.jpg",
+          "file_size_kb": 68.28,
+          "resolution": "500x364",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Late_blight",
+          "predicted_class": "Potato___Late_blight",
+          "confidence": 0.9394649863243103,
+          "confidence_pct": 93.95,
+          "is_correct": true,
+          "expected_prob_pct": 93.95,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Potato___Late_blight",
+              "prob_pct": 93.95
+            },
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 5.17
+            },
+            {
+              "label": "Potato___healthy",
+              "prob_pct": 0.44
+            }
+          ],
+          "latency_ms": 17.99
+        },
+        {
+          "folder": "patato late blight",
+          "file_name": "B2750109-Late_blight_on_a_potato_plant-SPL.jpg",
+          "file_size_kb": 103.77,
+          "resolution": "539x800",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Late_blight",
+          "predicted_class": "Potato___Late_blight",
+          "confidence": 0.9555391669273376,
+          "confidence_pct": 95.55,
+          "is_correct": true,
+          "expected_prob_pct": 95.55,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Potato___Late_blight",
+              "prob_pct": 95.55
+            },
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 1.98
+            },
+            {
+              "label": "Potato___Early_blight",
+              "prob_pct": 1.66
+            }
+          ],
+          "latency_ms": 27.94
+        },
+        {
+          "folder": "patato late blight",
+          "file_name": "potato-late-blight.jpg",
+          "file_size_kb": 24.27,
+          "resolution": "490x390",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Late_blight",
+          "predicted_class": "Potato___Late_blight",
+          "confidence": 0.8740936517715454,
+          "confidence_pct": 87.41,
+          "is_correct": true,
+          "expected_prob_pct": 87.41,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Potato___Late_blight",
+              "prob_pct": 87.41
+            },
+            {
+              "label": "Potato___Early_blight",
+              "prob_pct": 7.66
+            },
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 1.98
+            }
+          ],
+          "latency_ms": 12.49
+        }
+      ]
+    },
+    "tomato bacterial spot": {
+      "expected_class": "Tomato___Bacterial_spot",
+      "total_images": 3,
+      "correct_images": 3,
+      "accuracy_pct": 100.0,
+      "items": [
+        {
+          "folder": "tomato bacterial spot",
+          "file_name": "Bacterial_spots563.jpg",
+          "file_size_kb": 57.71,
+          "resolution": "800x600",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Bacterial_spot",
+          "predicted_class": "Tomato___Bacterial_spot",
+          "confidence": 0.9954003095626831,
+          "confidence_pct": 99.54,
+          "is_correct": true,
+          "expected_prob_pct": 99.54,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Bacterial_spot",
+              "prob_pct": 99.54
+            },
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 0.33
+            },
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 0.07
+            }
+          ],
+          "latency_ms": 28.57
+        },
+        {
+          "folder": "tomato bacterial spot",
+          "file_name": "Tomato%2BBacterial%2BSpot%2Bon%2BLeaves.jpg",
+          "file_size_kb": 44.42,
+          "resolution": "500x263",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Bacterial_spot",
+          "predicted_class": "Tomato___Bacterial_spot",
+          "confidence": 0.9800422787666321,
+          "confidence_pct": 98.0,
+          "is_correct": true,
+          "expected_prob_pct": 98.0,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Bacterial_spot",
+              "prob_pct": 98.0
+            },
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 1.56
+            },
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 0.14
+            }
+          ],
+          "latency_ms": 16.45
+        },
+        {
+          "folder": "tomato bacterial spot",
+          "file_name": "tomato_bacterial-speck_01_zoom.jpg",
+          "file_size_kb": 124.23,
+          "resolution": "900x675",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Bacterial_spot",
+          "predicted_class": "Tomato___Bacterial_spot",
+          "confidence": 0.9979223012924194,
+          "confidence_pct": 99.79,
+          "is_correct": true,
+          "expected_prob_pct": 99.79,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Bacterial_spot",
+              "prob_pct": 99.79
+            },
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 0.14
+            },
+            {
+              "label": "Tomato___healthy",
+              "prob_pct": 0.05
+            }
+          ],
+          "latency_ms": 57.08
+        }
+      ]
+    },
+    "tomato late blight": {
+      "expected_class": "Tomato___Late_blight",
+      "total_images": 3,
+      "correct_images": 3,
+      "accuracy_pct": 100.0,
+      "items": [
+        {
+          "folder": "tomato late blight",
+          "file_name": "110822-206-Tomato-blight.jpg",
+          "file_size_kb": 165.31,
+          "resolution": "750x499",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Late_blight",
+          "predicted_class": "Tomato___Late_blight",
+          "confidence": 0.9446423649787903,
+          "confidence_pct": 94.46,
+          "is_correct": true,
+          "expected_prob_pct": 94.46,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 94.46
+            },
+            {
+              "label": "Potato___Late_blight",
+              "prob_pct": 4.21
+            },
+            {
+              "label": "Tomato___Bacterial_spot",
+              "prob_pct": 0.5
+            }
+          ],
+          "latency_ms": 31.43
+        },
+        {
+          "folder": "tomato late blight",
+          "file_name": "18c.jpg",
+          "file_size_kb": 22.03,
+          "resolution": "350x255",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Late_blight",
+          "predicted_class": "Tomato___Late_blight",
+          "confidence": 0.9865707755088806,
+          "confidence_pct": 98.66,
+          "is_correct": true,
+          "expected_prob_pct": 98.66,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 98.66
+            },
+            {
+              "label": "Tomato___healthy",
+              "prob_pct": 0.58
+            },
+            {
+              "label": "Tomato___Bacterial_spot",
+              "prob_pct": 0.38
+            }
+          ],
+          "latency_ms": 29.7
+        },
+        {
+          "folder": "tomato late blight",
+          "file_name": "LateBlt09_06.jpg",
+          "file_size_kb": 15.43,
+          "resolution": "400x268",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Late_blight",
+          "predicted_class": "Tomato___Late_blight",
+          "confidence": 0.6554932594299316,
+          "confidence_pct": 65.55,
+          "is_correct": true,
+          "expected_prob_pct": 65.55,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 65.55
+            },
+            {
+              "label": "Tomato___Bacterial_spot",
+              "prob_pct": 16.37
+            },
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 15.15
+            }
+          ],
+          "latency_ms": 36.53
+        }
+      ]
+    }
+  },
+  "detailed_results": [
+    {
+      "folder": "patato early blight",
+      "file_name": "3023 (1).jpg",
+      "file_size_kb": 128.12,
+      "resolution": "1024x768",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Early_blight",
+      "predicted_class": "Potato___Early_blight",
+      "confidence": 0.5481936931610107,
+      "confidence_pct": 54.82,
+      "is_correct": true,
+      "expected_prob_pct": 54.82,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Potato___Early_blight",
+          "prob_pct": 54.82
+        },
+        {
+          "label": "Potato___Late_blight",
+          "prob_pct": 42.31
+        },
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 1.25
+        }
+      ],
+      "latency_ms": 1809.62
+    },
+    {
+      "folder": "patato early blight",
+      "file_name": "potato-blight-phytophthora-infestans-close-up-of-upper-surface-of-BMMRXC.jpg",
+      "file_size_kb": 105.53,
+      "resolution": "1300x956",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Early_blight",
+      "predicted_class": "Potato___Late_blight",
+      "confidence": 0.6734222769737244,
+      "confidence_pct": 67.34,
+      "is_correct": false,
+      "expected_prob_pct": 9.06,
+      "expected_rank": 2,
+      "top_probabilities": [
+        {
+          "label": "Potato___Late_blight",
+          "prob_pct": 67.34
+        },
+        {
+          "label": "Potato___Early_blight",
+          "prob_pct": 9.06
+        },
+        {
+          "label": "Potato___healthy",
+          "prob_pct": 8.05
+        }
+      ],
+      "latency_ms": 33.59
+    },
+    {
+      "folder": "patato early blight",
+      "file_name": "potatobd001.jpg",
+      "file_size_kb": 11.86,
+      "resolution": "230x150",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Early_blight",
+      "predicted_class": "Potato___Early_blight",
+      "confidence": 0.9116924405097961,
+      "confidence_pct": 91.17,
+      "is_correct": true,
+      "expected_prob_pct": 91.17,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Potato___Early_blight",
+          "prob_pct": 91.17
+        },
+        {
+          "label": "Potato___Late_blight",
+          "prob_pct": 6.58
+        },
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 1.58
+        }
+      ],
+      "latency_ms": 13.69
+    },
+    {
+      "folder": "patato late blight",
+      "file_name": "20090710-lateblight.jpg",
+      "file_size_kb": 68.28,
+      "resolution": "500x364",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Late_blight",
+      "predicted_class": "Potato___Late_blight",
+      "confidence": 0.9394649863243103,
+      "confidence_pct": 93.95,
+      "is_correct": true,
+      "expected_prob_pct": 93.95,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Potato___Late_blight",
+          "prob_pct": 93.95
+        },
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 5.17
+        },
+        {
+          "label": "Potato___healthy",
+          "prob_pct": 0.44
+        }
+      ],
+      "latency_ms": 17.99
+    },
+    {
+      "folder": "patato late blight",
+      "file_name": "B2750109-Late_blight_on_a_potato_plant-SPL.jpg",
+      "file_size_kb": 103.77,
+      "resolution": "539x800",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Late_blight",
+      "predicted_class": "Potato___Late_blight",
+      "confidence": 0.9555391669273376,
+      "confidence_pct": 95.55,
+      "is_correct": true,
+      "expected_prob_pct": 95.55,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Potato___Late_blight",
+          "prob_pct": 95.55
+        },
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 1.98
+        },
+        {
+          "label": "Potato___Early_blight",
+          "prob_pct": 1.66
+        }
+      ],
+      "latency_ms": 27.94
+    },
+    {
+      "folder": "patato late blight",
+      "file_name": "potato-late-blight.jpg",
+      "file_size_kb": 24.27,
+      "resolution": "490x390",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Late_blight",
+      "predicted_class": "Potato___Late_blight",
+      "confidence": 0.8740936517715454,
+      "confidence_pct": 87.41,
+      "is_correct": true,
+      "expected_prob_pct": 87.41,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Potato___Late_blight",
+          "prob_pct": 87.41
+        },
+        {
+          "label": "Potato___Early_blight",
+          "prob_pct": 7.66
+        },
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 1.98
+        }
+      ],
+      "latency_ms": 12.49
+    },
+    {
+      "folder": "tomato bacterial spot",
+      "file_name": "Bacterial_spots563.jpg",
+      "file_size_kb": 57.71,
+      "resolution": "800x600",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Bacterial_spot",
+      "predicted_class": "Tomato___Bacterial_spot",
+      "confidence": 0.9954003095626831,
+      "confidence_pct": 99.54,
+      "is_correct": true,
+      "expected_prob_pct": 99.54,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Bacterial_spot",
+          "prob_pct": 99.54
+        },
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 0.33
+        },
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 0.07
+        }
+      ],
+      "latency_ms": 28.57
+    },
+    {
+      "folder": "tomato bacterial spot",
+      "file_name": "Tomato%2BBacterial%2BSpot%2Bon%2BLeaves.jpg",
+      "file_size_kb": 44.42,
+      "resolution": "500x263",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Bacterial_spot",
+      "predicted_class": "Tomato___Bacterial_spot",
+      "confidence": 0.9800422787666321,
+      "confidence_pct": 98.0,
+      "is_correct": true,
+      "expected_prob_pct": 98.0,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Bacterial_spot",
+          "prob_pct": 98.0
+        },
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 1.56
+        },
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 0.14
+        }
+      ],
+      "latency_ms": 16.45
+    },
+    {
+      "folder": "tomato bacterial spot",
+      "file_name": "tomato_bacterial-speck_01_zoom.jpg",
+      "file_size_kb": 124.23,
+      "resolution": "900x675",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Bacterial_spot",
+      "predicted_class": "Tomato___Bacterial_spot",
+      "confidence": 0.9979223012924194,
+      "confidence_pct": 99.79,
+      "is_correct": true,
+      "expected_prob_pct": 99.79,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Bacterial_spot",
+          "prob_pct": 99.79
+        },
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 0.14
+        },
+        {
+          "label": "Tomato___healthy",
+          "prob_pct": 0.05
+        }
+      ],
+      "latency_ms": 57.08
+    },
+    {
+      "folder": "tomato late blight",
+      "file_name": "110822-206-Tomato-blight.jpg",
+      "file_size_kb": 165.31,
+      "resolution": "750x499",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Late_blight",
+      "predicted_class": "Tomato___Late_blight",
+      "confidence": 0.9446423649787903,
+      "confidence_pct": 94.46,
+      "is_correct": true,
+      "expected_prob_pct": 94.46,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 94.46
+        },
+        {
+          "label": "Potato___Late_blight",
+          "prob_pct": 4.21
+        },
+        {
+          "label": "Tomato___Bacterial_spot",
+          "prob_pct": 0.5
+        }
+      ],
+      "latency_ms": 31.43
+    },
+    {
+      "folder": "tomato late blight",
+      "file_name": "18c.jpg",
+      "file_size_kb": 22.03,
+      "resolution": "350x255",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Late_blight",
+      "predicted_class": "Tomato___Late_blight",
+      "confidence": 0.9865707755088806,
+      "confidence_pct": 98.66,
+      "is_correct": true,
+      "expected_prob_pct": 98.66,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 98.66
+        },
+        {
+          "label": "Tomato___healthy",
+          "prob_pct": 0.58
+        },
+        {
+          "label": "Tomato___Bacterial_spot",
+          "prob_pct": 0.38
+        }
+      ],
+      "latency_ms": 29.7
+    },
+    {
+      "folder": "tomato late blight",
+      "file_name": "LateBlt09_06.jpg",
+      "file_size_kb": 15.43,
+      "resolution": "400x268",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Late_blight",
+      "predicted_class": "Tomato___Late_blight",
+      "confidence": 0.6554932594299316,
+      "confidence_pct": 65.55,
+      "is_correct": true,
+      "expected_prob_pct": 65.55,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 65.55
+        },
+        {
+          "label": "Tomato___Bacterial_spot",
+          "prob_pct": 16.37
+        },
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 15.15
+        }
+      ],
+      "latency_ms": 36.53
+    }
+  ]
+}
