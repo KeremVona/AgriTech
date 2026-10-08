@@ -18,7 +18,7 @@
   - Write test suite `ml-service/tests/test_hybrid_dataset.py`.
   - Commit: `feat(ml): implement PlantVillage and PlantDoc hybrid dataset merger and class balancing`.
 
-- [ ] **Subtask 3: Multi-Task PyTorch Model Architecture (`model_multitask.py`)**
+- [x] **Subtask 3: Multi-Task PyTorch Model Architecture (`model_multitask.py`)**
   - Implement `MultiTaskPlantClassifier` using `MobileNetV3-Large` backbone.
   - Define Crop Head (4 classes) and Disease Pathology Head (8 classes).
   - Implement combined loss: $\mathcal{L} = 0.4 \cdot \mathcal{L}_{\text{crop}} + 0.6 \cdot \mathcal{L}_{\text{disease}}$.
