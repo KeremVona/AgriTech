@@ -279,7 +279,7 @@ async def test_classify_leaf_low_confidence_returns_rescan_advisory(client, monk
 
     original_run = inference_engine.run
 
-    def low_confidence_run(image_bytes: bytes):
+    def low_confidence_run(image_bytes: bytes, **kwargs):
         # Build a flat distribution (confidence ≈ 1/12 ≈ 8.3% per class)
         probs = np.full(len(CLASS_LABELS), 1.0 / len(CLASS_LABELS), dtype=np.float32)
         return {
@@ -318,6 +318,41 @@ async def test_classify_leaf_low_confidence_returns_rescan_advisory(client, monk
 
     # Must NOT contain the normal advisory (no chemical_treatments at top level)
     assert "agronomic_advisory" not in data
+
+
+@pytest.mark.anyio
+async def test_classify_leaf_with_crop_hint(client, monkeypatch):
+    """Verify endpoint accepts crop_hint and forwards it to inference_engine.run."""
+    from inference import inference_engine
+
+    captured_hint = None
+
+    def spy_run(image_bytes: bytes, crop_hint=None):
+        nonlocal captured_hint
+        captured_hint = crop_hint
+        return {
+            "top_label": "Tomato___healthy",
+            "confidence": 0.95,
+            "top_probabilities": [{"label": "Tomato___healthy", "probability": 0.95}],
+            "all_probabilities": {"Tomato___healthy": 0.95},
+            "execution_time_ms": 10.0,
+            "model_version": "spy_model",
+            "model_loaded": True,
+        }
+
+    monkeypatch.setattr(inference_engine, "run", spy_run)
+
+    jpeg_bytes = _make_jpeg_bytes()
+    response = await client.post(
+        "/api/v1/classify-leaf",
+        files={"file": ("leaf.jpg", jpeg_bytes, "image/jpeg")},
+        data={"crop_hint": "tomato"},
+    )
+    assert response.status_code == 200
+    assert captured_hint == "tomato"
+    data = response.json()
+    assert data["prediction"]["crop"] == "Tomato"
+    assert data["prediction"]["condition"] == "Healthy"
 
 
 # ---------------------------------------------------------------------------
