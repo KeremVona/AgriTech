@@ -70,7 +70,7 @@ export const ExportToolbar: React.FC<ExportToolbarProps> = ({
           type="button"
           onClick={onOpenReportModal}
           disabled={isRecording}
-          className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer flex items-center gap-1.5 shadow-sm"
+          className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer flex items-center gap-1.5 shadow-sm disabled:active:scale-100 disabled:pointer-events-none disabled:opacity-50"
           title="Generate printable agronomic field advisory PDF report"
         >
           <span>📄</span>
@@ -82,7 +82,7 @@ export const ExportToolbar: React.FC<ExportToolbarProps> = ({
           type="button"
           onClick={onSnapImage}
           disabled={isRecording}
-          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 hover:border-slate-600 transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 hover:border-slate-600 transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer flex items-center gap-1.5 disabled:active:scale-100 disabled:pointer-events-none disabled:opacity-50"
           title="Save instantaneous high-resolution PNG snapshot"
         >
           <span>📸</span>

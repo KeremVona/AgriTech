@@ -83,7 +83,7 @@ export const DiagnosticScanModal: React.FC<DiagnosticScanModalProps> = ({
             className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-400 hover:text-white flex items-center justify-center text-sm transition-all cursor-pointer active:scale-[0.97]"
             aria-label="Close diagnostic scanner"
           >
-            ✕
+            <span aria-hidden="true">✕</span>
           </button>
         </div>
 
