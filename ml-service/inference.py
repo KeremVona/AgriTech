@@ -96,35 +96,24 @@ def preprocess_image(image_bytes: bytes) -> np.ndarray:
     """
     Converts raw image bytes to a normalised float32 NCHW tensor (1, 3, 224, 224).
 
-    Steps mirror torchvision.transforms:
+    Steps:
         1. Decode & convert to RGB
-        2. Resize shortest edge to 256 (bilinear)
-        3. Center-crop to 224×224
-        4. Scale to [0, 1] float32
-        5. Normalise with ImageNet mean / std channel-wise
+        2. Bilinear resize to 224x224 (preserves entire leaf boundary and perimeter lesions)
+        3. Scale to [0, 1] float32
+        4. Normalise with ImageNet mean / std channel-wise
     """
     try:
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     except (UnidentifiedImageError, OSError, SyntaxError) as exc:
         raise ValueError(f"Cannot decode image: {exc}") from exc
 
-    # Step 2 – resize (shortest edge → 256, maintaining aspect ratio)
-    w, h = img.size
-    scale = 256 / min(w, h)
-    new_w = max(int(round(w * scale)), 1)
-    new_h = max(int(round(h * scale)), 1)
-    img = img.resize((new_w, new_h), Image.BILINEAR)
-
-    # Step 3 – centre crop to model input size
     input_size = settings.image_input_size  # 224
-    left = (new_w - input_size) // 2
-    top = (new_h - input_size) // 2
-    img = img.crop((left, top, left + input_size, top + input_size))
+    img = img.resize((input_size, input_size), Image.BILINEAR)
 
-    # Step 4 – to float32 [0, 1]
+    # To float32 [0, 1]
     arr = np.array(img, dtype=np.float32) / 255.0  # (H, W, C)
 
-    # Step 5 – ImageNet normalisation
+    # ImageNet normalisation
     mean = np.array(settings.imagenet_mean, dtype=np.float32)
     std = np.array(settings.imagenet_std, dtype=np.float32)
     arr = (arr - mean) / std
@@ -133,6 +122,69 @@ def preprocess_image(image_bytes: bytes) -> np.ndarray:
     arr = arr.transpose(2, 0, 1)        # (C, H, W)
     arr = np.expand_dims(arr, axis=0)   # (1, C, H, W)
     return arr
+
+
+# ---------------------------------------------------------------------------
+# Multi-Task Taxonomy & Bayesian Probability Combination
+# ---------------------------------------------------------------------------
+
+CROP_NAME_TO_IDX: dict[str, int] = {
+    "apple": 0,
+    "corn": 1,
+    "potato": 2,
+    "tomato": 3,
+}
+
+CLASS_TAXONOMY_MAP: dict[str, tuple[int, int]] = {
+    "Apple___healthy":                     (0, 0),
+    "Apple___Cedar_apple_rust":            (0, 6),
+    "Corn_(maize)___healthy":              (1, 0),
+    "Corn_(maize)___Common_rust_":         (1, 4),
+    "Corn_(maize)___Northern_Leaf_Blight": (1, 5),
+    "Potato___healthy":                    (2, 0),
+    "Potato___Early_blight":               (2, 1),
+    "Potato___Late_blight":                (2, 2),
+    "Tomato___healthy":                    (3, 0),
+    "Tomato___Early_blight":               (3, 1),
+    "Tomato___Late_blight":                (3, 2),
+    "Tomato___Bacterial_spot":             (3, 3),
+}
+
+
+def _combine_multitask_probabilities(
+    crop_probs: np.ndarray,
+    disease_probs: np.ndarray,
+    crop_hint: Optional[str] = None,
+) -> np.ndarray:
+    """
+    Combines independent crop probabilities [4] and disease probabilities [8]
+    into canonical 12-class distribution using Bayesian joint probability:
+        P(Class_i) = P(Crop_c) * P(Disease_d)
+    If crop_hint is supplied, crops outside the hint are filtered out.
+    """
+    target_crop_idx = None
+    if crop_hint:
+        target_crop_idx = CROP_NAME_TO_IDX.get(crop_hint.lower().strip())
+
+    probs = np.zeros(len(CLASS_LABELS), dtype=np.float32)
+    for i, cls_name in enumerate(CLASS_LABELS):
+        if cls_name in CLASS_TAXONOMY_MAP:
+            c_idx, d_idx = CLASS_TAXONOMY_MAP[cls_name]
+            if target_crop_idx is not None and c_idx != target_crop_idx:
+                probs[i] = 0.0
+            else:
+                c_weight = 1.0 if target_crop_idx is not None else float(crop_probs[c_idx])
+                d_weight = float(disease_probs[d_idx]) if d_idx < len(disease_probs) else 0.001
+                probs[i] = c_weight * d_weight
+        else:
+            probs[i] = 0.001
+
+    sum_p = probs.sum()
+    if sum_p > 0:
+        probs /= sum_p
+    else:
+        probs = np.full(len(CLASS_LABELS), 1.0 / len(CLASS_LABELS), dtype=np.float32)
+    return probs
 
 
 # ---------------------------------------------------------------------------
@@ -204,9 +256,11 @@ class InferenceEngine:
     # Core inference
     # ------------------------------------------------------------------
 
-    def run(self, image_bytes: bytes) -> dict:
+    def run(self, image_bytes: bytes, crop_hint: Optional[str] = None) -> dict:
         """
         Runs the full preprocessing → inference → postprocessing pipeline.
+        Supports both single-head and dual-head multi-task ONNX models,
+        as well as optional crop_hint for hierarchical filtering.
 
         Returns a dict with:
             top_label, confidence, probabilities, execution_time_ms, model_version, model_loaded
@@ -217,8 +271,17 @@ class InferenceEngine:
 
         if self._model_loaded and self._session is not None:
             raw_output = self._session.run(None, {self._input_name: tensor})
-            logits = raw_output[0][0]           # shape: (12,)
-            probabilities = _softmax(logits)
+            if len(raw_output) >= 2:
+                # Dual-Head Multi-Task Model
+                crop_logits = raw_output[0][0]
+                disease_logits = raw_output[1][0]
+                crop_probs = _softmax(crop_logits)
+                disease_probs = _softmax(disease_logits)
+                probabilities = _combine_multitask_probabilities(crop_probs, disease_probs, crop_hint=crop_hint)
+            else:
+                # Single-Head Model
+                logits = raw_output[0][0]           # shape: (12,)
+                probabilities = _softmax(logits)
         else:
             # Stub: deterministic dummy distribution (index 0 = Tomato healthy)
             probabilities = _stub_probabilities()

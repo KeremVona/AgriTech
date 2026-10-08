@@ -1,33 +1,46 @@
-# Task List: Fix ML Class Labels Ordering & Index Permutation
+# TODO-110: PlantVillage + PlantDoc Hybrid Dataset & Multi-Task MobileNetV3-Large Architecture
 
-**Branch:** `fix/ml-class-labels-ordering`  
-**Status:** READY TO START  
-**Plan Document:** `tasks/plan.md`  
+## Current Status: COMPLETED
+**Branch:** `feat/ml-todo110-hybrid-dataset-multitask`  
+**Assignee:** ML Engineer  
+**Phase:** Phase 1 — Machine Learning Core Upgrade  
 
 ---
 
-- [x] **Task 1: Git Branch Setup**
-  - Create and switch to `fix/ml-class-labels-ordering` from `main`.
-  - Confirm working tree is clean.
+- [x] **Subtask 1: Diagnostic Artifacts & Branch Initialization**
+  - Switch to `feat/ml-todo110-hybrid-dataset-multitask`.
+  - Stage diagnostic report `EXTERNAL_TEST_ACCURACY_REPORT.md` and test scripts.
+  - Commit: `docs(ml): record external test diagnostic report and initialize todo-110 branch`.
 
-- [x] **Task 2: Update Class Labels & Resilient Loader (`ml-service/inference.py`)**
-  - Reorder `CLASS_LABELS` in `ml-service/inference.py` to match `hyperparameters.json` alphabetical order.
-  - Implement dynamic fallback sync reading `hyperparameters.json` if available.
-  - Update `_stub_probabilities()` to use dynamic index lookup for `Tomato___Late_blight`.
-  - Acceptance: `CLASS_LABELS[0] == "Apple___Cedar_apple_rust"` and `CLASS_LABELS[11] == "Tomato___healthy"`.
+- [x] **Subtask 2: Hybrid Dataset Merger, Class Mapping & Balancing (`prepare_hybrid_dataset.py`)**
+  - Implement `ml-service/scripts/prepare_hybrid_dataset.py` with explicit PlantDoc mapping and class balancing cap.
+  - Add deterministic 70/15/15 stratified split and SHA-256 leakage protection.
+  - Write test suite `ml-service/tests/test_hybrid_dataset.py`.
+  - Commit: `feat(ml): implement PlantVillage and PlantDoc hybrid dataset merger and class balancing`.
 
-- [x] **Task 3: Unit Testing & CI Regression Guardrails**
-  - Install `pytest`, `pytest-asyncio`, `httpx` in `ml-service/venv`.
-  - Add `test_class_labels_matches_hyperparameters()` in `test_inference_engine.py`.
-  - Run full test suite: `pytest ml-service/tests`.
-  - Acceptance: 100% test pass rate across all test modules (136/136 passed).
+- [x] **Subtask 3: Multi-Task PyTorch Model Architecture (`model_multitask.py`)**
+  - Implement `MultiTaskPlantClassifier` using `MobileNetV3-Large` backbone.
+  - Define Crop Head (4 classes) and Disease Pathology Head (8 classes).
+  - Implement combined loss: $\mathcal{L} = 0.4 \cdot \mathcal{L}_{\text{crop}} + 0.6 \cdot \mathcal{L}_{\text{disease}}$.
+  - Write test suite `ml-service/tests/test_model_multitask.py`.
+  - Commit: `feat(ml): build MobileNetV3-Large dual-head multi-task architecture and loss`.
 
-- [x] **Task 4: Empirical Sample Verification (36 PlantVillage Images)**
-  - Run 36-image diagnostic test script across 12 target pathologies.
-  - Verify API accuracy jumps from 16.7% to 100.0% (36/36 correct).
-  - Acceptance: Every class folder predicts its exact corresponding pathology (36/36, 100.0% verified).
+- [x] **Subtask 4: Google Colab GPU End-to-End Training Notebook (`notebooks/TODO_110_MultiTask_Training.ipynb`)**
+  - Build standalone Google Colab notebook for GPU (NVIDIA T4) training.
+  - Include dataset downloads, DataLoader, augmentations, training loop, evaluation metrics, and dual-head ONNX export.
+  - Commit: `feat(ml): create self-contained Google Colab GPU training and evaluation notebook`.
 
-- [x] **Task 5: Completion Report & Git Commit**
-  - Generate `PROJECT_DETAILS/Reports/Phase 1/FIX-class-labels-ordering.md`.
-  - Commit changes with conventional commit `fix(ml): synchronize inference class labels with training ground truth`.
-  - Acceptance: Complete Definition of Done report matching `Task Completion.md`.
+- [x] **Subtask 5: Dual-Head ONNX Export & Benchmarking Pipeline (`export_multitask_onnx.py`)**
+  - Build export and INT8 quantization script with dual outputs (`crop_logits`, `disease_logits`).
+  - Run 100 sequential single-thread CPU benchmarks (verify $\le 25\text{ MB}$, $\le 85\text{ ms}$).
+  - Commit: `feat(ml): implement dual-head ONNX export, INT8 quantization and latency benchmarking`.
+
+- [x] **Subtask 6: FastAPI Service Multi-Task Adapter & Preprocessing Upgrade (`inference.py`)**
+  - Upgrade `preprocess_image` to aspect-ratio preserving resize/padding.
+  - Adapt `InferenceEngine` for dual-head ONNX and support optional `crop_hint`.
+  - Verify all unit and regression tests pass across `ml-service`.
+  - Commit: `feat(ml): integrate dual-head ONNX engine with hierarchical inference and resize preprocessing`.
+
+- [x] **Subtask 7: Formal Completion Report (DoD) & Final Validation**
+  - Generate `PROJECT_DETAILS/Reports/Phase 1/TODO-110-hybrid-multitask.md`.
+  - Commit: `docs(ml): add TODO-110 completion report and mark tasks complete`.
