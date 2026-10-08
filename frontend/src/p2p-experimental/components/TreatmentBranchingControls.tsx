@@ -56,7 +56,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
       case 'late':
         return 'bg-rose-500/20 text-rose-400 border-rose-500/40';
       default:
-        return 'bg-purple-500/20 text-purple-400 border-purple-500/40';
+        return 'bg-slate-800 text-slate-300 border-slate-700';
     }
   };
 
@@ -103,7 +103,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
             checked={treatmentActive}
             onChange={(e) => onToggleTreatment(e.target.checked)}
           />
-          <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-transform after:duration-150 after:ease-out peer-checked:bg-emerald-500"></div>
           <span className="ml-2.5 text-xs font-semibold text-slate-300 hidden sm:inline">
             {treatmentActive ? 'Treatment Active' : 'Untreated Only'}
           </span>
@@ -117,7 +117,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
             className={`px-3.5 py-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 ${
               isPostTreatment
                 ? 'bg-emerald-950/40 border-emerald-700/50 text-emerald-300'
-                : 'bg-blue-950/40 border-blue-700/50 text-blue-300'
+                : 'bg-sky-950/40 border-sky-700/50 text-sky-300'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -128,15 +128,15 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
                     <strong className="font-semibold text-emerald-200">
                       Curative Branch Engaged:
                     </strong>{' '}
-                    Lesions arrested at Day {interventionDay.toFixed(1)} ({interventionSeverity.toFixed(1)}%).
+                    Lesions arrested at Day <span className="font-mono tabular-nums">{interventionDay.toFixed(1)}</span> (<span className="font-mono tabular-nums">{interventionSeverity.toFixed(1)}%</span>).
                   </>
                 ) : (
                   <>
-                    <strong className="font-semibold text-blue-200">
+                    <strong className="font-semibold text-sky-200">
                       Pre-Treatment Phase:
                     </strong>{' '}
-                    Current scrubber (Day {currentScrubDay.toFixed(1)}) is before spray checkpoint (Day{' '}
-                    {interventionDay.toFixed(1)}).
+                    Current scrubber (Day <span className="font-mono tabular-nums">{currentScrubDay.toFixed(1)}</span>) is before spray checkpoint (Day{' '}
+                    <span className="font-mono tabular-nums">{interventionDay.toFixed(1)}</span>).
                   </>
                 )}
               </span>
@@ -144,10 +144,10 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
             <button
               type="button"
               onClick={onPinCurrentScrub}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition-colors flex items-center gap-1 shrink-0"
+              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer flex items-center gap-1 shrink-0"
               title="Set intervention timing to current scrubber position"
             >
-              <span>🎯</span> Pin to Day {currentScrubDay.toFixed(1)}
+              <span>🎯</span> Pin to Day <span className="font-mono tabular-nums">{currentScrubDay.toFixed(1)}</span>
             </button>
           </div>
 
@@ -155,7 +155,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
           <div>
             <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
               <span className="font-medium text-slate-300">Intervention Timing Presets:</span>
-              <span className="font-mono text-emerald-400">
+              <span className="font-mono tabular-nums text-emerald-400">
                 Trigger: {interventionSeverity.toFixed(1)}% (Day {interventionDay.toFixed(1)})
               </span>
             </div>
@@ -163,7 +163,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
               <button
                 type="button"
                 onClick={() => onSetInterventionSeverity(15.0)}
-                className={`px-2.5 py-2 rounded-xl text-xs font-medium border text-left transition-all ${
+                className={`px-2.5 py-2 rounded-xl text-xs font-medium border text-left transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
                   Math.abs(interventionSeverity - 15.0) < 1.0
                     ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-sm'
                     : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:border-slate-600 hover:text-slate-200'
@@ -178,7 +178,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
               <button
                 type="button"
                 onClick={() => onSetInterventionSeverity(35.0)}
-                className={`px-2.5 py-2 rounded-xl text-xs font-medium border text-left transition-all ${
+                className={`px-2.5 py-2 rounded-xl text-xs font-medium border text-left transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
                   Math.abs(interventionSeverity - 35.0) < 1.0
                     ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-sm'
                     : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:border-slate-600 hover:text-slate-200'
@@ -193,7 +193,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
               <button
                 type="button"
                 onClick={() => onSetInterventionSeverity(60.0)}
-                className={`px-2.5 py-2 rounded-xl text-xs font-medium border text-left transition-all ${
+                className={`px-2.5 py-2 rounded-xl text-xs font-medium border text-left transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
                   Math.abs(interventionSeverity - 60.0) < 1.0
                     ? 'bg-rose-500/20 border-rose-500/50 text-rose-300 shadow-sm'
                     : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:border-slate-600 hover:text-slate-200'
@@ -216,7 +216,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
               <button
                 type="button"
                 onClick={() => onSelectCategory('systemic_curative')}
-                className={`py-2 px-2.5 rounded-xl text-xs font-medium border transition-all text-center ${
+                className={`py-2 px-2.5 rounded-xl text-xs font-medium border transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] text-center ${
                   selectedCategory === 'systemic_curative'
                     ? 'bg-emerald-600 text-white border-emerald-500 shadow-md font-semibold'
                     : 'bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-200'
@@ -229,9 +229,9 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
               <button
                 type="button"
                 onClick={() => onSelectCategory('protectant_contact')}
-                className={`py-2 px-2.5 rounded-xl text-xs font-medium border transition-all text-center ${
+                className={`py-2 px-2.5 rounded-xl text-xs font-medium border transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] text-center ${
                   selectedCategory === 'protectant_contact'
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-md font-semibold'
+                    ? 'bg-sky-600 text-white border-sky-500 shadow-md font-semibold'
                     : 'bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -242,9 +242,9 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
               <button
                 type="button"
                 onClick={() => onSelectCategory('bio_fungicide')}
-                className={`py-2 px-2.5 rounded-xl text-xs font-medium border transition-all text-center ${
+                className={`py-2 px-2.5 rounded-xl text-xs font-medium border transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] text-center ${
                   selectedCategory === 'bio_fungicide'
-                    ? 'bg-purple-600 text-white border-purple-500 shadow-md font-semibold'
+                    ? 'bg-violet-600 text-white border-violet-500 shadow-md font-semibold'
                     : 'bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -262,7 +262,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
                   key={prod.id}
                   type="button"
                   onClick={() => onSelectProduct(prod.id)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
                     (selectedProductId === prod.id || (!selectedProductId && prod.id === activeProduct?.id))
                       ? 'bg-slate-700 text-white border-slate-500 font-semibold shadow-xs'
                       : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
@@ -339,7 +339,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
                   efficacyResult.windowTier
                 )}`}
               >
-                {efficacyResult.efficacyPct}% Curative Knockdown
+                <span className="font-mono tabular-nums">{efficacyResult.efficacyPct}%</span> Curative Knockdown
               </span>
             </div>
             <p className="text-[11px] text-slate-400 italic bg-slate-950/40 rounded-lg p-2.5 border border-slate-800/60 leading-relaxed">

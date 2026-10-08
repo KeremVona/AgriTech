@@ -120,7 +120,7 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" title="Stalled" />
           ) : (
             <span
-              className="text-[9px] font-mono opacity-80 hidden sm:inline"
+              className="text-[9px] font-mono tabular-nums opacity-80 hidden sm:inline"
               title="Speed multiplier"
             >
               {microclimate.compositeFactor.toFixed(1)}×
@@ -181,7 +181,7 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
           <span className="text-sm shrink-0">📤</span>
           <span className="truncate">Export</span>
           {isRecording && (
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
           )}
         </button>
       </div>

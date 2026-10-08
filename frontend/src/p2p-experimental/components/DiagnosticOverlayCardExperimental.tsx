@@ -52,14 +52,14 @@ export const DiagnosticOverlayCardExperimental: React.FC<DiagnosticOverlayCardEx
     if (pct <= 70) {
       return { label: 'MODERATE RISK', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' };
     }
-    return { label: 'CRITICAL OUTBREAK', color: 'bg-red-500/20 text-red-400 border-red-500/30 animate-pulse' };
+    return { label: 'CRITICAL OUTBREAK', color: 'bg-rose-500/20 text-rose-400 border-rose-500/30' };
   };
 
   const risk = getRiskBadge(sliderPercentage);
 
   return (
     <div
-      className={`bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4 backdrop-blur-md ${className}`}
+      className={`bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 backdrop-blur-md ${className}`}
       aria-live="polite"
     >
       {/* Top Meta Bar */}
@@ -79,7 +79,7 @@ export const DiagnosticOverlayCardExperimental: React.FC<DiagnosticOverlayCardEx
           >
             {risk.label}
           </span>
-          <span className="text-xs font-mono font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+          <span className="text-xs font-mono tabular-nums font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
             {sliderPercentage.toFixed(1)}%
           </span>
         </div>

@@ -37,7 +37,7 @@ export const ExportToolbar: React.FC<ExportToolbarProps> = ({
           type="button"
           onClick={onStartRecording}
           disabled={isRecording}
-          className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-2 transition-all shadow-sm ${
+          className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-2 transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer shadow-sm ${
             isRecording
               ? 'bg-rose-950/60 border-rose-600/60 text-rose-300 cursor-wait'
               : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500 hover:shadow-emerald-950/40'
@@ -47,7 +47,7 @@ export const ExportToolbar: React.FC<ExportToolbarProps> = ({
           {isRecording ? (
             <>
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-              <span>Recording {recordingProgress}%</span>
+              <span>Recording <span className="font-mono tabular-nums">{recordingProgress}%</span></span>
             </>
           ) : (
             <>
@@ -70,7 +70,7 @@ export const ExportToolbar: React.FC<ExportToolbarProps> = ({
           type="button"
           onClick={onOpenReportModal}
           disabled={isRecording}
-          className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 transition-all flex items-center gap-1.5 shadow-sm"
+          className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer flex items-center gap-1.5 shadow-sm"
           title="Generate printable agronomic field advisory PDF report"
         >
           <span>📄</span>
@@ -82,7 +82,7 @@ export const ExportToolbar: React.FC<ExportToolbarProps> = ({
           type="button"
           onClick={onSnapImage}
           disabled={isRecording}
-          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 hover:border-slate-600 transition-all flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 hover:border-slate-600 transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer flex items-center gap-1.5"
           title="Save instantaneous high-resolution PNG snapshot"
         >
           <span>📸</span>

@@ -25,7 +25,7 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
 
   const getStatusBadgeStyle = () => {
     if (diagnostics.isStalled) {
-      return 'bg-red-500/20 text-red-400 border-red-500/30';
+      return 'bg-rose-500/20 text-rose-400 border-rose-500/30';
     }
     if (diagnostics.compositeFactor >= 0.8) {
       return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
@@ -33,7 +33,7 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
     if (diagnostics.compositeFactor >= 0.4) {
       return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
     }
-    return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+    return 'bg-sky-500/20 text-sky-400 border-sky-500/30';
   };
 
   const handleApplyPreset = (preset: WeatherPreset) => {
@@ -43,7 +43,7 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
 
   return (
     <div
-      className={`bg-slate-900/95 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5 transition-all ${className}`}
+      className={`bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4 sm:space-y-5 transition-all ${className}`}
     >
       {/* Header & Status Indicator */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
@@ -53,9 +53,9 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
           </div>
           <div>
             <h3 className="text-sm font-bold text-white tracking-wide flex items-center gap-2">
-              Microclimate Environmental Modifiers
+              Microclimate Modifiers
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700/60">
-                Magarey Beta Engine
+                Magarey Beta
               </span>
             </h3>
             <p className="text-[11px] text-slate-400 mt-0.5">
@@ -71,11 +71,11 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
           >
             <span
               className={`w-2 h-2 rounded-full ${
-                diagnostics.isStalled ? 'bg-red-500' : 'bg-current animate-pulse'
+                diagnostics.isStalled ? 'bg-rose-500' : 'bg-current animate-pulse'
               }`}
             />
             <span>{diagnostics.statusLabel}</span>
-            <span className="font-mono opacity-80">
+            <span className="font-mono tabular-nums opacity-80">
               ({diagnostics.compositeFactor.toFixed(2)}× speed)
             </span>
           </div>
@@ -87,7 +87,7 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
         <div
           className={`px-3.5 py-2 rounded-xl text-xs flex items-start gap-2.5 border transition-all ${
             diagnostics.isStalled
-              ? 'bg-red-950/40 border-red-800/60 text-red-300'
+              ? 'bg-rose-950/40 border-rose-800/60 text-rose-300'
               : 'bg-amber-950/40 border-amber-800/60 text-amber-300'
           }`}
         >
@@ -117,7 +117,7 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
                 key={preset.id}
                 type="button"
                 onClick={() => handleApplyPreset(preset)}
-                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`p-2.5 rounded-xl border text-left transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
                   isSelected
                     ? 'bg-emerald-600/20 border-emerald-500 text-white shadow-md'
                     : 'bg-slate-950/60 border-slate-800/90 text-slate-300 hover:border-slate-700 hover:bg-slate-800/50'
@@ -127,7 +127,7 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
                   <span>{preset.icon}</span>
                   <span className="truncate">{preset.label}</span>
                 </div>
-                <div className="text-[10px] font-mono text-emerald-400/90 mt-1">
+                <div className="text-[10px] font-mono tabular-nums text-emerald-400/90 mt-1">
                   {preset.temperature}°C • {preset.humidity}% RH
                 </div>
               </button>
@@ -137,7 +137,7 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
       </div>
 
       {/* Sliders Grid: Temperature & Relative Humidity */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
         {/* Temperature Slider */}
         <div className="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2">
           <div className="flex items-center justify-between">
@@ -145,7 +145,7 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
               <span className="text-xs">🌡️</span>
               <span className="text-xs font-semibold text-slate-200">Ambient Temperature</span>
             </div>
-            <div className="flex items-center gap-1.5 font-mono">
+            <div className="flex items-center gap-1.5 font-mono tabular-nums">
               <span className="text-xs font-bold text-emerald-400">{temperature.toFixed(1)}°C</span>
               <span className="text-[10px] text-slate-500">
                 (Opt: {profile.cardinals.opt}°C)
@@ -178,7 +178,7 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
               <span className="text-xs">💧</span>
               <span className="text-xs font-semibold text-slate-200">Relative Humidity (RH)</span>
             </div>
-            <div className="flex items-center gap-1.5 font-mono">
+            <div className="flex items-center gap-1.5 font-mono tabular-nums">
               <span className="text-xs font-bold text-emerald-400">{humidity.toFixed(0)}%</span>
               <span className="text-[10px] text-slate-500">
                 (Crit: {profile.humidity.crit}%)

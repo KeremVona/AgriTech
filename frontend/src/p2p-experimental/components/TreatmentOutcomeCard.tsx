@@ -61,7 +61,7 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
             treatmentActive
               ? isPostTreatment
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                : 'bg-blue-500/20 text-blue-400 border-blue-500/40'
+                : 'bg-sky-500/20 text-sky-400 border-sky-500/40'
               : 'bg-slate-800 text-slate-400 border-slate-700'
           }`}
         >
@@ -81,7 +81,7 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
             <span className="text-[11px] text-slate-400 font-medium block">
               Green Leaf Area (GLA)
             </span>
-            <div className="text-xl font-bold font-mono text-emerald-400 mt-0.5">
+            <div className="text-xl font-bold font-mono tabular-nums text-emerald-400 mt-0.5">
               {treatmentActive ? `${yieldAnalytics.greenLeafAreaPct.toFixed(1)}%` : '0.0%'}
             </div>
           </div>
@@ -106,14 +106,14 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
             <span className="text-[11px] text-slate-400 font-medium block">
               Yield Salvaged vs. Untreated
             </span>
-            <div className="text-xl font-bold font-mono text-amber-400 mt-0.5">
+            <div className="text-xl font-bold font-mono tabular-nums text-amber-400 mt-0.5">
               {treatmentActive ? `+${yieldAnalytics.salvagedYieldPct.toFixed(1)}%` : '+0.0%'}
             </div>
           </div>
           <div className="mt-2">
             <span className="text-[10px] text-slate-400 font-medium block">
               Harvest Retention:{' '}
-              <strong className="text-slate-200">
+              <strong className="text-slate-200 font-mono tabular-nums">
                 {yieldAnalytics.retainedYieldPct.toFixed(1)}%
               </strong>
             </span>
@@ -131,7 +131,7 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
             <span className="text-[11px] text-slate-400 font-medium block">
               Net Economic Benefit
             </span>
-            <div className="text-xl font-bold font-mono text-blue-400 mt-0.5">
+            <div className="text-xl font-bold font-mono tabular-nums text-sky-400 mt-0.5">
               {treatmentActive
                 ? `+$${yieldAnalytics.netEconomicBenefitUSDPerHectare.toLocaleString()}`
                 : '$0/ha'}
@@ -140,7 +140,7 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
           <div className="mt-2">
             <span className="text-[10px] text-slate-400 font-medium block">
               Return on Spray (ROI):{' '}
-              <strong className="text-emerald-400">
+              <strong className="text-emerald-400 font-mono tabular-nums">
                 {treatmentActive ? `${yieldAnalytics.returnOnInvestmentRatio.toFixed(1)}×` : '0×'}
               </strong>
             </span>
@@ -179,7 +179,7 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
             </div>
 
             <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/60">
-              <span className="text-blue-400 font-bold block mb-0.5">
+              <span className="text-sky-400 font-bold block mb-0.5">
                 • Sporulation Suppression:
               </span>
               <p className="text-slate-300 leading-relaxed">
@@ -188,7 +188,7 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
             </div>
 
             <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/60">
-              <span className="text-purple-400 font-bold block mb-0.5">
+              <span className="text-violet-400 font-bold block mb-0.5">
                 • Lesion Margin Suberization:
               </span>
               <p className="text-slate-300 leading-relaxed">
@@ -200,16 +200,16 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
           {/* Comparative Summary Footer */}
           <div className="pt-2 border-t border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-400">
             <div>
-              Sprayed at <strong className="text-amber-300 font-mono">{interventionSeverity.toFixed(1)}%</strong> • Active state:{' '}
-              <strong className="text-emerald-300 font-mono">{currentTreatedSeverity.toFixed(1)}%</strong> • Plateau capped at{' '}
-              <strong className="text-emerald-300 font-mono">
+              Sprayed at <strong className="text-amber-300 font-mono tabular-nums">{interventionSeverity.toFixed(1)}%</strong> • Active state:{' '}
+              <strong className="text-emerald-300 font-mono tabular-nums">{currentTreatedSeverity.toFixed(1)}%</strong> • Plateau capped at{' '}
+              <strong className="text-emerald-300 font-mono tabular-nums">
                 {plateauSeverity.toFixed(1)}%
               </strong>{' '}
               (vs <span className="text-rose-400 line-through">100% defoliation</span>)
             </div>
             <div className="font-mono text-[10px] text-slate-500">
               <span className="capitalize text-slate-400 mr-2">{selectedCategory.replace('_', ' ')}</span>
-              Curative efficacy: {efficacyResult.efficacyPct}% • Cost: ${profile.sprayCostPerHectareUSD}/ha
+              Curative efficacy: <span className="tabular-nums">{efficacyResult.efficacyPct}%</span> • Cost: $<span className="tabular-nums">{profile.sprayCostPerHectareUSD}</span>/ha
             </div>
           </div>
         </div>

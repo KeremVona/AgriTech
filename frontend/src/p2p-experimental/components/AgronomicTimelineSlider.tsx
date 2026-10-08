@@ -34,7 +34,7 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
 
   return (
     <div
-      className={`bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 ${className}`}
+      className={`bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4 ${className}`}
     >
       {/* Top Header: Active Stage & Calendar Countdown */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
@@ -60,7 +60,7 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
               <div className="text-[10px] font-mono uppercase text-slate-400 leading-tight">
                 Projected Field Time
               </div>
-              <div className="text-xs font-mono font-bold text-emerald-400 leading-tight">
+              <div className="text-xs font-mono tabular-nums font-bold text-emerald-400 leading-tight">
                 Day {dynamicOutput.elapsedDays.toFixed(1)}{' '}
                 <span className="text-slate-500 font-normal">
                   / ~{dynamicOutput.dayTimelineMax} d
@@ -73,10 +73,10 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
 
       {/* Main Dual-Scale Slider Bar */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs font-mono">
+        <div className="flex items-center justify-between text-xs font-mono tabular-nums">
           <span className="text-slate-400 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            Infection Severity: <strong className="text-white">{sliderPercentage.toFixed(1)}%</strong>
+            Infection Severity: <strong className="text-white tabular-nums">{sliderPercentage.toFixed(1)}%</strong>
           </span>
 
           <span className="text-slate-400 flex items-center gap-1.5">
@@ -110,7 +110,7 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
                   key={milestone.stageOrder}
                   type="button"
                   onClick={() => handleMilestoneClick(midPct)}
-                  className={`flex flex-col items-center group transition-all cursor-pointer ${
+                  className={`flex flex-col items-center group transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
                     isActive ? 'scale-105' : 'opacity-65 hover:opacity-95'
                   }`}
                 >
@@ -155,9 +155,9 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
           </div>
 
           {dynamicOutput.stageIndex < 2 && (
-            <div className="text-[11px] font-mono text-amber-400/90">
+            <div className="text-[11px] font-mono tabular-nums text-amber-400/90">
               ⏱️ Time to Next Stage:{' '}
-              <span className="font-bold text-amber-300">
+              <span className="font-bold text-amber-300 tabular-nums">
                 {dynamicOutput.stageDaysRemaining.toFixed(1)} days
               </span>
             </div>
