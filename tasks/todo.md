@@ -25,7 +25,7 @@
   - Write test suite `ml-service/tests/test_model_multitask.py`.
   - Commit: `feat(ml): build MobileNetV3-Large dual-head multi-task architecture and loss`.
 
-- [ ] **Subtask 4: Google Colab GPU End-to-End Training Notebook (`notebooks/TODO_110_MultiTask_Training.ipynb`)**
+- [x] **Subtask 4: Google Colab GPU End-to-End Training Notebook (`notebooks/TODO_110_MultiTask_Training.ipynb`)**
   - Build standalone Google Colab notebook for GPU (NVIDIA T4) training.
   - Include dataset downloads, DataLoader, augmentations, training loop, evaluation metrics, and dual-head ONNX export.
   - Commit: `feat(ml): create self-contained Google Colab GPU training and evaluation notebook`.
