@@ -10,6 +10,7 @@
     "test:assets": "node scripts/verify_assets.js",
     "test:agronomy": "node --experimental-strip-types scripts/test_agronomic_model.js",
     "test:hotspots": "node --experimental-strip-types scripts/test_hotspot_registry.js",
+    "test:treatment": "node --experimental-strip-types scripts/test_treatment_branching.js",
     "preview": "vite preview"
   },
   "dependencies": {
