@@ -22,9 +22,9 @@ import asyncio
 import logging
 import uuid
 from contextlib import asynccontextmanager
-from typing import Union
+from typing import Optional, Union
 
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -182,7 +182,9 @@ async def health_check():
     summary="Classify leaf disease from an uploaded image",
 )
 async def classify_leaf(
-    request: Request, file: UploadFile = File(...)
+    request: Request,
+    file: UploadFile = File(...),
+    crop_hint: Optional[str] = Form(None),
 ) -> Union[ClassifyLeafResponse, ClassifyLeafLowConfidenceResponse]:
     """
     Ingests a multipart leaf image, preprocesses it with Pillow, runs ONNX
@@ -246,12 +248,14 @@ async def classify_leaf(
             },
         )
 
-    # ------------------------------------------------------------------
-    # Layer 4 + 5: Preprocessing & Inference (offloaded to threadpool)
-    # ------------------------------------------------------------------
     loop = asyncio.get_running_loop()
     try:
-        result = await loop.run_in_executor(None, inference_engine.run, image_bytes)
+        if crop_hint:
+            result = await loop.run_in_executor(
+                None, lambda: inference_engine.run(image_bytes, crop_hint=crop_hint)
+            )
+        else:
+            result = await loop.run_in_executor(None, inference_engine.run, image_bytes)
     except ValueError as exc:
         return JSONResponse(
             status_code=400,

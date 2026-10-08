@@ -227,3 +227,65 @@ def test_inference_engine_quantized_int8_model():
     assert result["top_label"] in CLASS_LABELS
     assert 0.0 <= result["confidence"] <= 1.0
 
+
+def test_combine_multitask_probabilities_valid_distribution():
+    """Verify Bayesian combination produces a normalized distribution summing to 1.0."""
+    from inference import _combine_multitask_probabilities
+
+    crop_probs = np.array([0.05, 0.05, 0.10, 0.80], dtype=np.float32)  # High Tomato
+    disease_probs = np.array([0.02, 0.10, 0.85, 0.01, 0.01, 0.01, 0.0, 0.0], dtype=np.float32)  # High Late blight
+
+    combined = _combine_multitask_probabilities(crop_probs, disease_probs)
+    assert len(combined) == 12
+    assert np.isclose(np.sum(combined), 1.0, atol=1e-5)
+    late_blight_idx = CLASS_LABELS.index("Tomato___Late_blight")
+    assert np.argmax(combined) == late_blight_idx
+    assert combined[late_blight_idx] > 0.5
+
+
+def test_combine_multitask_probabilities_crop_hint_filtering():
+    """Verify crop_hint zeros out probability for all other crops."""
+    from inference import _combine_multitask_probabilities
+
+    # Even if model thought potato was high, user specifies crop_hint='tomato'
+    crop_probs = np.array([0.1, 0.1, 0.7, 0.1], dtype=np.float32)  # High Potato
+    disease_probs = np.array([0.02, 0.05, 0.90, 0.01, 0.01, 0.01, 0.0, 0.0], dtype=np.float32)
+
+    combined = _combine_multitask_probabilities(crop_probs, disease_probs, crop_hint="tomato")
+    assert np.isclose(np.sum(combined), 1.0, atol=1e-5)
+
+    # Check all non-tomato classes are zero
+    for idx, label in enumerate(CLASS_LABELS):
+        if not label.startswith("Tomato"):
+            assert combined[idx] == 0.0
+        else:
+            assert combined[idx] > 0.0
+
+    assert CLASS_LABELS[int(np.argmax(combined))] == "Tomato___Late_blight"
+
+
+def test_dual_head_onnx_inference_engine_execution(monkeypatch):
+    """Verify InferenceEngine properly handles dual-head ONNX output format."""
+    engine = InferenceEngine()
+    engine._model_loaded = True
+    engine._model_version = "mock_multitask"
+    engine._input_name = "input"
+
+    class MockSession:
+        def run(self, output_names, input_feed):
+            # Return 2 outputs: crop_logits [1, 4], disease_logits [1, 8]
+            # Crop 2 = Potato (logits: [0, 0, 5.0, 0])
+            # Disease 1 = Early blight (logits: [0, 6.0, 0, 0, 0, 0, 0, 0])
+            crop_logits = np.array([[0.0, 0.0, 5.0, 0.0]], dtype=np.float32)
+            disease_logits = np.array([[0.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], dtype=np.float32)
+            return [crop_logits, disease_logits]
+
+    engine._session = MockSession()
+    img_bytes = _make_jpeg_bytes(224, 224)
+
+    result = engine.run(img_bytes)
+    assert result["model_loaded"] is True
+    assert result["top_label"] == "Potato___Early_blight"
+    assert result["confidence"] > 0.80
+
+

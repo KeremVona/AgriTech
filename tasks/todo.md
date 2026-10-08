@@ -35,7 +35,7 @@
   - Run 100 sequential single-thread CPU benchmarks (verify $\le 25\text{ MB}$, $\le 85\text{ ms}$).
   - Commit: `feat(ml): implement dual-head ONNX export, INT8 quantization and latency benchmarking`.
 
-- [ ] **Subtask 6: FastAPI Service Multi-Task Adapter & Preprocessing Upgrade (`inference.py`)**
+- [x] **Subtask 6: FastAPI Service Multi-Task Adapter & Preprocessing Upgrade (`inference.py`)**
   - Upgrade `preprocess_image` to aspect-ratio preserving resize/padding.
   - Adapt `InferenceEngine` for dual-head ONNX and support optional `crop_hint`.
   - Verify all unit and regression tests pass across `ml-service`.
