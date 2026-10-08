@@ -28,21 +28,48 @@ logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # 12 target class labels (must stay in sync with TODO-102 training label order)
+# PyTorch ImageFolder sorts classes alphabetically: Apple -> Corn -> Potato -> Tomato
 # ---------------------------------------------------------------------------
-CLASS_LABELS: list[str] = [
-    "Tomato___healthy",
-    "Tomato___Early_blight",
-    "Tomato___Late_blight",
-    "Tomato___Bacterial_spot",
-    "Potato___healthy",
-    "Potato___Early_blight",
-    "Potato___Late_blight",
-    "Corn_(maize)___healthy",
+DEFAULT_CLASS_LABELS: list[str] = [
+    "Apple___Cedar_apple_rust",
+    "Apple___healthy",
     "Corn_(maize)___Common_rust_",
     "Corn_(maize)___Northern_Leaf_Blight",
-    "Apple___healthy",
-    "Apple___Cedar_apple_rust",
+    "Corn_(maize)___healthy",
+    "Potato___Early_blight",
+    "Potato___Late_blight",
+    "Potato___healthy",
+    "Tomato___Bacterial_spot",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight",
+    "Tomato___healthy",
 ]
+
+
+def _load_class_labels() -> list[str]:
+    """
+    Loads class labels from models/hyperparameters.json if available,
+    guaranteeing runtime parity with the trained model checkpoint.
+    Falls back to DEFAULT_CLASS_LABELS.
+    """
+    candidate_paths = [
+        Path(settings.onnx_model_path).parent / "hyperparameters.json",
+        Path(__file__).parent / "models" / "hyperparameters.json",
+    ]
+    for p in candidate_paths:
+        if p.exists():
+            try:
+                import json
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if "classes" in data and len(data["classes"]) == 12:
+                    return list(data["classes"])
+            except Exception as e:
+                logger.warning("Failed to parse %s for class labels: %s", p, e)
+    return DEFAULT_CLASS_LABELS
+
+
+CLASS_LABELS: list[str] = _load_class_labels()
 
 # Human-readable metadata keyed by class label
 _CLASS_META: dict[str, dict] = {
@@ -234,13 +261,17 @@ def _softmax(logits: np.ndarray) -> np.ndarray:
 def _stub_probabilities() -> np.ndarray:
     """
     Returns a deterministic dummy probability array for stub mode.
-    Peaks at index 2 (Tomato___Late_blight) at ~94% to mimic a realistic
+    Peaks at Tomato___Late_blight at ~89% to mimic a realistic
     high-confidence positive classification for integration testing.
     """
     probs = np.full(len(CLASS_LABELS), 0.005, dtype=np.float32)
-    probs[2] = 0.8931  # Tomato___Late_blight
-    probs[1] = 0.0612  # Tomato___Early_blight
-    probs[0] = 0.0201  # Tomato___healthy
+    late_blight_idx = CLASS_LABELS.index("Tomato___Late_blight") if "Tomato___Late_blight" in CLASS_LABELS else 10
+    early_blight_idx = CLASS_LABELS.index("Tomato___Early_blight") if "Tomato___Early_blight" in CLASS_LABELS else 9
+    healthy_idx = CLASS_LABELS.index("Tomato___healthy") if "Tomato___healthy" in CLASS_LABELS else 11
+
+    probs[late_blight_idx] = 0.8931  # Tomato___Late_blight
+    probs[early_blight_idx] = 0.0612  # Tomato___Early_blight
+    probs[healthy_idx] = 0.0201  # Tomato___healthy
     # Normalize so they sum to 1
     probs = probs / probs.sum()
     return probs

@@ -117,6 +117,26 @@ def test_class_labels_coverage():
     assert "Apple" in labels_str
 
 
+def test_class_labels_alphabetical_order():
+    """Class labels must strictly maintain ImageFolder alphabetical order starting with Apple."""
+    assert CLASS_LABELS[0] == "Apple___Cedar_apple_rust"
+    assert CLASS_LABELS[1] == "Apple___healthy"
+    assert CLASS_LABELS[-1] == "Tomato___healthy"
+    assert CLASS_LABELS == sorted(CLASS_LABELS)
+
+
+def test_class_labels_matches_hyperparameters():
+    """When hyperparameters.json is present, CLASS_LABELS must match its classes exactly."""
+    import json
+    from pathlib import Path
+    hp_path = Path(__file__).parent.parent / "models" / "hyperparameters.json"
+    if hp_path.exists():
+        with open(hp_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if "classes" in data:
+            assert CLASS_LABELS == data["classes"]
+
+
 # ---------------------------------------------------------------------------
 # get_class_meta
 # ---------------------------------------------------------------------------
