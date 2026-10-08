@@ -1,0 +1,739 @@
+{
+  "timestamp": "2026-10-08T13:13:05Z",
+  "model_version": "agritech_classifier",
+  "total_images_evaluated": 12,
+  "total_correct": 1,
+  "overall_accuracy_pct": 8.33,
+  "folder_summaries": {
+    "patato early blight": {
+      "expected_class": "Potato___Early_blight",
+      "total_images": 3,
+      "correct_images": 0,
+      "accuracy_pct": 0.0,
+      "items": [
+        {
+          "folder": "patato early blight",
+          "file_name": "3023 (1).jpg",
+          "file_size_kb": 128.12,
+          "resolution": "1024x768",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Early_blight",
+          "predicted_class": "Corn_(maize)___Northern_Leaf_Blight",
+          "confidence": 0.4779421389102936,
+          "confidence_pct": 47.79,
+          "is_correct": false,
+          "expected_prob_pct": 1.28,
+          "expected_rank": 5,
+          "top_probabilities": [
+            {
+              "label": "Corn_(maize)___Northern_Leaf_Blight",
+              "prob_pct": 47.79
+            },
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 29.21
+            },
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 16.21
+            }
+          ],
+          "latency_ms": 117.89
+        },
+        {
+          "folder": "patato early blight",
+          "file_name": "potato-blight-phytophthora-infestans-close-up-of-upper-surface-of-BMMRXC.jpg",
+          "file_size_kb": 105.53,
+          "resolution": "1300x956",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Early_blight",
+          "predicted_class": "Tomato___Late_blight",
+          "confidence": 0.35368290543556213,
+          "confidence_pct": 35.37,
+          "is_correct": false,
+          "expected_prob_pct": 1.9,
+          "expected_rank": 7,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 35.37
+            },
+            {
+              "label": "Corn_(maize)___Common_rust_",
+              "prob_pct": 34.79
+            },
+            {
+              "label": "Apple___Cedar_apple_rust",
+              "prob_pct": 11.81
+            }
+          ],
+          "latency_ms": 54.18
+        },
+        {
+          "folder": "patato early blight",
+          "file_name": "potatobd001.jpg",
+          "file_size_kb": 11.86,
+          "resolution": "230x150",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Early_blight",
+          "predicted_class": "Tomato___Late_blight",
+          "confidence": 0.8000891804695129,
+          "confidence_pct": 80.01,
+          "is_correct": false,
+          "expected_prob_pct": 0.19,
+          "expected_rank": 8,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 80.01
+            },
+            {
+              "label": "Corn_(maize)___Northern_Leaf_Blight",
+              "prob_pct": 14.08
+            },
+            {
+              "label": "Tomato___Bacterial_spot",
+              "prob_pct": 2.03
+            }
+          ],
+          "latency_ms": 16.83
+        }
+      ]
+    },
+    "patato late blight": {
+      "expected_class": "Potato___Late_blight",
+      "total_images": 3,
+      "correct_images": 0,
+      "accuracy_pct": 0.0,
+      "items": [
+        {
+          "folder": "patato late blight",
+          "file_name": "20090710-lateblight.jpg",
+          "file_size_kb": 68.28,
+          "resolution": "500x364",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Late_blight",
+          "predicted_class": "Tomato___Late_blight",
+          "confidence": 0.5291029810905457,
+          "confidence_pct": 52.91,
+          "is_correct": false,
+          "expected_prob_pct": 0.1,
+          "expected_rank": 6,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 52.91
+            },
+            {
+              "label": "Corn_(maize)___healthy",
+              "prob_pct": 46.49
+            },
+            {
+              "label": "Corn_(maize)___Northern_Leaf_Blight",
+              "prob_pct": 0.19
+            }
+          ],
+          "latency_ms": 17.64
+        },
+        {
+          "folder": "patato late blight",
+          "file_name": "B2750109-Late_blight_on_a_potato_plant-SPL.jpg",
+          "file_size_kb": 103.77,
+          "resolution": "539x800",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Late_blight",
+          "predicted_class": "Potato___Early_blight",
+          "confidence": 0.9191230535507202,
+          "confidence_pct": 91.91,
+          "is_correct": false,
+          "expected_prob_pct": 0.08,
+          "expected_rank": 5,
+          "top_probabilities": [
+            {
+              "label": "Potato___Early_blight",
+              "prob_pct": 91.91
+            },
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 5.45
+            },
+            {
+              "label": "Corn_(maize)___healthy",
+              "prob_pct": 2.34
+            }
+          ],
+          "latency_ms": 26.1
+        },
+        {
+          "folder": "patato late blight",
+          "file_name": "potato-late-blight.jpg",
+          "file_size_kb": 24.27,
+          "resolution": "490x390",
+          "color_mode": "RGB",
+          "expected_class": "Potato___Late_blight",
+          "predicted_class": "Tomato___Late_blight",
+          "confidence": 0.9996040463447571,
+          "confidence_pct": 99.96,
+          "is_correct": false,
+          "expected_prob_pct": 0.0,
+          "expected_rank": 4,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 99.96
+            },
+            {
+              "label": "Corn_(maize)___healthy",
+              "prob_pct": 0.02
+            },
+            {
+              "label": "Corn_(maize)___Common_rust_",
+              "prob_pct": 0.01
+            }
+          ],
+          "latency_ms": 20.55
+        }
+      ]
+    },
+    "tomato bacterial spot": {
+      "expected_class": "Tomato___Bacterial_spot",
+      "total_images": 3,
+      "correct_images": 0,
+      "accuracy_pct": 0.0,
+      "items": [
+        {
+          "folder": "tomato bacterial spot",
+          "file_name": "Bacterial_spots563.jpg",
+          "file_size_kb": 57.71,
+          "resolution": "800x600",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Bacterial_spot",
+          "predicted_class": "Tomato___Late_blight",
+          "confidence": 0.994027853012085,
+          "confidence_pct": 99.4,
+          "is_correct": false,
+          "expected_prob_pct": 0.0,
+          "expected_rank": 11,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 99.4
+            },
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 0.28
+            },
+            {
+              "label": "Potato___Early_blight",
+              "prob_pct": 0.26
+            }
+          ],
+          "latency_ms": 25.88
+        },
+        {
+          "folder": "tomato bacterial spot",
+          "file_name": "Tomato%2BBacterial%2BSpot%2Bon%2BLeaves.jpg",
+          "file_size_kb": 44.42,
+          "resolution": "500x263",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Bacterial_spot",
+          "predicted_class": "Tomato___Early_blight",
+          "confidence": 0.9874593019485474,
+          "confidence_pct": 98.75,
+          "is_correct": false,
+          "expected_prob_pct": 0.0,
+          "expected_rank": 10,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 98.75
+            },
+            {
+              "label": "Potato___Early_blight",
+              "prob_pct": 0.53
+            },
+            {
+              "label": "Corn_(maize)___Common_rust_",
+              "prob_pct": 0.28
+            }
+          ],
+          "latency_ms": 19.18
+        },
+        {
+          "folder": "tomato bacterial spot",
+          "file_name": "tomato_bacterial-speck_01_zoom.jpg",
+          "file_size_kb": 124.23,
+          "resolution": "900x675",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Bacterial_spot",
+          "predicted_class": "Tomato___Early_blight",
+          "confidence": 0.3527432978153229,
+          "confidence_pct": 35.27,
+          "is_correct": false,
+          "expected_prob_pct": 0.11,
+          "expected_rank": 8,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 35.27
+            },
+            {
+              "label": "Potato___Early_blight",
+              "prob_pct": 26.79
+            },
+            {
+              "label": "Corn_(maize)___Northern_Leaf_Blight",
+              "prob_pct": 24.26
+            }
+          ],
+          "latency_ms": 53.23
+        }
+      ]
+    },
+    "tomato late blight": {
+      "expected_class": "Tomato___Late_blight",
+      "total_images": 3,
+      "correct_images": 1,
+      "accuracy_pct": 33.33,
+      "items": [
+        {
+          "folder": "tomato late blight",
+          "file_name": "110822-206-Tomato-blight.jpg",
+          "file_size_kb": 165.31,
+          "resolution": "750x499",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Late_blight",
+          "predicted_class": "Tomato___Late_blight",
+          "confidence": 0.9994975328445435,
+          "confidence_pct": 99.95,
+          "is_correct": true,
+          "expected_prob_pct": 99.95,
+          "expected_rank": 1,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 99.95
+            },
+            {
+              "label": "Corn_(maize)___Northern_Leaf_Blight",
+              "prob_pct": 0.02
+            },
+            {
+              "label": "Potato___Late_blight",
+              "prob_pct": 0.01
+            }
+          ],
+          "latency_ms": 26.63
+        },
+        {
+          "folder": "tomato late blight",
+          "file_name": "18c.jpg",
+          "file_size_kb": 22.03,
+          "resolution": "350x255",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Late_blight",
+          "predicted_class": "Potato___Late_blight",
+          "confidence": 0.4893612563610077,
+          "confidence_pct": 48.94,
+          "is_correct": false,
+          "expected_prob_pct": 14.45,
+          "expected_rank": 3,
+          "top_probabilities": [
+            {
+              "label": "Potato___Late_blight",
+              "prob_pct": 48.94
+            },
+            {
+              "label": "Corn_(maize)___Northern_Leaf_Blight",
+              "prob_pct": 25.84
+            },
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 14.45
+            }
+          ],
+          "latency_ms": 14.59
+        },
+        {
+          "folder": "tomato late blight",
+          "file_name": "LateBlt09_06.jpg",
+          "file_size_kb": 15.43,
+          "resolution": "400x268",
+          "color_mode": "RGB",
+          "expected_class": "Tomato___Late_blight",
+          "predicted_class": "Tomato___Early_blight",
+          "confidence": 0.9987691044807434,
+          "confidence_pct": 99.88,
+          "is_correct": false,
+          "expected_prob_pct": 0.11,
+          "expected_rank": 2,
+          "top_probabilities": [
+            {
+              "label": "Tomato___Early_blight",
+              "prob_pct": 99.88
+            },
+            {
+              "label": "Tomato___Late_blight",
+              "prob_pct": 0.11
+            },
+            {
+              "label": "Corn_(maize)___Common_rust_",
+              "prob_pct": 0.0
+            }
+          ],
+          "latency_ms": 15.47
+        }
+      ]
+    }
+  },
+  "detailed_results": [
+    {
+      "folder": "patato early blight",
+      "file_name": "3023 (1).jpg",
+      "file_size_kb": 128.12,
+      "resolution": "1024x768",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Early_blight",
+      "predicted_class": "Corn_(maize)___Northern_Leaf_Blight",
+      "confidence": 0.4779421389102936,
+      "confidence_pct": 47.79,
+      "is_correct": false,
+      "expected_prob_pct": 1.28,
+      "expected_rank": 5,
+      "top_probabilities": [
+        {
+          "label": "Corn_(maize)___Northern_Leaf_Blight",
+          "prob_pct": 47.79
+        },
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 29.21
+        },
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 16.21
+        }
+      ],
+      "latency_ms": 117.89
+    },
+    {
+      "folder": "patato early blight",
+      "file_name": "potato-blight-phytophthora-infestans-close-up-of-upper-surface-of-BMMRXC.jpg",
+      "file_size_kb": 105.53,
+      "resolution": "1300x956",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Early_blight",
+      "predicted_class": "Tomato___Late_blight",
+      "confidence": 0.35368290543556213,
+      "confidence_pct": 35.37,
+      "is_correct": false,
+      "expected_prob_pct": 1.9,
+      "expected_rank": 7,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 35.37
+        },
+        {
+          "label": "Corn_(maize)___Common_rust_",
+          "prob_pct": 34.79
+        },
+        {
+          "label": "Apple___Cedar_apple_rust",
+          "prob_pct": 11.81
+        }
+      ],
+      "latency_ms": 54.18
+    },
+    {
+      "folder": "patato early blight",
+      "file_name": "potatobd001.jpg",
+      "file_size_kb": 11.86,
+      "resolution": "230x150",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Early_blight",
+      "predicted_class": "Tomato___Late_blight",
+      "confidence": 0.8000891804695129,
+      "confidence_pct": 80.01,
+      "is_correct": false,
+      "expected_prob_pct": 0.19,
+      "expected_rank": 8,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 80.01
+        },
+        {
+          "label": "Corn_(maize)___Northern_Leaf_Blight",
+          "prob_pct": 14.08
+        },
+        {
+          "label": "Tomato___Bacterial_spot",
+          "prob_pct": 2.03
+        }
+      ],
+      "latency_ms": 16.83
+    },
+    {
+      "folder": "patato late blight",
+      "file_name": "20090710-lateblight.jpg",
+      "file_size_kb": 68.28,
+      "resolution": "500x364",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Late_blight",
+      "predicted_class": "Tomato___Late_blight",
+      "confidence": 0.5291029810905457,
+      "confidence_pct": 52.91,
+      "is_correct": false,
+      "expected_prob_pct": 0.1,
+      "expected_rank": 6,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 52.91
+        },
+        {
+          "label": "Corn_(maize)___healthy",
+          "prob_pct": 46.49
+        },
+        {
+          "label": "Corn_(maize)___Northern_Leaf_Blight",
+          "prob_pct": 0.19
+        }
+      ],
+      "latency_ms": 17.64
+    },
+    {
+      "folder": "patato late blight",
+      "file_name": "B2750109-Late_blight_on_a_potato_plant-SPL.jpg",
+      "file_size_kb": 103.77,
+      "resolution": "539x800",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Late_blight",
+      "predicted_class": "Potato___Early_blight",
+      "confidence": 0.9191230535507202,
+      "confidence_pct": 91.91,
+      "is_correct": false,
+      "expected_prob_pct": 0.08,
+      "expected_rank": 5,
+      "top_probabilities": [
+        {
+          "label": "Potato___Early_blight",
+          "prob_pct": 91.91
+        },
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 5.45
+        },
+        {
+          "label": "Corn_(maize)___healthy",
+          "prob_pct": 2.34
+        }
+      ],
+      "latency_ms": 26.1
+    },
+    {
+      "folder": "patato late blight",
+      "file_name": "potato-late-blight.jpg",
+      "file_size_kb": 24.27,
+      "resolution": "490x390",
+      "color_mode": "RGB",
+      "expected_class": "Potato___Late_blight",
+      "predicted_class": "Tomato___Late_blight",
+      "confidence": 0.9996040463447571,
+      "confidence_pct": 99.96,
+      "is_correct": false,
+      "expected_prob_pct": 0.0,
+      "expected_rank": 4,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 99.96
+        },
+        {
+          "label": "Corn_(maize)___healthy",
+          "prob_pct": 0.02
+        },
+        {
+          "label": "Corn_(maize)___Common_rust_",
+          "prob_pct": 0.01
+        }
+      ],
+      "latency_ms": 20.55
+    },
+    {
+      "folder": "tomato bacterial spot",
+      "file_name": "Bacterial_spots563.jpg",
+      "file_size_kb": 57.71,
+      "resolution": "800x600",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Bacterial_spot",
+      "predicted_class": "Tomato___Late_blight",
+      "confidence": 0.994027853012085,
+      "confidence_pct": 99.4,
+      "is_correct": false,
+      "expected_prob_pct": 0.0,
+      "expected_rank": 11,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 99.4
+        },
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 0.28
+        },
+        {
+          "label": "Potato___Early_blight",
+          "prob_pct": 0.26
+        }
+      ],
+      "latency_ms": 25.88
+    },
+    {
+      "folder": "tomato bacterial spot",
+      "file_name": "Tomato%2BBacterial%2BSpot%2Bon%2BLeaves.jpg",
+      "file_size_kb": 44.42,
+      "resolution": "500x263",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Bacterial_spot",
+      "predicted_class": "Tomato___Early_blight",
+      "confidence": 0.9874593019485474,
+      "confidence_pct": 98.75,
+      "is_correct": false,
+      "expected_prob_pct": 0.0,
+      "expected_rank": 10,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 98.75
+        },
+        {
+          "label": "Potato___Early_blight",
+          "prob_pct": 0.53
+        },
+        {
+          "label": "Corn_(maize)___Common_rust_",
+          "prob_pct": 0.28
+        }
+      ],
+      "latency_ms": 19.18
+    },
+    {
+      "folder": "tomato bacterial spot",
+      "file_name": "tomato_bacterial-speck_01_zoom.jpg",
+      "file_size_kb": 124.23,
+      "resolution": "900x675",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Bacterial_spot",
+      "predicted_class": "Tomato___Early_blight",
+      "confidence": 0.3527432978153229,
+      "confidence_pct": 35.27,
+      "is_correct": false,
+      "expected_prob_pct": 0.11,
+      "expected_rank": 8,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 35.27
+        },
+        {
+          "label": "Potato___Early_blight",
+          "prob_pct": 26.79
+        },
+        {
+          "label": "Corn_(maize)___Northern_Leaf_Blight",
+          "prob_pct": 24.26
+        }
+      ],
+      "latency_ms": 53.23
+    },
+    {
+      "folder": "tomato late blight",
+      "file_name": "110822-206-Tomato-blight.jpg",
+      "file_size_kb": 165.31,
+      "resolution": "750x499",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Late_blight",
+      "predicted_class": "Tomato___Late_blight",
+      "confidence": 0.9994975328445435,
+      "confidence_pct": 99.95,
+      "is_correct": true,
+      "expected_prob_pct": 99.95,
+      "expected_rank": 1,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 99.95
+        },
+        {
+          "label": "Corn_(maize)___Northern_Leaf_Blight",
+          "prob_pct": 0.02
+        },
+        {
+          "label": "Potato___Late_blight",
+          "prob_pct": 0.01
+        }
+      ],
+      "latency_ms": 26.63
+    },
+    {
+      "folder": "tomato late blight",
+      "file_name": "18c.jpg",
+      "file_size_kb": 22.03,
+      "resolution": "350x255",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Late_blight",
+      "predicted_class": "Potato___Late_blight",
+      "confidence": 0.4893612563610077,
+      "confidence_pct": 48.94,
+      "is_correct": false,
+      "expected_prob_pct": 14.45,
+      "expected_rank": 3,
+      "top_probabilities": [
+        {
+          "label": "Potato___Late_blight",
+          "prob_pct": 48.94
+        },
+        {
+          "label": "Corn_(maize)___Northern_Leaf_Blight",
+          "prob_pct": 25.84
+        },
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 14.45
+        }
+      ],
+      "latency_ms": 14.59
+    },
+    {
+      "folder": "tomato late blight",
+      "file_name": "LateBlt09_06.jpg",
+      "file_size_kb": 15.43,
+      "resolution": "400x268",
+      "color_mode": "RGB",
+      "expected_class": "Tomato___Late_blight",
+      "predicted_class": "Tomato___Early_blight",
+      "confidence": 0.9987691044807434,
+      "confidence_pct": 99.88,
+      "is_correct": false,
+      "expected_prob_pct": 0.11,
+      "expected_rank": 2,
+      "top_probabilities": [
+        {
+          "label": "Tomato___Early_blight",
+          "prob_pct": 99.88
+        },
+        {
+          "label": "Tomato___Late_blight",
+          "prob_pct": 0.11
+        },
+        {
+          "label": "Corn_(maize)___Common_rust_",
+          "prob_pct": 0.0
+        }
+      ],
+      "latency_ms": 15.47
+    }
+  ]
+}
