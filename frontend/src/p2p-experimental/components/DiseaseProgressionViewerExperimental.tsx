@@ -7,6 +7,7 @@ import { CompareHealthyToggle } from '../../components/DiseaseProgressionViewer/
 import { DiagnosticOverlayCard } from '../../components/DiseaseProgressionViewer/DiagnosticOverlayCard';
 import { MicroclimateControlPanel } from './MicroclimateControlPanel';
 import { AgronomicTimelineSlider } from './AgronomicTimelineSlider';
+import { LeafHotspotOverlay } from './LeafHotspotOverlay';
 
 export interface DiseaseProgressionViewerExperimentalProps {
   cropId?: SupportedCropId;
@@ -42,6 +43,7 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
   const [loadedCropId, setLoadedCropId] = useState<SupportedCropId | null>(null);
   const [compareMode, setCompareMode] = useState<boolean>(false);
   const [isFallbackMode, setIsFallbackMode] = useState<boolean>(false);
+  const [hotspotsEnabled, setHotspotsEnabled] = useState<boolean>(true);
 
   // Synchronize state when initial percentage prop changes externally
   if (prevInitial !== initialPercentage) {
@@ -309,6 +311,14 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
                   />
                 </div>
               )}
+
+              {/* Interactive Anatomical Symptom Hotspots Overlay */}
+              <LeafHotspotOverlay
+                cropId={cropId}
+                sliderPercentage={sliderValue}
+                enabled={hotspotsEnabled}
+                onToggleEnabled={setHotspotsEnabled}
+              />
 
               {/* Top Banner on Compare Mode */}
               {compareMode && (
