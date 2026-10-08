@@ -99,11 +99,11 @@ Following `PROJECT_DETAILS/GIT_CHANGES.md`, each subtask is verified with tests 
 
 ## 4. Acceptance Criteria
 
-- [ ] PlantDoc and PlantVillage datasets mapped cleanly across target taxonomy.
-- [ ] Balanced dataset pipeline generated with zero data leakage (SHA-256 validated).
-- [ ] Dual-head `MobileNetV3-Large` PyTorch architecture implemented with multi-task loss.
-- [ ] Google Colab training notebook ready with GPU optimization and evaluation plots.
-- [ ] Exported dual-head ONNX model artifact $\le 25\text{ MB}$.
-- [ ] Median CPU latency $\le 85\text{ ms}$ on single-thread execution.
-- [ ] FastAPI `/api/v1/classify-leaf` supports dual-head predictions and optional `crop_hint`.
-- [ ] All unit and regression tests pass across `ml-service`.
+- [x] PlantDoc and PlantVillage datasets mapped cleanly across target taxonomy.
+- [x] Balanced dataset pipeline generated with zero data leakage (SHA-256 validated).
+- [x] Dual-head `MobileNetV3-Large` PyTorch architecture implemented with multi-task loss.
+- [x] Google Colab training notebook ready with GPU optimization and evaluation plots.
+- [x] Exported dual-head ONNX model artifact $\le 25\text{ MB}$.
+- [x] Median CPU latency $\le 85\text{ ms}$ on single-thread execution.
+- [x] FastAPI `/api/v1/classify-leaf` supports dual-head predictions and optional `crop_hint`.
+- [x] All unit and regression tests pass across `ml-service`.

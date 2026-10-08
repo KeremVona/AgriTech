@@ -1,6 +1,6 @@
 # TODO-110: PlantVillage + PlantDoc Hybrid Dataset & Multi-Task MobileNetV3-Large Architecture
 
-## Current Status: IN PROGRESS
+## Current Status: COMPLETED
 **Branch:** `feat/ml-todo110-hybrid-dataset-multitask`  
 **Assignee:** ML Engineer  
 **Phase:** Phase 1 — Machine Learning Core Upgrade  
@@ -41,6 +41,6 @@
   - Verify all unit and regression tests pass across `ml-service`.
   - Commit: `feat(ml): integrate dual-head ONNX engine with hierarchical inference and resize preprocessing`.
 
-- [ ] **Subtask 7: Formal Completion Report (DoD) & Final Validation**
+- [x] **Subtask 7: Formal Completion Report (DoD) & Final Validation**
   - Generate `PROJECT_DETAILS/Reports/Phase 1/TODO-110-hybrid-multitask.md`.
   - Commit: `docs(ml): add TODO-110 completion report and mark tasks complete`.
