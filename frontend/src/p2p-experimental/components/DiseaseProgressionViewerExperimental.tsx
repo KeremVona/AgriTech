@@ -406,13 +406,13 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
             <span className="text-slate-400">
               {isPostTreatment ? (
                 <>
-                  Spray active at Day {interventionDays.toFixed(1)} ({interventionSeverity.toFixed(1)}%) • Plateau capped at{' '}
-                  <strong className="text-emerald-300 font-mono">
+                  Spray active at Day <span className="font-mono tabular-nums">{interventionDays.toFixed(1)}</span> (<span className="font-mono tabular-nums">{interventionSeverity.toFixed(1)}%</span>) • Plateau capped at{' '}
+                  <strong className="text-emerald-300 font-mono tabular-nums">
                     {treatedOutput.plateauSeverityPct.toFixed(1)}%
                   </strong>
                 </>
               ) : (
-                <>Pre-treatment phase (Day {currentScrubDay.toFixed(1)} &lt; Day {interventionDays.toFixed(1)})</>
+                <>Pre-treatment phase (Day <span className="font-mono tabular-nums">{currentScrubDay.toFixed(1)}</span> &lt; Day <span className="font-mono tabular-nums">{interventionDays.toFixed(1)}</span>)</>
               )}
             </span>
           </div>
@@ -421,7 +421,7 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
             <button
               type="button"
               onClick={() => setTrajectoryView('treated')}
-              className={`px-3 py-1 rounded-lg transition-all ${
+              className={`px-3 py-1 rounded-lg transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
                 trajectoryView === 'treated'
                   ? 'bg-emerald-600 text-white font-semibold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -432,7 +432,7 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
             <button
               type="button"
               onClick={() => setTrajectoryView('untreated')}
-              className={`px-3 py-1 rounded-lg transition-all ${
+              className={`px-3 py-1 rounded-lg transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
                 trajectoryView === 'untreated'
                   ? 'bg-rose-600 text-white font-semibold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -443,9 +443,9 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
             <button
               type="button"
               onClick={() => setTrajectoryView('split')}
-              className={`px-3 py-1 rounded-lg transition-all ${
+              className={`px-3 py-1 rounded-lg transition-all duration-150 ease-out cursor-pointer active:scale-[0.97] ${
                 trajectoryView === 'split'
-                  ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                  ? 'bg-sky-600 text-white font-semibold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -699,7 +699,7 @@ export const DiseaseProgressionViewerExperimental: React.FC<DiseaseProgressionVi
                 title="Record automated 60 FPS progression video sweep"
               >
                 <span>🎬</span>
-                <span>{isRecording ? `Recording ${recordingProgress}%` : 'Timelapse'}</span>
+                <span>{isRecording ? <>Recording <span className="font-mono tabular-nums">{recordingProgress}%</span></> : 'Timelapse'}</span>
               </button>
               <button
                 type="button"

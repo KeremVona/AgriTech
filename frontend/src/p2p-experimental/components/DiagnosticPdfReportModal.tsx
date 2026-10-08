@@ -21,7 +21,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
   const { telemetry, foliar, treatment, culturalControls, canvasSnapshotDataUrl } = reportData;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto print:p-0 print:bg-white print:static">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto print:p-0 print:bg-white print:static animate-in fade-in duration-150">
       {/* Print Stylesheet overrides */}
       <style>{`
         @media print {
@@ -50,7 +50,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
       `}</style>
 
       {/* Modal Dialog Container */}
-      <div className="relative w-full max-w-3xl my-8 bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] print:max-h-none print:border-none print:shadow-none print:bg-white">
+      <div className="relative w-full max-w-3xl my-8 bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] print:max-h-none print:border-none print:shadow-none print:bg-white transition-transform duration-150 ease-out">
         {/* Sticky Action Header (Screen only) */}
         <div className="no-print flex items-center justify-between px-6 py-4 bg-slate-800/90 border-b border-slate-700 shrink-0">
           <div className="flex items-center gap-2">
@@ -63,7 +63,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer flex items-center gap-1.5"
             >
               <span>🖨️</span>
               <span>Print / Save as PDF</span>
@@ -71,7 +71,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-700 hover:bg-slate-600 text-slate-200 transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer"
             >
               Close
             </button>
