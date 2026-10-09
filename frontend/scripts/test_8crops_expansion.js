@@ -31,7 +31,7 @@ import { assembleFieldReportData } from '../src/p2p-experimental/models/exportRe
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PUBLIC_PROGRESSION_DIR = path.resolve(__dirname, '../public/progression');
+const EXP_PROGRESSION_DIR = path.resolve(__dirname, '../public/progression-experimental');
 
 const ALL_8_CROPS = [
   'tomato',
@@ -179,18 +179,27 @@ for (const cropId of ALL_8_CROPS) {
   for (let s = 0; s < 3; s++) {
     const stage = crop.stages[s];
     assert.strictEqual(stage.stage_order, s);
-    assert.ok(stage.assets.base_image_url.startsWith(`/progression/${cropId}/`));
+    assert.ok(stage.assets.base_image_url.startsWith(`/progression-experimental/${cropId}/`));
+    if (s === 0) {
+      assert.strictEqual(stage.assets.mask_image_url, null);
+    } else {
+      assert.ok(
+        stage.assets.mask_image_url?.startsWith(`/progression-experimental/${cropId}/`),
+        `Missing or invalid mask url for ${cropId} stage ${s}`
+      );
+    }
   }
 }
-console.log('  [✓] Test 4 Passed: 8-crop manifest stages and resolution verified');
+console.log('  [✓] Test 4 Passed: 8-crop manifest stages, resolution, and mask URLs verified');
 
 // ----------------------------------------------------------------------------
-// Test 5: Physical Assets on Disk Verification (40 WebP Files)
+// Test 5: Physical Assets on Disk Verification (40 WebP Files in progression-experimental)
 // ----------------------------------------------------------------------------
-console.log('  [*] Test 5: Verifying physical WebP files on disk in public/progression/...');
+console.log('  [*] Test 5: Verifying physical WebP files on disk in public/progression-experimental/...');
+const MAX_ASSET_SIZE_BYTES = 150 * 1024; // 150 KB limit
 for (const cropId of ALL_8_CROPS) {
-  const cropDir = path.join(PUBLIC_PROGRESSION_DIR, cropId);
-  assert.ok(fs.existsSync(cropDir), `Missing folder for ${cropId}`);
+  const cropDir = path.join(EXP_PROGRESSION_DIR, cropId);
+  assert.ok(fs.existsSync(cropDir), `Missing experimental folder for ${cropId}`);
 
   const requiredFiles = [
     `${cropId}_stage0_healthy.webp`,
@@ -202,12 +211,23 @@ for (const cropId of ALL_8_CROPS) {
 
   for (const filename of requiredFiles) {
     const filePath = path.join(cropDir, filename);
-    assert.ok(fs.existsSync(filePath), `Missing asset: ${filePath}`);
+    assert.ok(fs.existsSync(filePath), `Missing experimental asset: ${filePath}`);
     const stat = fs.statSync(filePath);
     assert.ok(stat.size > 1000, `Asset ${filename} unexpectedly small: ${stat.size} bytes`);
+    assert.ok(
+      stat.size <= MAX_ASSET_SIZE_BYTES,
+      `Asset ${filename} exceeds 150 KB limit: ${(stat.size / 1024).toFixed(1)} KB`
+    );
+
+    // Validate RIFF....WEBP binary header signature
+    const buffer = fs.readFileSync(filePath);
+    const isWebP =
+      buffer.subarray(0, 4).toString() === 'RIFF' &&
+      buffer.subarray(8, 12).toString() === 'WEBP';
+    assert.ok(isWebP, `File ${filename} lacks valid RIFF/WEBP binary signature`);
   }
 }
-console.log('  [✓] Test 5 Passed: All 40 WebP files verified present and valid on disk');
+console.log('  [✓] Test 5 Passed: All 40 experimental WebP files verified present, < 150KB, with valid RIFF/WEBP headers');
 
 // ----------------------------------------------------------------------------
 // Test 6: PDF Field Report Assembly for all 8 Crops

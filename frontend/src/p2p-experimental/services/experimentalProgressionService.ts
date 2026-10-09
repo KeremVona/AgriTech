@@ -61,7 +61,7 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Maintain preventive cultural hygiene; ensure drip irrigation to avoid foliar wetness.',
           color_palette_hex: ['#2D6A4F', '#52B788', '#74C69D'],
           assets: {
-            base_image_url: '/progression/tomato/tomato_stage0_healthy.webp',
+            base_image_url: '/progression-experimental/tomato/tomato_stage0_healthy.webp',
             mask_image_url: null,
           },
         },
@@ -76,8 +76,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Apply preventive copper hydroxide or chlorothalonil barrier before upcoming precipitation events.',
           color_palette_hex: ['#D4A373', '#E9C46A', '#582F0E'],
           assets: {
-            base_image_url: '/progression/tomato/tomato_stage1_early.webp',
-            mask_image_url: '/progression/tomato/tomato_stage1_mask.webp',
+            base_image_url: '/progression-experimental/tomato/tomato_stage1_early.webp',
+            mask_image_url: '/progression-experimental/tomato/tomato_stage1_mask.webp',
           },
         },
         {
@@ -91,8 +91,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Immediately prune and isolate infected stems; apply systemic fungicide (mancozeb/difenoconazole); lock out overhead irrigation.',
           color_palette_hex: ['#BC6C25', '#3D2616', '#1D1208'],
           assets: {
-            base_image_url: '/progression/tomato/tomato_stage2_severe.webp',
-            mask_image_url: '/progression/tomato/tomato_stage2_mask.webp',
+            base_image_url: '/progression-experimental/tomato/tomato_stage2_severe.webp',
+            mask_image_url: '/progression-experimental/tomato/tomato_stage2_mask.webp',
           },
         },
       ],
@@ -117,7 +117,7 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Inspect field margins; monitor ambient relative humidity and leaf wetness hours.',
           color_palette_hex: ['#285943', '#4A8B66', '#78B48C'],
           assets: {
-            base_image_url: '/progression/potato/potato_stage0_healthy.webp',
+            base_image_url: '/progression-experimental/potato/potato_stage0_healthy.webp',
             mask_image_url: null,
           },
         },
@@ -132,8 +132,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Immediate curative fungicide application (cymoxanil / mandipropamid); enforce zero overhead irrigation.',
           color_palette_hex: ['#6B705C', '#A5A58D', '#B7B7A4'],
           assets: {
-            base_image_url: '/progression/potato/potato_stage1_early.webp',
-            mask_image_url: '/progression/potato/potato_stage1_mask.webp',
+            base_image_url: '/progression-experimental/potato/potato_stage1_early.webp',
+            mask_image_url: '/progression-experimental/potato/potato_stage1_mask.webp',
           },
         },
         {
@@ -147,8 +147,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Burn down foliage to prevent tuber contamination; destroy volunteer plants; rotate Solanaceous fields.',
           color_palette_hex: ['#3F4238', '#1C1D17', '#0A0B08'],
           assets: {
-            base_image_url: '/progression/potato/potato_stage2_severe.webp',
-            mask_image_url: '/progression/potato/potato_stage2_mask.webp',
+            base_image_url: '/progression-experimental/potato/potato_stage2_severe.webp',
+            mask_image_url: '/progression-experimental/potato/potato_stage2_mask.webp',
           },
         },
       ],
@@ -173,7 +173,7 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Scout upper whorl leaves weekly; assess regional rust spores carried by wind currents.',
           color_palette_hex: ['#386641', '#6A994E', '#A7C957'],
           assets: {
-            base_image_url: '/progression/corn/corn_stage0_healthy.webp',
+            base_image_url: '/progression-experimental/corn/corn_stage0_healthy.webp',
             mask_image_url: null,
           },
         },
@@ -188,8 +188,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Apply strobilurin (azoxystrobin) or triazole (propiconazole) if pustules reach ear leaf prior to silking.',
           color_palette_hex: ['#BC6C25', '#D4A373', '#7F4F24'],
           assets: {
-            base_image_url: '/progression/corn/corn_stage1_early.webp',
-            mask_image_url: '/progression/corn/corn_stage1_mask.webp',
+            base_image_url: '/progression-experimental/corn/corn_stage1_early.webp',
+            mask_image_url: '/progression-experimental/corn/corn_stage1_mask.webp',
           },
         },
         {
@@ -203,8 +203,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Select resistant hybrid corn cultivars for subsequent seasons; deep plow crop residue to bury spores.',
           color_palette_hex: ['#582F0E', '#3D1308', '#260802'],
           assets: {
-            base_image_url: '/progression/corn/corn_stage2_severe.webp',
-            mask_image_url: '/progression/corn/corn_stage2_mask.webp',
+            base_image_url: '/progression-experimental/corn/corn_stage2_severe.webp',
+            mask_image_url: '/progression-experimental/corn/corn_stage2_mask.webp',
           },
         },
       ],
@@ -229,7 +229,7 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Apply protective fungicide barrier at green tip bud stage ahead of primary ascospore discharge.',
           color_palette_hex: ['#2D6A4F', '#40916C', '#52B788'],
           assets: {
-            base_image_url: '/progression/apple/apple_stage0_healthy.webp',
+            base_image_url: '/progression-experimental/apple/apple_stage0_healthy.webp',
             mask_image_url: null,
           },
         },
@@ -244,8 +244,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Apply curative DMI / anilinopyrimidine fungicide (cyprodinil / difenoconazole) within 72h Mills infection period.',
           color_palette_hex: ['#4A5320', '#606C38', '#283618'],
           assets: {
-            base_image_url: '/progression/apple/apple_stage1_early.webp',
-            mask_image_url: '/progression/apple/apple_stage1_mask.webp',
+            base_image_url: '/progression-experimental/apple/apple_stage1_early.webp',
+            mask_image_url: '/progression-experimental/apple/apple_stage1_mask.webp',
           },
         },
         {
@@ -259,8 +259,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Mow fallen leaf litter post-harvest and spray 5% urea solution to accelerate winter leaf breakdown.',
           color_palette_hex: ['#3D2616', '#261405', '#140A02'],
           assets: {
-            base_image_url: '/progression/apple/apple_stage2_severe.webp',
-            mask_image_url: '/progression/apple/apple_stage2_mask.webp',
+            base_image_url: '/progression-experimental/apple/apple_stage2_severe.webp',
+            mask_image_url: '/progression-experimental/apple/apple_stage2_mask.webp',
           },
         },
       ],
@@ -285,7 +285,7 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Ensure adequate trellis airflow; apply preventive copper or mancozeb before extended rain events.',
           color_palette_hex: ['#2D6A4F', '#40916C', '#74C69D'],
           assets: {
-            base_image_url: '/progression/grape/grape_stage0_healthy.webp',
+            base_image_url: '/progression-experimental/grape/grape_stage0_healthy.webp',
             mask_image_url: null,
           },
         },
@@ -300,8 +300,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Apply curative DMI fungicide (Difenoconazole) within 72h kickback window post-infection.',
           color_palette_hex: ['#7F4F24', '#936639', '#DDB892'],
           assets: {
-            base_image_url: '/progression/grape/grape_stage1_early.webp',
-            mask_image_url: '/progression/grape/grape_stage1_mask.webp',
+            base_image_url: '/progression-experimental/grape/grape_stage1_early.webp',
+            mask_image_url: '/progression-experimental/grape/grape_stage1_mask.webp',
           },
         },
         {
@@ -315,8 +315,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Combine eradicant strobilurin with strict mechanical winter pruning and removal of dried mummies.',
           color_palette_hex: ['#493B2A', '#2E2214', '#17100A'],
           assets: {
-            base_image_url: '/progression/grape/grape_stage2_severe.webp',
-            mask_image_url: '/progression/grape/grape_stage2_mask.webp',
+            base_image_url: '/progression-experimental/grape/grape_stage2_severe.webp',
+            mask_image_url: '/progression-experimental/grape/grape_stage2_mask.webp',
           },
         },
       ],
@@ -341,7 +341,7 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Use drip irrigation; ensure hot-water treated disease-free transplant stock.',
           color_palette_hex: ['#2D6A4F', '#52B788', '#74C69D'],
           assets: {
-            base_image_url: '/progression/pepper/pepper_stage0_healthy.webp',
+            base_image_url: '/progression-experimental/pepper/pepper_stage0_healthy.webp',
             mask_image_url: null,
           },
         },
@@ -356,8 +356,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Apply copper hydroxide tank-mixed with mancozeb to overcome copper resistance.',
           color_palette_hex: ['#CB997E', '#DDBEA9', '#6B705C'],
           assets: {
-            base_image_url: '/progression/pepper/pepper_stage1_early.webp',
-            mask_image_url: '/progression/pepper/pepper_stage1_mask.webp',
+            base_image_url: '/progression-experimental/pepper/pepper_stage1_early.webp',
+            mask_image_url: '/progression-experimental/pepper/pepper_stage1_mask.webp',
           },
         },
         {
@@ -371,8 +371,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Sanitize fallen leaves; apply Kasugamycin or SAR inducers to protect emerging flushes.',
           color_palette_hex: ['#A5A58D', '#6B705C', '#3F4238'],
           assets: {
-            base_image_url: '/progression/pepper/pepper_stage2_severe.webp',
-            mask_image_url: '/progression/pepper/pepper_stage2_mask.webp',
+            base_image_url: '/progression-experimental/pepper/pepper_stage2_severe.webp',
+            mask_image_url: '/progression-experimental/pepper/pepper_stage2_mask.webp',
           },
         },
       ],
@@ -397,7 +397,7 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Apply delayed-dormant copper at bud-swell; plant evergreen perimeter windbreaks.',
           color_palette_hex: ['#2D6A4F', '#52B788', '#95D5B2'],
           assets: {
-            base_image_url: '/progression/peach/peach_stage0_healthy.webp',
+            base_image_url: '/progression-experimental/peach/peach_stage0_healthy.webp',
             mask_image_url: null,
           },
         },
@@ -412,8 +412,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Apply low-rate copper or Oxytetracycline starting at petal fall to prevent twig cankers.',
           color_palette_hex: ['#7209B7', '#560BAD', '#480CA8'],
           assets: {
-            base_image_url: '/progression/peach/peach_stage1_early.webp',
-            mask_image_url: '/progression/peach/peach_stage1_mask.webp',
+            base_image_url: '/progression-experimental/peach/peach_stage1_early.webp',
+            mask_image_url: '/progression-experimental/peach/peach_stage1_mask.webp',
           },
         },
         {
@@ -427,8 +427,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Prune blighted twigs during dry weather; spray post-harvest copper at 50% leaf drop in autumn.',
           color_palette_hex: ['#3A0CA3', '#3F37C9', '#4361EE'],
           assets: {
-            base_image_url: '/progression/peach/peach_stage2_severe.webp',
-            mask_image_url: '/progression/peach/peach_stage2_mask.webp',
+            base_image_url: '/progression-experimental/peach/peach_stage2_severe.webp',
+            mask_image_url: '/progression-experimental/peach/peach_stage2_mask.webp',
           },
         },
       ],
@@ -453,7 +453,7 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Ensure wide row spacing (1.5m) for maximum canopy airflow; inspect shaded lower leaves weekly.',
           color_palette_hex: ['#2D6A4F', '#40916C', '#52B788'],
           assets: {
-            base_image_url: '/progression/squash/squash_stage0_healthy.webp',
+            base_image_url: '/progression-experimental/squash/squash_stage0_healthy.webp',
             mask_image_url: null,
           },
         },
@@ -468,8 +468,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Apply translaminar DMI (Myclobutanil) or Potassium Bicarbonate to arrest superficial conidiophores.',
           color_palette_hex: ['#E9ECEF', '#CED4DA', '#ADB5BD'],
           assets: {
-            base_image_url: '/progression/squash/squash_stage1_early.webp',
-            mask_image_url: '/progression/squash/squash_stage1_mask.webp',
+            base_image_url: '/progression-experimental/squash/squash_stage1_early.webp',
+            mask_image_url: '/progression-experimental/squash/squash_stage1_mask.webp',
           },
         },
         {
@@ -483,8 +483,8 @@ export const EXPERIMENTAL_8CROPS_MANIFEST: ExperimentalProgressionManifest = {
             'Protect younger crown leaves; maintain soil moisture; plow crop residues immediately after harvest.',
           color_palette_hex: ['#D4A373', '#BC6C25', '#A68A56'],
           assets: {
-            base_image_url: '/progression/squash/squash_stage2_severe.webp',
-            mask_image_url: '/progression/squash/squash_stage2_mask.webp',
+            base_image_url: '/progression-experimental/squash/squash_stage2_severe.webp',
+            mask_image_url: '/progression-experimental/squash/squash_stage2_mask.webp',
           },
         },
       ],
@@ -517,8 +517,12 @@ export function resolveExperimentalStage(
   percentage: number
 ): ProgressionStage {
   const clamped = Math.max(0, Math.min(100, percentage));
-  const matched = stages.find(
-    (s) => clamped >= s.min_slider_pct && clamped <= s.max_slider_pct
-  );
-  return matched ?? stages[stages.length - 1];
+  for (let i = 0; i < stages.length; i++) {
+    const stage = stages[i];
+    const nextStage = stages[i + 1];
+    if (clamped >= stage.min_slider_pct && (!nextStage || clamped < nextStage.min_slider_pct)) {
+      return stage;
+    }
+  }
+  return stages[stages.length - 1];
 }
