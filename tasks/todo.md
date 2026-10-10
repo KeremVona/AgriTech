@@ -1,7 +1,7 @@
 # Task List: Multi-Dataset Model Re-Training (Solution 1)
 
 **Branch:** `feat/ml-exp-multidataset-retrain` (Strictly local, no remote pushes)  
-**Status:** Phase 2 Complete (Ingestion Pipeline, Dataset, & Manifests Built) - Awaiting User Approval for Phase 3  
+**Status:** Phase 3 Complete (MobileNetV3-Large Multi-Task Architecture Configured) - Awaiting User Approval for Phase 4  
 **Plan Document:** `tasks/plan.md`  
 
 ---
@@ -21,12 +21,12 @@
   - [x] Verification: 10 unit tests pass; manifests generated; zero leakage verified.
   - [x] Commit: `feat(ml-retrain-exp): implement multi-dataset ingestion and augmentation pipeline`.
 
-- [ ] **Phase 3: Model Architecture Configuration (`MobileNetV3-Large` Multi-Task)**
-  - Implement `MultiTaskPlantClassifier` with `MobileNetV3-Large` backbone.
-  - Define Crop Species Head (4 classes) and Disease Pathology Head (8 classes).
-  - Implement combined Multi-Task Loss with label smoothing.
-  - Verification: Unit tests pass; output shapes and backprop verified.
-  - Commit: `feat(ml-retrain-exp): implement MobileNetV3-Large dual-head multi-task architecture`.
+- [x] **Phase 3: Model Architecture Configuration (`MobileNetV3-Large` Multi-Task)**
+  - [x] Implement `MultiTaskPlantClassifier` with `MobileNetV3-Large` backbone.
+  - [x] Define Crop Species Head (4 classes) and Disease Pathology Head (8 classes).
+  - [x] Implement combined Multi-Task Loss with label smoothing (0.1) and task weighting (0.4/0.6).
+  - [x] Verification: Unit tests pass; output shapes, feature extraction, backprop, and ONNX export verified.
+  - [x] Commit: `feat(ml-retrain-exp): implement MobileNetV3-Large dual-head multi-task architecture`.
 
 - [ ] **Phase 4: Training & Validation Harness (Colab / Local GPU)**
   - Implement `train_multidataset.py` with AdamW, Cosine Annealing, and early stopping.
