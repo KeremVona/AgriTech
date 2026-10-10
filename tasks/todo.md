@@ -1,17 +1,17 @@
 # Task List: Multi-Dataset Model Re-Training (Solution 1)
 
 **Branch:** `feat/ml-exp-multidataset-retrain` (Strictly local, no remote pushes)  
-**Status:** READY FOR IMPLEMENTATION PLAN APPROVAL  
+**Status:** Phase 1 Complete (Taxonomy & Balancing Finalized) - Awaiting User Approval for Phase 2  
 **Plan Document:** `tasks/plan.md`  
 
 ---
 
-- [ ] **Phase 1: Dataset Review & Taxonomy Alignment (Joint Review)**
-  - Review 4 candidate Mendeley datasets with user.
-  - Establish class mapping dictionary to the 12 canonical project classes.
-  - Set per-class sample balancing caps (e.g., max 500–800 images per class) to avoid skew.
-  - Decide on handling of out-of-scope classes.
-  - Checkpoint: User approves dataset selection and class mapping.
+- [x] **Phase 1: Dataset Review & Taxonomy Alignment (Joint Review)**
+  - [x] Review 4 candidate Mendeley datasets with user.
+  - [x] Establish class mapping dictionary to the 12 canonical project classes.
+  - [x] Set per-class sample balancing caps (e.g., max 500–800 images per class) to avoid skew.
+  - [x] Decide on handling of out-of-scope classes.
+  - [x] Checkpoint: User approves dataset selection and class mapping (documented in `ml-retrain-experimental/TAXONOMY_ALIGNMENT.md`).
 
 - [ ] **Phase 2: Isolated Experimental Directory & Ingestion Pipeline**
   - Create directory structure under `ml-retrain-experimental/`.
