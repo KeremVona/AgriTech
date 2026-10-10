@@ -111,6 +111,14 @@ def main():
         raw_s0 = Image.open(paths["s0"])
         raw_s1 = Image.open(paths["s1"])
         raw_s2 = Image.open(paths["s2"])
+
+        # Tomato and Corn botanical plates are oriented horizontally with base on the left;
+        # Rotate 90 degrees counter-clockwise (ROTATE_90) so plant base is at bottom and tip at top.
+        if crop_id in ["tomato", "corn"]:
+            print(f"    Rotating {crop_id} 90 degrees so plant base is at bottom...")
+            raw_s0 = raw_s0.transpose(Image.Transpose.ROTATE_90)
+            raw_s1 = raw_s1.transpose(Image.Transpose.ROTATE_90)
+            raw_s2 = raw_s2.transpose(Image.Transpose.ROTATE_90)
         
         # Cutout white background and normalize to 800x800 RGBA
         s0_rgba = normalize_to_target_spec(remove_white_background(raw_s0))
