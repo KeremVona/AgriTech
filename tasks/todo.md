@@ -1,7 +1,7 @@
 # Task List: Multi-Dataset Model Re-Training (Solution 1)
 
 **Branch:** `feat/ml-exp-multidataset-retrain` (Strictly local, no remote pushes)  
-**Status:** Phase 3 Complete (MobileNetV3-Large Multi-Task Architecture Configured) - Awaiting User Approval for Phase 4  
+**Status:** Phase 4 Complete (Training Harness & Colab GPU Notebook Built) - Awaiting User Approval for Phase 5  
 **Plan Document:** `tasks/plan.md`  
 
 ---
@@ -28,11 +28,11 @@
   - [x] Verification: Unit tests pass; output shapes, feature extraction, backprop, and ONNX export verified.
   - [x] Commit: `feat(ml-retrain-exp): implement MobileNetV3-Large dual-head multi-task architecture`.
 
-- [ ] **Phase 4: Training & Validation Harness (Colab / Local GPU)**
-  - Implement `train_multidataset.py` with AdamW, Cosine Annealing, and early stopping.
-  - Build standalone Google Colab / Kaggle GPU training notebook (`notebooks/MultiDataset_Training.ipynb`).
-  - Verification: Test run for 1 synthetic epoch passes cleanly.
-  - Commit: `feat(ml-retrain-exp): add training loop, metrics tracker and Colab GPU notebook`.
+- [x] **Phase 4: Training & Validation Harness (Colab / Local GPU)**
+  - [x] Implement `train_multidataset.py` with AdamW, SequentialLR warmup/cosine decay, and early stopping.
+  - [x] Build standalone Google Colab / Kaggle GPU training notebook (`notebooks/MultiDataset_Training.ipynb`).
+  - [x] Verification: End-to-end mock training run passes, checkpoint deserialization & strict weight loading verified.
+  - [x] Commit: `feat(ml-retrain-exp): add training loop, metrics tracker and Colab GPU notebook`.
 
 - [ ] **Phase 5: Model Training Run & Field Benchmark Evaluation**
   - Execute full training run on GPU until convergence.
