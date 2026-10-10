@@ -1,0 +1,12 @@
+# Local .gitignore for isolated ML retraining experiments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Ignore raw data downloads and heavy weights
+data/raw/
+data/processed/
+*.pt
+*.pth
+*.ckpt
+*.onnx

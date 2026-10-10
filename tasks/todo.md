@@ -1,7 +1,7 @@
 # Task List: Multi-Dataset Model Re-Training (Solution 1)
 
 **Branch:** `feat/ml-exp-multidataset-retrain` (Strictly local, no remote pushes)  
-**Status:** Phase 1 Complete (Taxonomy & Balancing Finalized) - Awaiting User Approval for Phase 2  
+**Status:** Phase 2 Complete (Ingestion Pipeline, Dataset, & Manifests Built) - Awaiting User Approval for Phase 3  
 **Plan Document:** `tasks/plan.md`  
 
 ---
@@ -13,13 +13,13 @@
   - [x] Decide on handling of out-of-scope classes.
   - [x] Checkpoint: User approves dataset selection and class mapping (documented in `ml-retrain-experimental/TAXONOMY_ALIGNMENT.md`).
 
-- [ ] **Phase 2: Isolated Experimental Directory & Ingestion Pipeline**
-  - Create directory structure under `ml-retrain-experimental/`.
-  - Implement `ingest_multidataset.py` with image validation and SHA-256 leakage protection.
-  - Implement deterministic stratified split (70% Train / 15% Val / 15% Test).
-  - Implement PyTorch Dataset & DataLoader with augmentations (`RandomResizedCrop`, `ColorJitter`, `RandomErasing`).
-  - Verification: Split verification script passes; class distribution report generated.
-  - Commit: `feat(ml-retrain-exp): implement multi-dataset ingestion and augmentation pipeline`.
+- [x] **Phase 2: Isolated Experimental Directory & Ingestion Pipeline**
+  - [x] Create directory structure under `ml-retrain-experimental/`.
+  - [x] Implement `ingest_multidataset.py` with deep image validation, POSIX serialization, and SHA-256 leakage protection.
+  - [x] Implement deterministic stratified split (70% Train / 15% Val / 15% Test) with domain backfilling and 700 cap.
+  - [x] Implement PyTorch Dataset & DataLoader with augmentations (`RandomResizedCrop`, `ColorJitter`, `RandomErasing`).
+  - [x] Verification: 10 unit tests pass; manifests generated; zero leakage verified.
+  - [x] Commit: `feat(ml-retrain-exp): implement multi-dataset ingestion and augmentation pipeline`.
 
 - [ ] **Phase 3: Model Architecture Configuration (`MobileNetV3-Large` Multi-Task)**
   - Implement `MultiTaskPlantClassifier` with `MobileNetV3-Large` backbone.

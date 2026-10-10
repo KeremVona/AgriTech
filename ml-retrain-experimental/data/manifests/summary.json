@@ -1,0 +1,92 @@
+{
+  "total_train": 7288,
+  "total_val": 1562,
+  "total_test": 1562,
+  "zero_leakage_verified": true,
+  "class_breakdown": {
+    "Apple___Cedar_apple_rust": {
+      "train_lab": 192,
+      "train_field": 0,
+      "val": 41,
+      "test": 42,
+      "total": 275
+    },
+    "Apple___healthy": {
+      "train_lab": 700,
+      "train_field": 0,
+      "val": 150,
+      "test": 150,
+      "total": 1000
+    },
+    "Corn_(maize)___Common_rust_": {
+      "train_lab": 700,
+      "train_field": 0,
+      "val": 150,
+      "test": 150,
+      "total": 1000
+    },
+    "Corn_(maize)___Northern_Leaf_Blight": {
+      "train_lab": 690,
+      "train_field": 0,
+      "val": 148,
+      "test": 147,
+      "total": 985
+    },
+    "Corn_(maize)___healthy": {
+      "train_lab": 700,
+      "train_field": 0,
+      "val": 150,
+      "test": 150,
+      "total": 1000
+    },
+    "Potato___Early_blight": {
+      "train_lab": 700,
+      "train_field": 0,
+      "val": 150,
+      "test": 150,
+      "total": 1000
+    },
+    "Potato___Late_blight": {
+      "train_lab": 700,
+      "train_field": 0,
+      "val": 150,
+      "test": 150,
+      "total": 1000
+    },
+    "Potato___healthy": {
+      "train_lab": 106,
+      "train_field": 0,
+      "val": 23,
+      "test": 23,
+      "total": 152
+    },
+    "Tomato___Bacterial_spot": {
+      "train_lab": 700,
+      "train_field": 0,
+      "val": 150,
+      "test": 150,
+      "total": 1000
+    },
+    "Tomato___Early_blight": {
+      "train_lab": 700,
+      "train_field": 0,
+      "val": 150,
+      "test": 150,
+      "total": 1000
+    },
+    "Tomato___Late_blight": {
+      "train_lab": 700,
+      "train_field": 0,
+      "val": 150,
+      "test": 150,
+      "total": 1000
+    },
+    "Tomato___healthy": {
+      "train_lab": 700,
+      "train_field": 0,
+      "val": 150,
+      "test": 150,
+      "total": 1000
+    }
+  }
+}
