@@ -235,13 +235,14 @@ def discover_folder_dataset(
         logger.warning(f"Dataset directory does not exist: {root_path}")
         return samples, global_hashes, rejections
 
-    # Find all subdirectories (including nested) that match folder_mapping keys
+    # Find all subdirectories (including nested) that match folder_mapping keys (case- and underscore-insensitive)
+    folder_mapping_norm = {k.strip().lower().replace("_", " "): v for k, v in folder_mapping.items()}
     candidate_folders: List[Tuple[Path, str]] = []
     for d in [root_path] + [p for p in root_path.rglob("*") if p.is_dir()]:
-        if d.name in folder_mapping:
-            canonical_cls = folder_mapping[d.name]
-            if canonical_cls in CANONICAL_CLASSES:
-                candidate_folders.append((d, canonical_cls))
+        norm_name = d.name.strip().lower().replace("_", " ")
+        canonical_cls = folder_mapping.get(d.name) or folder_mapping_norm.get(norm_name)
+        if canonical_cls and canonical_cls in CANONICAL_CLASSES:
+            candidate_folders.append((d, canonical_cls))
 
     # Normalize domain
     norm_domain = domain.strip().lower()
