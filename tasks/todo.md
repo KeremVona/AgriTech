@@ -41,8 +41,9 @@
   - [x] Verification: 21 unit tests pass across all experimental pipelines.
   - [x] Commit: `feat(ml-retrain-exp): record multi-dataset training run metrics and evaluation`.
 
-- [ ] **Phase 6: ONNX Export, Quantization & Final Report**
-  - Export dual-head ONNX model with dynamic batching.
-  - Benchmark ONNX model file size ($\le 25\text{ MB}$) and CPU latency ($\le 30\text{ ms}$).
-  - Compile `ml-retrain-experimental/RETRAINING_EXPERIMENT_REPORT.md` comparing Solution 1 vs Solution 2.
-  - Commit: `docs(ml-retrain-exp): compile multi-dataset retraining experiment report`.
+- [x] **Phase 6: ONNX Export, Quantization & Final Report**
+  - [x] Export dual-head ONNX model with dynamic batching (`export_onnx.py`).
+  - [x] Benchmark ONNX model file size (14.16 MB vs <= 25 MB budget) and CPU latency (2.34 ms vs <= 30 ms budget).
+  - [x] Compile `ml-retrain-experimental/RETRAINING_EXPERIMENT_REPORT.md` comparing Solution 1 vs Solution 2 with held-out test benchmarks.
+  - [x] Verification: 22 unit tests pass across all experimental pipelines.
+  - [x] Commit: `docs(ml-retrain-exp): compile multi-dataset retraining experiment report`.
