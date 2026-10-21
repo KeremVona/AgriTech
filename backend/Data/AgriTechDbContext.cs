@@ -1,5 +1,7 @@
 using AgriTech.Api.Models;
+using AgriTech.Api.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 
 namespace AgriTech.Api.Data;
 
@@ -17,6 +19,10 @@ public class AgriTechDbContext : DbContext
     public DbSet<SensorNode> SensorNodes => Set<SensorNode>();
     public DbSet<ModelInference> ModelInferences => Set<ModelInference>();
     public DbSet<CropScan> CropScans => Set<CropScan>();
+
+    // Keyless Query Results (BACK-203 Stored Procedures & Functions)
+    public DbSet<ParcelCoordinateLookupResult> ParcelCoordinateLookups => Set<ParcelCoordinateLookupResult>();
+    public DbSet<ParcelOverlapResult> ParcelOverlapResults => Set<ParcelOverlapResult>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -70,10 +76,14 @@ public class AgriTechDbContext : DbContext
             entity.Property(s => s.MadThresholdPct).HasColumnName("mad_threshold_pct").HasPrecision(3, 2).HasDefaultValue(0.50m);
         });
 
-        // 5. Field Configuration (Spatial Polygon + GiST Index)
+        // 5. Field Configuration (Spatial Polygon + GiST Index + ST_IsValid Check)
         modelBuilder.Entity<Field>(entity =>
         {
-            entity.ToTable("fields");
+            entity.ToTable("fields", t =>
+            {
+                t.HasCheckConstraint("chk_fields_boundary_valid", "ST_IsValid(boundary_geom)");
+            });
+
             entity.HasKey(f => f.Id);
             entity.Property(f => f.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
             entity.Property(f => f.OwnerId).HasColumnName("owner_id").IsRequired();
@@ -94,10 +104,14 @@ public class AgriTechDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // 6. Parcel Configuration (Spatial Polygon + GiST Index + Area Trigger Target)
+        // 6. Parcel Configuration (Spatial Polygon + GiST Index + Area Trigger + ST_IsValid Check)
         modelBuilder.Entity<Parcel>(entity =>
         {
-            entity.ToTable("parcels");
+            entity.ToTable("parcels", t =>
+            {
+                t.HasCheckConstraint("chk_parcels_boundary_valid", "ST_IsValid(boundary_geom)");
+            });
+
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
             entity.Property(p => p.FieldId).HasColumnName("field_id").IsRequired();
@@ -212,5 +226,62 @@ public class AgriTechDbContext : DbContext
                   .HasForeignKey(c => c.UploadedByUserId)
                   .OnDelete(DeleteBehavior.SetNull);
         });
+
+        // 10. Keyless Entity Types for Spatial Functions & Stored Procedures (BACK-203)
+        modelBuilder.Entity<ParcelCoordinateLookupResult>(entity =>
+        {
+            entity.HasNoKey();
+            entity.ToView(null);
+            entity.Property(e => e.ParcelId).HasColumnName("parcel_id");
+            entity.Property(e => e.ParcelName).HasColumnName("parcel_name");
+            entity.Property(e => e.FieldId).HasColumnName("field_id");
+            entity.Property(e => e.FieldName).HasColumnName("field_name");
+            entity.Property(e => e.CropId).HasColumnName("crop_id");
+            entity.Property(e => e.CropName).HasColumnName("crop_name");
+            entity.Property(e => e.SoilProfileId).HasColumnName("soil_profile_id");
+            entity.Property(e => e.SoilProfileName).HasColumnName("soil_profile_name");
+            entity.Property(e => e.PlantingDate).HasColumnName("planting_date");
+            entity.Property(e => e.AreaHectares).HasColumnName("area_hectares").HasPrecision(8, 2);
+            entity.Property(e => e.KcCurrent).HasColumnName("kc_current").HasPrecision(3, 2);
+        });
+
+        modelBuilder.Entity<ParcelOverlapResult>(entity =>
+        {
+            entity.HasNoKey();
+            entity.ToView(null);
+            entity.Property(e => e.ConflictingParcelId).HasColumnName("conflicting_parcel_id");
+            entity.Property(e => e.ConflictingParcelName).HasColumnName("conflicting_parcel_name");
+            entity.Property(e => e.OverlapAreaSqm).HasColumnName("overlap_area_sqm").HasPrecision(10, 2);
+        });
+    }
+
+    /// <summary>
+    /// Executes the optimized PostGIS Point-in-Polygon stored procedure (BACK-203).
+    /// Target latency: &lt; 10 ms across 1,000+ parcels using GiST index.
+    /// </summary>
+    public async Task<ParcelCoordinateLookupResult?> LocateParcelByCoordinateAsync(
+        double longitude,
+        double latitude,
+        CancellationToken cancellationToken = default)
+    {
+        return await ParcelCoordinateLookups
+            .FromSqlInterpolated($"SELECT * FROM fn_locate_parcel_by_coordinate({longitude}, {latitude})")
+            .AsNoTracking()
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes the candidate parcel boundary collision detection procedure (BACK-203).
+    /// </summary>
+    public async Task<List<ParcelOverlapResult>> CheckParcelOverlapAsync(
+        Guid fieldId,
+        Geometry candidateGeom,
+        Guid? excludeParcelId = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await ParcelOverlapResults
+            .FromSqlInterpolated($"SELECT * FROM fn_check_parcel_overlap({fieldId}, {candidateGeom}, {excludeParcelId})")
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 }
