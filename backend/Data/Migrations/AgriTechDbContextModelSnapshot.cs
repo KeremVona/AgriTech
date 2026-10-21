@@ -139,6 +139,85 @@ namespace AgriTech.Api.Data.Migrations
                     b.ToTable("crop_scans", (string)null);
                 });
 
+            modelBuilder.Entity("AgriTech.Api.Models.DTOs.ParcelCoordinateLookupResult", b =>
+                {
+                    b.Property<decimal>("AreaHectares")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("area_hectares");
+
+                    b.Property<Guid>("CropId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("crop_id");
+
+                    b.Property<string>("CropName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("crop_name");
+
+                    b.Property<Guid>("FieldId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("field_id");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("field_name");
+
+                    b.Property<decimal>("KcCurrent")
+                        .HasPrecision(3, 2)
+                        .HasColumnType("numeric(3,2)")
+                        .HasColumnName("kc_current");
+
+                    b.Property<Guid>("ParcelId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parcel_id");
+
+                    b.Property<string>("ParcelName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("parcel_name");
+
+                    b.Property<DateOnly>("PlantingDate")
+                        .HasColumnType("date")
+                        .HasColumnName("planting_date");
+
+                    b.Property<string>("SoilProfileId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("soil_profile_id");
+
+                    b.Property<string>("SoilProfileName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("soil_profile_name");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("AgriTech.Api.Models.DTOs.ParcelOverlapResult", b =>
+                {
+                    b.Property<Guid>("ConflictingParcelId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("conflicting_parcel_id");
+
+                    b.Property<string>("ConflictingParcelName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("conflicting_parcel_name");
+
+                    b.Property<decimal>("OverlapAreaSqm")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("overlap_area_sqm");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
             modelBuilder.Entity("AgriTech.Api.Models.Field", b =>
                 {
                     b.Property<Guid>("Id")
@@ -195,7 +274,10 @@ namespace AgriTech.Api.Data.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("fields", (string)null);
+                    b.ToTable("fields", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_fields_boundary_valid", "ST_IsValid(boundary_geom)");
+                        });
                 });
 
             modelBuilder.Entity("AgriTech.Api.Models.ModelInference", b =>
@@ -339,7 +421,10 @@ namespace AgriTech.Api.Data.Migrations
 
                     b.HasIndex("SoilProfileId");
 
-                    b.ToTable("parcels", (string)null);
+                    b.ToTable("parcels", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_parcels_boundary_valid", "ST_IsValid(boundary_geom)");
+                        });
                 });
 
             modelBuilder.Entity("AgriTech.Api.Models.SensorNode", b =>
