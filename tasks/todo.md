@@ -1,39 +1,44 @@
-# TODO-202: Spatial Table Schemas & GiST Spatial Indexes
+# TODO-203: Spatial Integrity Functions, Constraints & Coordinate Lookup
 
 ## Current Status: COMPLETED
-**Branch:** `feat/backend-todo202-spatial-tables-gist`  
-**Assignee:** Backend / Database Engineer  
+**Branch:** `feat/backend-todo203-spatial-functions-integrity`  
+**Assignee:** Backend / Spatial Database Engineer  
 **Phase:** Phase 2 — Spatial Foundation, GIS & Relational Data Layer  
 
 ---
 
-- [x] **Subtask 1: Entity Model Implementation (`backend/Models/`)**
-  - Implement C# domain entities: `User.cs`, `Field.cs`, `Parcel.cs`, `SensorNode.cs`, `CropScan.cs`, `Crop.cs`, `SoilProfile.cs`, `ModelInference.cs`.
-  - Use `NetTopologySuite.Geometries.Polygon` and `NetTopologySuite.Geometries.Point` for spatial representations.
+- [x] **Subtask 1: Spatial Integrity Check Constraints & Self-Intersection Enforcement**
+  - Added PostgreSQL CHECK constraints `chk_fields_boundary_valid` and `chk_parcels_boundary_valid` enforcing `ST_IsValid(boundary_geom) = TRUE`.
+  - Rejection of invalid geometries (e.g., self-intersecting butterfly/figure-8 polygons) at the database storage engine layer.
 
-- [x] **Subtask 2: DbContext Mapping & Spatial Index Configuration (`AgriTechDbContext.cs`)**
-  - Register `DbSet` collections for all domain entities.
-  - Map explicit column types: `geometry(Polygon, 4326)` and `geometry(Point, 4326)`.
-  - Configure explicit GiST spatial indexes: `idx_fields_boundary`, `idx_parcels_boundary`, `idx_sensor_nodes_point`, `idx_crop_scans_point`.
-  - Configure Foreign Key cascade rules:
-    - `Field` -> `Parcels`: `CASCADE`
-    - `Parcel` -> `SensorNodes`: `CASCADE`
-    - `Parcel` -> `CropScans`: `SET NULL`
-    - `User` -> `Fields`: `CASCADE`
+- [x] **Subtask 2: Topological Overlap Prevention Trigger & Candidate Parcel Validation Function**
+  - Implemented `fn_check_parcel_overlap(p_field_id, p_candidate_geom, p_exclude_parcel_id)` returning conflicting parcel ID, name, and overlap area in m² (`overlap_area_sqm`).
+  - Implemented `check_parcel_integrity()` trigger function and `trg_enforce_parcel_integrity` trigger on `parcels` executed BEFORE INSERT OR UPDATE of `boundary_geom`, `field_id`.
+  - Allowed adjacent boundary-sharing parcels via `NOT ST_Touches(p.boundary_geom, NEW.boundary_geom)` and surface tolerance `ST_Area(ST_Intersection(...)::geography) > 0.05 m²`.
+  - Enforced parent field spatial containment via `ST_Covers(v_field_geom, NEW.boundary_geom)`.
 
-- [x] **Subtask 3: EF Core Spatial Migration & PL/pgSQL Area Triggers**
-  - Generate migration: `20261015204052_SpatialTablesAndGiSTIndexes`.
-  - Implement PL/pgSQL triggers (`calculate_boundary_area` / `calculate_field_area` on `parcels` and `fields`) computing WGS 84 ellipsoidal surface area in hectares (`ST_Area(boundary_geom::geography) / 10000.0`).
-  - Export idempotent SQL migration script: `docker/postgres/02-spatial-tables-gist.sql`.
-  - Apply migration cleanly via `dotnet ef database update`.
+- [x] **Subtask 3: High-Performance Point-in-Polygon Coordinate Lookup Query**
+  - Implemented `fn_locate_parcel_by_coordinate(p_longitude, p_latitude)` returning parcel metadata, parent field, crop details, soil profile, planting date, and current Kc.
+  - Optimized as `LANGUAGE sql STABLE PARALLEL SAFE` to enable query inlining, utilizing GiST spatial index on `boundary_geom`.
 
-- [x] **Subtask 4: Automated Verification Test Harness (`scripts/verify_spatial_tables.ps1`)**
-  - Verify table existence across `fields`, `parcels`, `sensor_nodes`, `crop_scans`, `users`.
-  - Verify PostGIS `geometry_columns` registration (`POLYGON:4326` and `POINT:4326`).
-  - Verify GiST index installation in `pg_indexes`.
-  - Validate automated trigger calculation accuracy (1.00 ha computed vs. exact geodesic formula).
-  - Validate Foreign Key deletion cascades (`SensorNodes` deleted on parcel delete; `CropScans` retained with `parcel_id = NULL`).
+- [x] **Subtask 4: EF Core DTOs & DbContext Spatial Procedures Integration**
+  - Created keyless DTOs `ParcelCoordinateLookupResult.cs` and `ParcelOverlapResult.cs`.
+  - Configured keyless entity mappings in `AgriTechDbContext.cs`.
+  - Added repository helper methods `CheckParcelOverlapAsync` and `LocateParcelByCoordinateAsync` to `AgriTechDbContext`.
 
-- [x] **Subtask 5: Formal Completion Report (DoD) & Documentation**
-  - Create `PROJECT_DETAILS/Reports/Phase 2/TODO-202-spatial-tables.md`.
-  - Update `tasks/todo.md`.
+- [x] **Subtask 5: EF Core Migration & Standalone Docker Initialization Script**
+  - Generated migration `20261018131932_SpatialIntegrityFunctionsAndTriggers.cs`.
+  - Exported standalone idempotent SQL script `docker/postgres/03-spatial-functions.sql`.
+  - Applied migration to PostgreSQL via `dotnet ef database update`.
+
+- [x] **Subtask 6: Automated Verification Test Harness & Performance Benchmark**
+  - Created and executed `scripts/verify_spatial_procedures.ps1`.
+  - Test 1: Self-intersection rejection (`ST_IsValid` check constraint) -> PASS.
+  - Test 2: Topological collision rejection with descriptive error -> PASS.
+  - Test 3: Shared boundary adjacent parcels (`ST_Touches`) accepted -> PASS.
+  - Test 4: Seeded 1,024 non-overlapping parcels in a 32x32 grid -> PASS.
+  - Test 5: Benchmark `fn_locate_parcel_by_coordinate` execution time -> PASS (0.24 ms avg, well below 10 ms target).
+
+- [x] **Subtask 7: Formal Completion Report (DoD) & Documentation**
+  - Created `PROJECT_DETAILS/Reports/Phase 2/TODO-203-spatial-procedures.md`.
+  - Updated `tasks/todo.md`.
