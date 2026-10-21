@@ -1,44 +1,48 @@
-# TODO-203: Spatial Integrity Functions, Constraints & Coordinate Lookup
+# TODO-204: NetTopologySuite & GeoJSON Serializer Configuration
 
 ## Current Status: COMPLETED
-**Branch:** `feat/backend-todo203-spatial-functions-integrity`  
-**Assignee:** Backend / Spatial Database Engineer  
+**Branch:** `feat/backend-todo204-geojson-serialization`  
+**Assignee:** Backend Engineer  
 **Phase:** Phase 2 — Spatial Foundation, GIS & Relational Data Layer  
 
 ---
 
-- [x] **Subtask 1: Spatial Integrity Check Constraints & Self-Intersection Enforcement**
-  - Added PostgreSQL CHECK constraints `chk_fields_boundary_valid` and `chk_parcels_boundary_valid` enforcing `ST_IsValid(boundary_geom) = TRUE`.
-  - Rejection of invalid geometries (e.g., self-intersecting butterfly/figure-8 polygons) at the database storage engine layer.
+- [x] **Subtask 1: Spatial & GeoJSON NuGet Integration**
+  - Verified `Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite` (v10.0.3) for PostGIS spatial mapping in EF Core.
+  - Added `NetTopologySuite.IO.GeoJSON4STJ` (v4.0.0) providing native System.Text.Json (STJ) GeoJSON converters.
 
-- [x] **Subtask 2: Topological Overlap Prevention Trigger & Candidate Parcel Validation Function**
-  - Implemented `fn_check_parcel_overlap(p_field_id, p_candidate_geom, p_exclude_parcel_id)` returning conflicting parcel ID, name, and overlap area in m² (`overlap_area_sqm`).
-  - Implemented `check_parcel_integrity()` trigger function and `trg_enforce_parcel_integrity` trigger on `parcels` executed BEFORE INSERT OR UPDATE of `boundary_geom`, `field_id`.
-  - Allowed adjacent boundary-sharing parcels via `NOT ST_Touches(p.boundary_geom, NEW.boundary_geom)` and surface tolerance `ST_Area(ST_Intersection(...)::geography) > 0.05 m²`.
-  - Enforced parent field spatial containment via `ST_Covers(v_field_geom, NEW.boundary_geom)`.
+- [x] **Subtask 2: System.Text.Json Custom Serializer Configuration (`GeoJsonSerializationExtensions.cs`)**
+  - Implemented `ConfigureGeoJsonOptions` configuring `GeoJsonConverterFactory` with `GeometryFactory(srid: 4326)`.
+  - Enforced WGS 84 (EPSG:4326) coordinate reference system tagging on all incoming geometries.
+  - Streamlined zero-overhead JSON serialization reading/writing directly via `Utf8JsonReader` and `Utf8JsonWriter` without intermediate string conversions.
+  - Implemented domain entity mapping extension methods (`ToGeoJsonFeature`, `ToGeoJsonFeatureCollection`) for `Parcel`, `Field`, and `SensorNode`.
 
-- [x] **Subtask 3: High-Performance Point-in-Polygon Coordinate Lookup Query**
-  - Implemented `fn_locate_parcel_by_coordinate(p_longitude, p_latitude)` returning parcel metadata, parent field, crop details, soil profile, planting date, and current Kc.
-  - Optimized as `LANGUAGE sql STABLE PARALLEL SAFE` to enable query inlining, utilizing GiST spatial index on `boundary_geom`.
+- [x] **Subtask 3: ASP.NET Core Web API Pipeline Registration (`Program.cs`)**
+  - Registered `.AddGeoJsonSerialization(srid: 4326)` on `IMvcBuilder` in `Program.cs`.
+  - Enabled automatic model binding and validation of GeoJSON payloads across all API controllers.
 
-- [x] **Subtask 4: EF Core DTOs & DbContext Spatial Procedures Integration**
-  - Created keyless DTOs `ParcelCoordinateLookupResult.cs` and `ParcelOverlapResult.cs`.
-  - Configured keyless entity mappings in `AgriTechDbContext.cs`.
-  - Added repository helper methods `CheckParcelOverlapAsync` and `LocateParcelByCoordinateAsync` to `AgriTechDbContext`.
+- [x] **Subtask 4: Spatial DTOs & Validation Models (`Models/DTOs/`)**
+  - Created `CreateParcelGeoJsonRequest.cs` binding incoming GeoJSON geometry directly into `NetTopologySuite.Geometries.Polygon`.
+  - Created `GeometryTestRequest.cs` supporting polymorphic GeoJSON geometry deserialization.
+  - Created `GeoJsonValidationResponse.cs` reporting geometry type, coordinate count, SRID, and centroid metrics.
 
-- [x] **Subtask 5: EF Core Migration & Standalone Docker Initialization Script**
-  - Generated migration `20261018131932_SpatialIntegrityFunctionsAndTriggers.cs`.
-  - Exported standalone idempotent SQL script `docker/postgres/03-spatial-functions.sql`.
-  - Applied migration to PostgreSQL via `dotnet ef database update`.
+- [x] **Subtask 5: Spatial GeoJSON Controller Endpoints (`SpatialGeoJsonController.cs`)**
+  - `POST /api/v1/spatial/geojson/deserialize-polygon` — Ingests client GeoJSON and automatically deserializes into `Polygon` (AC 1).
+  - `POST /api/v1/spatial/geojson/deserialize-geometry` — Polymorphic geometry deserialization.
+  - `GET /api/v1/spatial/geojson/sample-feature` — Produces valid RFC 7946 GeoJSON `Feature` (AC 2a).
+  - `GET /api/v1/spatial/geojson/sample-feature-collection` — Produces valid RFC 7946 GeoJSON `FeatureCollection` (AC 2b).
+  - `POST /api/v1/spatial/geojson/echo-feature` — Verifies roundtrip Feature deserialization as `IFeature` (`StjFeature`).
+  - `GET /api/v1/spatial/geojson/parcels` — Streams live database parcels as RFC 7946 `FeatureCollection`.
 
-- [x] **Subtask 6: Automated Verification Test Harness & Performance Benchmark**
-  - Created and executed `scripts/verify_spatial_procedures.ps1`.
-  - Test 1: Self-intersection rejection (`ST_IsValid` check constraint) -> PASS.
-  - Test 2: Topological collision rejection with descriptive error -> PASS.
-  - Test 3: Shared boundary adjacent parcels (`ST_Touches`) accepted -> PASS.
-  - Test 4: Seeded 1,024 non-overlapping parcels in a 32x32 grid -> PASS.
-  - Test 5: Benchmark `fn_locate_parcel_by_coordinate` execution time -> PASS (0.24 ms avg, well below 10 ms target).
+- [x] **Subtask 6: Automated Verification Test Harness (`scripts/verify_geojson_serialization.ps1`)**
+  - Automated PowerShell test harness executing:
+    - Test 1: NuGet package & compilation check -> PASS.
+    - Test 2: Web API bootstrapping on test port -> PASS.
+    - Test 3: Deserialization into `NetTopologySuite.Geometries.Polygon` with SRID 4326 -> PASS.
+    - Test 4: RFC 7946 GeoJSON `Feature` output validation -> PASS.
+    - Test 5: RFC 7946 GeoJSON `FeatureCollection` output validation -> PASS.
+    - Bonus: Roundtrip `IFeature` echo without string conversion overhead -> PASS.
 
 - [x] **Subtask 7: Formal Completion Report (DoD) & Documentation**
-  - Created `PROJECT_DETAILS/Reports/Phase 2/TODO-203-spatial-procedures.md`.
+  - Created `PROJECT_DETAILS/Reports/Phase 2/TODO-204-geojson-serialization.md`.
   - Updated `tasks/todo.md`.
