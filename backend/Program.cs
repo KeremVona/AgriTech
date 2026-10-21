@@ -1,10 +1,14 @@
 using AgriTech.Api.Data;
+using AgriTech.Api.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+// Configure ASP.NET Core Controllers with NetTopologySuite GeoJSON serialization (RFC 7946, SRID 4326)
+builder.Services.AddControllers()
+    .AddGeoJsonSerialization(srid: GeoJsonSerializationExtensions.DefaultSpatialReferenceId);
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -18,12 +22,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-// DbContext (PostgreSQL + NetTopologySuite)
+// DbContext (PostgreSQL + NetTopologySuite spatial provider)
 builder.Services.AddDbContext<AgriTechDbContext>(options => 
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         npgsqlOptions => npgsqlOptions.UseNetTopologySuite()));
-
 
 var app = builder.Build();
 
@@ -42,4 +45,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
