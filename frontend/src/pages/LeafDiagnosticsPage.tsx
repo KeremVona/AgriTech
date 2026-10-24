@@ -33,17 +33,23 @@ export const LeafDiagnosticsPage: React.FC = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const activeFileRef = useRef<File | null>(null);
 
-  // Clean up object URLs on unmount
+  // Clean up object URLs when selectedImageUrl changes or on unmount
   useEffect(() => {
     return () => {
       if (selectedImageUrl && selectedImageUrl.startsWith('blob:')) {
         URL.revokeObjectURL(selectedImageUrl);
       }
+    };
+  }, [selectedImageUrl]);
+
+  // Abort any active in-flight inference fetch strictly on component unmount
+  useEffect(() => {
+    return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [selectedImageUrl]);
+  }, []);
 
   const handleReset = () => {
     if (abortControllerRef.current) {
@@ -64,23 +70,23 @@ export const LeafDiagnosticsPage: React.FC = () => {
   const handleImageSelected = async (file: File) => {
     setErrorMessage(null);
     setVerdict(null);
-    setUiState('VALIDATING');
 
-    // 1. Client-Side Pre-Flight Validation
-    const validation = await validateLeafImage(file);
-    if (!validation.valid) {
-      setErrorMessage(validation.error || 'Invalid leaf image. Please check format and dimensions.');
-      setUiState('REJECTED');
-      return;
-    }
-
-    // 2. Set Preview & Metadata
+    // 1. Instant preview URL & validating state
     if (selectedImageUrl && selectedImageUrl.startsWith('blob:')) {
       URL.revokeObjectURL(selectedImageUrl);
     }
     const previewUrl = URL.createObjectURL(file);
     setSelectedImageUrl(previewUrl);
     activeFileRef.current = file;
+    setUiState('VALIDATING');
+
+    // 2. Client-Side Pre-Flight Validation
+    const validation = await validateLeafImage(file);
+    if (!validation.valid) {
+      setErrorMessage(validation.error || 'Invalid leaf image. Please check format and dimensions.');
+      setUiState('REJECTED');
+      return;
+    }
 
     setFileMetadata({
       name: file.name,
@@ -132,14 +138,23 @@ export const LeafDiagnosticsPage: React.FC = () => {
     setUiState('IDLE');
   };
 
+  const handleRetryScan = () => {
+    if (activeFileRef.current) {
+      runInference(activeFileRef.current);
+    }
+  };
+
   const handleSelectPreset = (preset: ClinicalSamplePreset) => {
     handleReset();
     const prediction = presetToPrediction(preset);
     setVerdict(prediction);
     setUiState(preset.severityTier === 'Tier 1' ? 'LOW_CONFIDENCE' : 'SUCCESS');
+    if (preset.sampleImageUrl) {
+      setSelectedImageUrl(preset.sampleImageUrl);
+    }
     setFileMetadata({
-      name: `${preset.id}.jpg`,
-      sizeMb: 1.85,
+      name: `${preset.id}.webp`,
+      sizeMb: 0.12,
       width: 1024,
       height: 1024,
     });
@@ -231,6 +246,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
               onImageSelected={handleImageSelected}
               onRetake={handleReset}
               onAbortScan={handleAbortScan}
+              onRetry={activeFileRef.current ? handleRetryScan : undefined}
             />
 
             <SamplingBestPracticesCard />

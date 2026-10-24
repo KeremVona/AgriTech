@@ -10,6 +10,7 @@ export interface LeafImageDropzoneProps {
   onImageSelected: (file: File) => void;
   onRetake: () => void;
   onAbortScan?: () => void;
+  onRetry?: () => void;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ export const LeafImageDropzone: React.FC<LeafImageDropzoneProps> = ({
   onImageSelected,
   onRetake,
   onAbortScan,
+  onRetry,
   className = '',
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -240,17 +242,33 @@ export const LeafImageDropzone: React.FC<LeafImageDropzoneProps> = ({
           </div>
         )}
 
-        {/* Client Validation Error Banner */}
+        {/* Client Validation & Network Error Banner */}
         {errorMessage && (
           <div
             role="alert"
-            className="mt-4 p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-900 text-xs flex items-start gap-2.5"
+            className="mt-4 p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-900 text-xs flex flex-col gap-2"
           >
-            <span className="text-base shrink-0 leading-none" aria-hidden="true">⚠️</span>
-            <div className="space-y-0.5">
-              <p className="font-semibold text-red-950">Pre-flight Validation Notice</p>
-              <p className="text-red-800 leading-relaxed">{errorMessage}</p>
+            <div className="flex items-start gap-2.5">
+              <span className="text-base shrink-0 leading-none" aria-hidden="true">⚠️</span>
+              <div className="space-y-0.5">
+                <p className="font-semibold text-red-950">
+                  {uiState === 'ERROR' ? 'Diagnostic Vision Service Notice' : 'Pre-flight Validation Notice'}
+                </p>
+                <p className="text-red-800 leading-relaxed">{errorMessage}</p>
+              </div>
             </div>
+            {uiState === 'ERROR' && onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-950 text-xs font-semibold rounded-md border border-red-300 cursor-pointer ag-interactive transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Retry Diagnostic Scan</span>
+              </button>
+            )}
           </div>
         )}
       </div>

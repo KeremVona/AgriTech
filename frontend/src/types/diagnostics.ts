@@ -34,6 +34,7 @@ export interface DiagnosticPrediction {
   executionTimeMs: number;
   requiresRescan?: boolean;
   rescanInstructions?: string[];
+  sampleImageUrl?: string;
 }
 
 export type DiagnosticUIState =

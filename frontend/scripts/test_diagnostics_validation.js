@@ -99,11 +99,14 @@ for (const preset of CLINICAL_SAMPLE_PRESETS) {
   const probSum = preset.topProbabilities.reduce((acc, curr) => acc + curr.probability, 0);
   assert.ok(probSum <= 1.001, `Preset ${preset.id} probabilities sum > 1.0 (${probSum})`);
 
+  assert.ok(preset.sampleImageUrl && preset.sampleImageUrl.startsWith('/progression/'), `Preset ${preset.id} must have valid progression sampleImageUrl`);
+
   // Test adapter conversion
   const prediction = presetToPrediction(preset);
   assert.equal(prediction.crop, preset.crop);
   assert.equal(prediction.severityTier, preset.severityTier);
   assert.equal(prediction.confidenceScore, preset.confidenceScore);
+  assert.equal(prediction.sampleImageUrl, preset.sampleImageUrl);
   assert.ok(prediction.inferenceId.startsWith('preset-'));
 }
 
