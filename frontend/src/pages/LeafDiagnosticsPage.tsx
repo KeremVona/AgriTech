@@ -223,7 +223,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
                   key={preset.id}
                   type="button"
                   onClick={() => handleSelectPreset(preset)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-300 hover:border-ag-brand text-ag-ink flex items-center gap-1.5 ag-interactive shadow-xs cursor-pointer"
+                  className="px-3 py-2 min-h-[44px] touch-manipulation rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-300 hover:border-ag-brand text-ag-ink flex items-center gap-1.5 ag-interactive shadow-xs cursor-pointer"
                   title={`Test ${preset.label} (${preset.severityTier})`}
                 >
                   <span>{preset.icon}</span>
