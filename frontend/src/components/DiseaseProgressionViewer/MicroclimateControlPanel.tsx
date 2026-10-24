@@ -7,7 +7,7 @@
  * - Preset scenarios for immediate epidemiology stress testing
  */
 
-import React, { useId } from 'react';
+import React, { useId, useMemo } from 'react';
 import type { SupportedCropId } from '../../types/progression.ts';
 import type { MicroclimateDiagnostics, WeatherPreset } from '../../models/agronomicTimelineModel.ts';
 import {
@@ -56,34 +56,37 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
     onHumidityChange(preset.humidity);
   };
 
-  // Generate SVG path points for the Magarey Beta Temperature Curve
+  // Generate SVG path points for the Magarey Beta Temperature Curve (scaled 0°C to 45°C)
   const svgWidth = 260;
   const svgHeight = 60;
-  const tMinAxis = Math.max(0, profile.cardinals.min - 4);
-  const tMaxAxis = Math.min(45, profile.cardinals.max + 4);
+  const tMinAxis = 0;
+  const tMaxAxis = 45;
 
   const getX = (t: number) => ((t - tMinAxis) / (tMaxAxis - tMinAxis)) * svgWidth;
   const getY = (factor: number) => svgHeight - 8 - factor * (svgHeight - 16);
 
-  const curvePoints: string[] = [];
-  const areaPoints: string[] = [`M ${getX(tMinAxis)} ${svgHeight - 4}`];
+  const { curvePoints, areaPoints } = useMemo(() => {
+    const cPoints: string[] = [];
+    const aPoints: string[] = [`M ${getX(tMinAxis)} ${svgHeight - 4}`];
 
-  for (let t = tMinAxis; t <= tMaxAxis; t += 0.5) {
-    const factor = calculateTemperatureFactor(t, profile.cardinals);
-    const x = getX(t);
-    const y = getY(factor);
-    if (curvePoints.length === 0) {
-      curvePoints.push(`M ${x.toFixed(1)} ${y.toFixed(1)}`);
-    } else {
-      curvePoints.push(`L ${x.toFixed(1)} ${y.toFixed(1)}`);
+    for (let t = tMinAxis; t <= tMaxAxis; t += 0.5) {
+      const factor = calculateTemperatureFactor(t, profile.cardinals);
+      const x = getX(t);
+      const y = getY(factor);
+      if (cPoints.length === 0) {
+        cPoints.push(`M ${x.toFixed(1)} ${y.toFixed(1)}`);
+      } else {
+        cPoints.push(`L ${x.toFixed(1)} ${y.toFixed(1)}`);
+      }
+      aPoints.push(`L ${x.toFixed(1)} ${y.toFixed(1)}`);
     }
-    areaPoints.push(`L ${x.toFixed(1)} ${y.toFixed(1)}`);
-  }
-  areaPoints.push(`L ${getX(tMaxAxis)} ${svgHeight - 4} Z`);
+    aPoints.push(`L ${getX(tMaxAxis)} ${svgHeight - 4} Z`);
+    return { curvePoints: cPoints, areaPoints: aPoints };
+  }, [profile.cardinals]);
 
   // Current Temperature indicator position on SVG curve
   const currentTempFactor = calculateTemperatureFactor(temperature, profile.cardinals);
-  const currentX = Math.max(4, Math.min(svgWidth - 4, getX(temperature)));
+  const currentX = Math.max(2, Math.min(svgWidth - 2, getX(temperature)));
   const currentY = getY(currentTempFactor);
 
   return (

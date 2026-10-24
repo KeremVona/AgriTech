@@ -3,7 +3,7 @@
  * Precision Ag-Intelligence light-mode analytics card displaying:
  * - Green Leaf Area (GLA) preservation %
  * - Yield Retention & Loss Mitigation vs untreated baseline
- * - Economic Net Margin Saved ($/acre) & FRAC rotation guidance
+ * - Economic Net Margin Saved ($/ha) & FRAC rotation guidance
  */
 
 import React from 'react';
@@ -52,6 +52,10 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
         ? profile.manifestation.sporulationSuppressionEffect
         : profile.manifestation.necroticDesiccationEffect;
 
+  const displayGLA = treatmentActive
+    ? yieldAnalytics.greenLeafAreaPct
+    : Math.max(0, 100 - currentTreatedSeverity);
+
   return (
     <div
       className={`bg-white border rounded-2xl p-5 shadow-xs transition-all ${
@@ -96,20 +100,27 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
               Green Leaf Area (GLA)
             </span>
             <div className="text-xl font-bold font-mono tabular-nums text-teal-700 mt-0.5">
-              {treatmentActive ? `${yieldAnalytics.greenLeafAreaPct.toFixed(1)}%` : '0.0%'}
+              {displayGLA.toFixed(1)}%
             </div>
           </div>
           <div className="mt-2">
-            <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <div
+              className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={displayGLA}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Green Leaf Area Percentage"
+            >
               <div
                 className="h-full bg-teal-700 rounded-full transition-all duration-300"
                 style={{
-                  width: `${treatmentActive ? yieldAnalytics.greenLeafAreaPct : 0}%`,
+                  width: `${Math.min(100, Math.max(0, displayGLA))}%`,
                 }}
               />
             </div>
             <span className="text-[10px] text-slate-400 mt-1 block">
-              {treatmentActive ? 'Canopy photosynthesis preserved' : 'Total foliar necrosis'}
+              {treatmentActive ? 'Canopy photosynthesis preserved' : 'Progressive foliar chlorosis'}
             </span>
           </div>
         </div>
@@ -121,17 +132,17 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
               Yield Retention
             </span>
             <div className="text-xl font-bold font-mono tabular-nums text-emerald-700 mt-0.5">
-              {treatmentActive ? `${yieldAnalytics.retainedYieldPct.toFixed(1)}%` : '15.0%'}
+              {yieldAnalytics.retainedYieldPct.toFixed(1)}%
             </div>
           </div>
           <div className="mt-2">
             <span className="text-[11px] text-slate-600 font-medium block">
               {treatmentActive
                 ? `+${yieldAnalytics.salvagedYieldPct.toFixed(0)}% Salvaged`
-                : 'Catastrophic harvest loss'}
+                : 'Unchecked Disease Damage'}
             </span>
             <span className="text-[10px] text-slate-400 mt-0.5 block">
-              Estimated Loss: {treatmentActive ? yieldAnalytics.yieldLossPct.toFixed(1) : 85.0}%
+              Estimated Loss: {yieldAnalytics.yieldLossPct.toFixed(1)}%
             </span>
           </div>
         </div>

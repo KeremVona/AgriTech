@@ -193,7 +193,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
                       <span>Kickback: <strong className="text-slate-800">{p.curativeKickbackHours}h</strong></span>
                       <span>Rainfast: <strong className="text-slate-800">{p.rainfastnessHours}h</strong></span>
                       <span>PHI: <strong className="text-slate-800">{p.preHarvestIntervalDays}d</strong></span>
-                      <span className={`px-1.5 py-0.2 rounded font-semibold ${
+                      <span className={`px-1.5 py-0.5 rounded font-semibold ${
                         p.resistanceRisk === 'HIGH' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'
                       }`}>
                         Risk: {p.resistanceRisk}

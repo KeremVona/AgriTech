@@ -2,10 +2,10 @@
  * StudioInspectorRail (SPEC-UI-007, Section 4.5).
  * Precision Ag-Intelligence light-mode parameter inspector rail featuring:
  * - 4 tactile segmented tabs: Pathology & Prompts, Microclimate, Treatment Branch, Export & Reports
- * - Full responsive containment and zero overflow leakage
+ * - Full WAI-ARIA arrow key navigation, roving tabindex, and zero overflow leakage
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type { SupportedCropId, ProgressionDynamicOutput } from '../../models/agronomicTimelineModel.ts';
 import type {
   FungicideCategory,
@@ -13,7 +13,7 @@ import type {
   TreatedSeverityTrajectoryResult,
   YieldRetentionAnalyticsResult,
 } from '../../models/treatmentBranchingModel.ts';
-import type { CropProgressionData, ProgressionStage } from '../../types/progression.ts';
+import type { ProgressionStage } from '../../types/progression.ts';
 import { PromptAttentionInspector } from './PromptAttentionInspector.tsx';
 import { MicroclimateControlPanel } from './MicroclimateControlPanel.tsx';
 import { TreatmentBranchingControls } from './TreatmentBranchingControls.tsx';
@@ -24,9 +24,9 @@ export type InspectorTab = 'prompts' | 'climate' | 'treatment' | 'export';
 
 export interface StudioInspectorRailProps {
   cropId: SupportedCropId;
-  cropData: CropProgressionData | null;
+  cropData?: unknown;
   activeStage: ProgressionStage | null;
-  effectiveRenderSeverity: number;
+  effectiveRenderSeverity?: number;
   sliderValue: number;
   currentScrubDay: number;
   // Microclimate props
@@ -89,6 +89,7 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
   className = '',
 }) => {
   const [activeTab, setActiveTab] = useState<InspectorTab>('prompts');
+  const tabButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const tabs: { id: InspectorTab; label: string; icon: string }[] = [
     { id: 'prompts', label: 'Pathology & Prompts', icon: '🧬' },
@@ -97,6 +98,25 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
     { id: 'export', label: 'Export & Reports', icon: '📤' },
   ];
 
+  const handleTabKeyDown = (e: React.KeyboardEvent, index: number) => {
+    let nextIndex = index;
+    if (e.key === 'ArrowRight') {
+      nextIndex = (index + 1) % tabs.length;
+    } else if (e.key === 'ArrowLeft') {
+      nextIndex = (index - 1 + tabs.length) % tabs.length;
+    } else if (e.key === 'Home') {
+      nextIndex = 0;
+    } else if (e.key === 'End') {
+      nextIndex = tabs.length - 1;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    const nextTab = tabs[nextIndex];
+    setActiveTab(nextTab.id);
+    tabButtonRefs.current[nextIndex]?.focus();
+  };
+
   return (
     <div
       className={`bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs flex flex-col space-y-4 ${className}`}
@@ -104,25 +124,29 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
       aria-label="Studio Parameter Inspector"
     >
       {/* =========================================================================
-          1. SEGMENTED TAB SWITCHER (Emil Kowalski Tactile Micro-Interactions)
+          1. SEGMENTED TAB SWITCHER (WAI-ARIA Compliant Roving Tabindex)
           ========================================================================= */}
       <div
         className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 bg-slate-100 rounded-2xl border border-slate-200/80"
         role="tablist"
         aria-label="Inspector Panels"
       >
-        {tabs.map((tab) => {
+        {tabs.map((tab, idx) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
+              ref={(el) => {
+                tabButtonRefs.current[idx] = el;
+              }}
               role="tab"
               aria-selected={isActive}
               aria-controls={`panel-${tab.id}`}
               id={`tab-${tab.id}`}
               tabIndex={isActive ? 0 : -1}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 cursor-pointer ${
+              onKeyDown={(e) => handleTabKeyDown(e, idx)}
+              className={`py-2 px-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-700 focus:ring-offset-1 ${
                 isActive
                   ? 'bg-white text-teal-800 shadow-xs border border-slate-200/60 font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'

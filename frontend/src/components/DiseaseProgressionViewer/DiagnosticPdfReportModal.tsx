@@ -1,10 +1,10 @@
 /**
  * DiagnosticPdfReportModal (SPEC-UI-007, Section 4.9).
  * Printable agronomic field advisory report modal formatted for high-contrast
- * clinical review and automated PDF printing.
+ * clinical review, focus trapping, and multi-page print compatibility.
  */
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import type { AgronomicFieldReportData } from '../../models/exportReportModel.ts';
 
 export interface DiagnosticPdfReportModalProps {
@@ -18,10 +18,39 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
   isOpen,
   onClose,
 }) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const printButtonRef = useRef<HTMLButtonElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
         onClose();
+        return;
+      }
+
+      // Accessible Focus Trap within Modal
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     },
     [onClose]
@@ -30,12 +59,23 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
   useEffect(() => {
     if (!isOpen) return;
 
+    // Capture triggering element for focus restoration upon close
+    previousActiveElement.current = document.activeElement as HTMLElement | null;
+
     window.addEventListener('keydown', handleKeyDown);
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+
+    // Set initial focus to the primary action button
+    const timer = setTimeout(() => {
+      printButtonRef.current?.focus();
+    }, 50);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
+      document.body.style.overflow = prevOverflow;
+      clearTimeout(timer);
+      previousActiveElement.current?.focus();
     };
   }, [isOpen, handleKeyDown]);
 
@@ -52,13 +92,18 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
       role="dialog"
       aria-modal="true"
       aria-labelledby="pdf-modal-title"
+      ref={modalRef}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static animate-in fade-in duration-150"
     >
-      {/* Print Stylesheet overrides */}
+      {/* Print Stylesheet Overrides with Multi-Page Flow */}
       <style>{`
+        @page {
+          size: A4 portrait;
+          margin: 12mm 15mm;
+        }
         @media print {
           body * {
             visibility: hidden;
@@ -67,16 +112,18 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
             visibility: visible;
           }
           #agronomic-printable-report {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+            position: static !important;
+            width: 100% !important;
             background: white !important;
             color: black !important;
-            padding: 24px !important;
+            padding: 0 !important;
             margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
+          }
+          .print-avoid-break {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
           .no-print {
             display: none !important;
@@ -96,9 +143,10 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
           </div>
           <div className="flex items-center gap-2.5">
             <button
+              ref={printButtonRef}
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white shadow-xs transition-all duration-150 active:scale-95 cursor-pointer flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white shadow-xs transition-all duration-150 active:scale-95 cursor-pointer flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:ring-offset-1"
             >
               <span>🖨️</span>
               <span>Print / Save as PDF</span>
@@ -106,7 +154,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all duration-150 active:scale-95 cursor-pointer"
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all duration-150 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-1"
             >
               Close
             </button>
@@ -120,7 +168,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
             className="bg-white print:bg-white rounded-2xl p-6 border border-slate-200 print:border-none print:p-0 space-y-6 shadow-2xs"
           >
             {/* 1. Official Letterhead Header */}
-            <div className="flex items-start justify-between border-b-2 border-teal-700 pb-4">
+            <div className="print-avoid-break flex items-start justify-between border-b-2 border-teal-700 pb-4">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🌱</span>
@@ -143,7 +191,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
             </div>
 
             {/* 2. Foliar Specimen & Canvas Snapshot Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
+            <div className="print-avoid-break grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
               {/* Snapshot Image */}
               <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 print:bg-gray-50 border border-slate-200 print:border-gray-200">
                 {canvasSnapshotDataUrl ? (
@@ -214,7 +262,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
             </div>
 
             {/* 3. Microclimate Telemetry Grid */}
-            <div className="bg-slate-50 print:bg-gray-100 p-3.5 rounded-xl border border-slate-200 print:border-gray-300">
+            <div className="print-avoid-break bg-slate-50 print:bg-gray-100 p-3.5 rounded-xl border border-slate-200 print:border-gray-300">
               <span className="text-xs font-bold text-slate-800 print:text-black block mb-2">
                 Field Microclimate Telemetry
               </span>
@@ -243,7 +291,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
             </div>
 
             {/* 4. Intervention & Treatment Advisory Section */}
-            <div className="border border-slate-200 print:border-gray-300 rounded-xl p-4 bg-slate-50 print:bg-gray-50 space-y-3">
+            <div className="print-avoid-break border border-slate-200 print:border-gray-300 rounded-xl p-4 bg-slate-50 print:bg-gray-50 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-teal-800 uppercase tracking-wide">
                   Phytosanitary Treatment Advisory
@@ -304,7 +352,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
             </div>
 
             {/* 5. Cultural Sanitization Guidelines */}
-            <div className="space-y-1.5">
+            <div className="print-avoid-break space-y-1.5">
               <span className="text-xs font-bold text-slate-800 print:text-black block">
                 Integrated Cultural Sanitation & Disease Management:
               </span>
@@ -316,7 +364,7 @@ export const DiagnosticPdfReportModal: React.FC<DiagnosticPdfReportModalProps> =
             </div>
 
             {/* 6. Document Footer & Disclaimer */}
-            <div className="pt-4 border-t border-slate-200 print:border-gray-300 text-[10px] text-slate-400 print:text-gray-500 flex items-center justify-between">
+            <div className="print-avoid-break pt-4 border-t border-slate-200 print:border-gray-300 text-[10px] text-slate-400 print:text-gray-500 flex items-center justify-between">
               <span>Precision AgriTech • MobileNetV3-Large & Diffusion Progression Engine</span>
               <span>CONFIDENTIAL • FOR FIELD USE ONLY</span>
             </div>
