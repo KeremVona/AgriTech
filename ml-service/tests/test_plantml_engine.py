@@ -42,6 +42,11 @@ def plantml(monkeypatch):
     plantml_engine._predictor = None
 
 
+async def _get(path):
+    async with AsyncClient(transport=ASGITransport(app=main.app), base_url="http://test") as c:
+        return await c.get(path)
+
+
 async def _post(data=None):
     async with AsyncClient(transport=ASGITransport(app=main.app), base_url="http://test") as c:
         return await c.post("/api/v1/classify-leaf", files={"file": ("l.jpg", _jpeg(), "image/jpeg")}, data=data or {})
@@ -83,7 +88,7 @@ async def test_responses_validate_for_each_status(plantml, status, conf):
         ClassifyLeafLowConfidenceResponse.model_validate(body)
         msg = body["low_confidence_advisory"]["message"]
         assert ("supported crop" in msg) == (status == "unsupported")
-    h = (await AsyncClient(transport=ASGITransport(app=main.app), base_url="http://test").get("/health/ready")).json()
+    h = (await _get("/health/ready")).json()
     assert h["backend"] == "plantml" and h["model_loaded"] is True
 
 
@@ -102,5 +107,19 @@ async def test_default_backend_unchanged():
     r = await _post()
     assert r.status_code == 200
     assert "status" not in r.json()
-    h = (await AsyncClient(transport=ASGITransport(app=main.app), base_url="http://test").get("/health/ready")).json()
+    h = (await _get("/health/ready")).json()
     assert h["backend"] == "onnx"
+
+
+async def test_unloaded_plantml_returns_503_and_health_reports_error(plantml):
+    def boom():
+        raise FileNotFoundError("system.yaml missing")
+
+    plantml_engine.load(boom)
+    r = await _post()
+    assert r.status_code == 503
+    assert r.json()["error"] == "model_unavailable"
+    assert "system.yaml missing" in r.json()["message"]
+    h = (await _get("/health/ready")).json()
+    assert h["backend"] == "plantml" and h["model_loaded"] is False and h["mode"] == "UNAVAILABLE"
+    assert "plant-ml failed to load" in h["note"] and "ONNX" not in h["note"]

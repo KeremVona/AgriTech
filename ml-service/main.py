@@ -84,7 +84,15 @@ async def lifespan(app: FastAPI):
         # Model loading is synchronous but runs only once; safe in startup context
         inference_engine.load(settings.onnx_model_path)
 
-    if _engine().is_loaded():
+    if settings.model_backend == "plantml":
+        if plantml_engine.is_loaded():
+            logger.info(
+                "plant-ml loaded (mode=%s, system=%s) — LIVE inference mode active.",
+                settings.plantml_mode, settings.plantml_system,
+            )
+        else:
+            logger.error("plant-ml NOT loaded: %s", plantml_engine.load_error)
+    elif _engine().is_loaded():
         logger.info("ONNX model loaded successfully — LIVE inference mode active.")
     else:
         logger.warning(
@@ -166,7 +174,7 @@ async def health_ready():
     return {
         "status": "ready",
         "model_loaded": _engine().is_loaded(),
-        "mode": "LIVE" if _engine().is_loaded() else "STUB",
+        "mode": "LIVE" if _engine().is_loaded() else ("UNAVAILABLE" if settings.model_backend == "plantml" else "STUB"),
         "backend": settings.model_backend,
         "advisory_kb": {
             "loaded": is_kb_loaded(),
@@ -174,7 +182,9 @@ async def health_ready():
             "class_count": get_kb_class_count(),
         },
         "note": (
-            None
+            f"plant-ml failed to load: {plantml_engine.load_error}"
+            if settings.model_backend == "plantml" and not plantml_engine.is_loaded()
+            else None
             if _engine().is_loaded()
             else "Running in stub mode — ML-102 (training) and ML-103 (ONNX export) are pending."
         ),
@@ -271,6 +281,14 @@ async def classify_leaf(
 
     loop = asyncio.get_running_loop()
     engine = _engine()
+    if settings.model_backend == "plantml" and not engine.is_loaded():
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": "model_unavailable",
+                "message": f"plant-ml engine is not loaded: {plantml_engine.load_error}",
+            },
+        )
     try:
         if crop_hint:
             result = await loop.run_in_executor(
