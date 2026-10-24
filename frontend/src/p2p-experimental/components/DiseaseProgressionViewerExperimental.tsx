@@ -26,7 +26,7 @@ import { CompareHealthyToggle } from '../../components/DiseaseProgressionViewer/
 import { AgronomicTimelineSlider } from './AgronomicTimelineSlider';
 import { LeafHotspotOverlay } from './LeafHotspotOverlay';
 import { StudioInspectorRail } from '../../components/DiseaseProgressionViewer/StudioInspectorRail';
-import { DiagnosticPdfReportModal } from './DiagnosticPdfReportModal';
+import { DiagnosticPdfReportModal } from '../../components/DiseaseProgressionViewer/DiagnosticPdfReportModal';
 
 export type TrajectoryViewMode = 'treated' | 'untreated' | 'split';
 
