@@ -8,7 +8,9 @@ import type {
 } from '../types/diagnostics';
 
 const ML_URL: string =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ML_URL) || 'http://localhost:8000';
+  typeof import.meta !== 'undefined' && import.meta.env?.VITE_ML_URL !== undefined
+    ? import.meta.env.VITE_ML_URL
+    : 'http://localhost:8000';
 const DEFAULT_TIMEOUT_MS = 30000;
 export const LOW_CONFIDENCE_THRESHOLD = 0.70; // SPEC-UI-006 §5 State 6
 

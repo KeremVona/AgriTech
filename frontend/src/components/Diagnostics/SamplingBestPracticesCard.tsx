@@ -1,4 +1,5 @@
 import React from 'react';
+import { MIN_IMAGE_DIMENSION_PX } from '../../utils/imageValidation';
 
 export const SamplingBestPracticesCard: React.FC<{ className?: string }> = ({ className = '' }) => {
   return (
@@ -37,7 +38,7 @@ export const SamplingBestPracticesCard: React.FC<{ className?: string }> = ({ cl
 
       <div className="p-3 rounded-md bg-ag-brand-subtle border border-emerald-200 text-xs text-teal-900 flex items-center gap-2">
         <span className="text-ag-brand font-bold text-sm" aria-hidden="true">💡</span>
-        <span>Resolution threshold: minimum <code className="font-mono font-semibold">224×224 px</code> required for neural feature extraction.</span>
+        <span>Resolution threshold: minimum <code className="font-mono font-semibold">{MIN_IMAGE_DIMENSION_PX}×{MIN_IMAGE_DIMENSION_PX} px</code> required for neural feature extraction.</span>
       </div>
     </div>
   );
