@@ -18,9 +18,15 @@ export function validateMimeType(mime: string): { valid: boolean; error?: string
 }
 
 /**
- * Validates payload size to prevent network buffer overflow.
+ * Validates payload size to prevent empty uploads and network buffer overflow.
  */
 export function validateFileSize(bytes: number): { valid: boolean; error?: string } {
+  if (bytes <= 0) {
+    return {
+      valid: false,
+      error: 'File is empty (0 bytes). Please select a valid leaf photo.',
+    };
+  }
   if (bytes > MAX_FILE_SIZE_BYTES) {
     const sizeMb = (bytes / (1024 * 1024)).toFixed(1);
     return {
@@ -84,7 +90,7 @@ export async function validateLeafImage(file: File): Promise<ImageValidationResu
     return {
       valid: false,
       error: mimeCheck.error,
-      fileSizeMb: file.size / (1024 * 1024),
+      fileSizeMb: Number((file.size / (1024 * 1024)).toFixed(2)),
       mimeType: file.type,
     };
   }
@@ -94,7 +100,7 @@ export async function validateLeafImage(file: File): Promise<ImageValidationResu
     return {
       valid: false,
       error: sizeCheck.error,
-      fileSizeMb: file.size / (1024 * 1024),
+      fileSizeMb: Number((file.size / (1024 * 1024)).toFixed(2)),
       mimeType: file.type,
     };
   }
@@ -106,7 +112,7 @@ export async function validateLeafImage(file: File): Promise<ImageValidationResu
       error: dimCheck.error,
       width: dimCheck.width,
       height: dimCheck.height,
-      fileSizeMb: file.size / (1024 * 1024),
+      fileSizeMb: Number((file.size / (1024 * 1024)).toFixed(2)),
       mimeType: file.type,
     };
   }
@@ -115,7 +121,7 @@ export async function validateLeafImage(file: File): Promise<ImageValidationResu
     valid: true,
     width: dimCheck.width,
     height: dimCheck.height,
-    fileSizeMb: file.size / (1024 * 1024),
+    fileSizeMb: Number((file.size / (1024 * 1024)).toFixed(2)),
     mimeType: file.type,
   };
 }
