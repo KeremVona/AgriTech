@@ -1,12 +1,25 @@
 /**
- * Core WebGL & Canvas 2D Blending Engine for Leaf Disease Progression (TODO-108).
+ * Core WebGL & Canvas 2D Blending Engine for Leaf Disease Progression (SPEC-UI-007, TODO-112).
  * Executes a two-phase fragment shader blend:
  * - Slider 0 -> 50%: Cross-dissolve Stage 0 (Healthy) to Stage 1 (Early) with localized chlorosis masking.
  * - Slider 51 -> 100%: Cross-dissolve Stage 1 to Stage 2 (Severe) with high-pass necrotic reveal.
+ * 
+ * Supports 3 Interactive View Modes:
+ * - 'rgb': Photorealistic blended foliar surface.
+ * - 'attention': 3-stop Bio-Agronomic heatmap (#0F766E Teal -> #F59E0B Amber -> #DC2626 Alert Red).
+ * - 'mask': High-contrast isolated lesion mask.
+ * 
+ * Supports Split Curtain Compare:
+ * - Splits canvas horizontally between healthy Stage 0 baseline and current progression state.
+ * 
  * Includes graceful HTML5 2D Canvas fallback and full context disposal for zero memory leaks.
  */
 
-const VERTEX_SHADER_SOURCE = `
+import type { ProgressionViewMode, TextureSources } from './types.ts';
+
+export type { TextureSources, ProgressionViewMode };
+
+export const VERTEX_SHADER_SOURCE = `
 attribute vec2 a_position;
 attribute vec2 a_texCoord;
 varying vec2 v_texCoord;
@@ -17,7 +30,7 @@ void main() {
 }
 `;
 
-const FRAGMENT_SHADER_SOURCE = `
+export const FRAGMENT_SHADER_SOURCE = `
 precision mediump float;
 
 varying vec2 v_texCoord;
@@ -28,9 +41,30 @@ uniform sampler2D u_stage2;
 uniform sampler2D u_mask1;
 uniform sampler2D u_mask2;
 
-uniform float u_progress;      // Normalized 0.0 to 1.0
-uniform float u_has_mask1;     // 1.0 if mask1 provided, 0.0 otherwise
-uniform float u_has_mask2;     // 1.0 if mask2 provided, 0.0 otherwise
+uniform float u_progress;         // Normalized 0.0 to 1.0
+uniform float u_has_mask1;        // 1.0 if mask1 provided, 0.0 otherwise
+uniform float u_has_mask2;        // 1.0 if mask2 provided, 0.0 otherwise
+uniform float u_view_mode;        // 0.0 = Standard RGB, 1.0 = Attention Heatmap, 2.0 = Difference Mask
+uniform float u_split_enabled;    // 1.0 = active, 0.0 = inactive
+uniform float u_split_position;   // 0.0 to 1.0 horizontal split curtain line
+
+// 3-stop Bio-Agronomic Colormap (SPEC-UI-007):
+// Stop 1: Deep Teal #0F766E = rgb(15, 118, 110) = vec3(0.0588, 0.4627, 0.4314)
+// Stop 2: Warm Amber #F59E0B = rgb(245, 158, 11) = vec3(0.9608, 0.6196, 0.0431)
+// Stop 3: Vivid Red #DC2626 = rgb(220, 38, 38) = vec3(0.8627, 0.1490, 0.1490)
+vec3 getAttentionColormap(float w) {
+    vec3 colLow = vec3(0.0588, 0.4627, 0.4314);
+    vec3 colMid = vec3(0.9608, 0.6196, 0.0431);
+    vec3 colHigh = vec3(0.8627, 0.1490, 0.1490);
+    
+    if (w < 0.35) {
+        float f = clamp(w / 0.35, 0.0, 1.0);
+        return mix(colLow, colMid, f);
+    } else {
+        float f = clamp((w - 0.35) / 0.65, 0.0, 1.0);
+        return mix(colMid, colHigh, f);
+    }
+}
 
 void main() {
     // Correct Y orientation for WebGL texture sampling
@@ -50,7 +84,8 @@ void main() {
         m2 = texture2D(u_mask2, uv).r;
     }
 
-    vec4 finalColor;
+    vec4 rgbColor;
+    float currentMask;
 
     if (u_progress <= 0.5) {
         // Phase 1: 0.0 -> 0.5 (Stage 0 -> Stage 1)
@@ -61,7 +96,8 @@ void main() {
         float organicFactor = clamp((t - (1.0 - m1) * 0.35) / 0.65, 0.0, 1.0);
         float blendAlpha = mix(t, organicFactor, 0.65);
 
-        finalColor = mix(col0, col1, blendAlpha);
+        rgbColor = mix(col0, col1, blendAlpha);
+        currentMask = (u_has_mask1 > 0.5) ? (m1 * clamp(t * 1.5, 0.05, 1.0)) : t;
     } else {
         // Phase 2: 0.5 -> 1.0 (Stage 1 -> Stage 2)
         float t = (u_progress - 0.5) / 0.5; // Normalized to 0.0 -> 1.0
@@ -71,20 +107,47 @@ void main() {
         float organicFactor = clamp((t - (1.0 - m2) * 0.40) / 0.60, 0.0, 1.0);
         float blendAlpha = mix(t, organicFactor, 0.70);
 
-        finalColor = mix(col1, col2, blendAlpha);
+        rgbColor = mix(col1, col2, blendAlpha);
+        currentMask = (u_has_mask2 > 0.5) ? mix(m1, m2, t) : mix(0.5, 1.0, t);
     }
 
-    gl_FragColor = finalColor;
+    // Determine output color based on u_view_mode
+    // 0.0 = Standard RGB
+    // 1.0 = Cross-Attention Heatmap
+    // 2.0 = Difference Mask
+    vec4 modeColor;
+    if (u_view_mode > 1.5) {
+        // Mode 2: Difference Mask (high-contrast monochrome mask showing affected foliar zones)
+        modeColor = vec4(vec3(currentMask), 1.0);
+    } else if (u_view_mode > 0.5) {
+        // Mode 1: Cross-Attention Heatmap (Bio-Teal #0F766E -> Amber #F59E0B -> Red #DC2626)
+        vec3 heatColor = getAttentionColormap(currentMask);
+        // Blend heatmap over leaf surface preserving underlying structure and foliar veins
+        float heatIntensity = clamp(currentMask * 0.75 + 0.20, 0.0, 0.90);
+        modeColor = vec4(mix(rgbColor.rgb, heatColor, heatIntensity), rgbColor.a);
+    } else {
+        // Mode 0: Standard Photorealistic RGB
+        modeColor = rgbColor;
+    }
+
+    // Apply Split Curtain Compare (if enabled)
+    if (u_split_enabled > 0.5) {
+        float splitDelta = uv.x - u_split_position;
+        if (abs(splitDelta) < 0.002) {
+            // 1px crisp divider line (white accent)
+            gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        } else if (splitDelta < 0.0) {
+            // Left of divider: Stage 0 (Healthy baseline specimen)
+            gl_FragColor = col0;
+        } else {
+            // Right of divider: Current progression state & view mode
+            gl_FragColor = modeColor;
+        }
+    } else {
+        gl_FragColor = modeColor;
+    }
 }
 `;
-
-export interface TextureSources {
-  stage0: string;
-  stage1: string;
-  stage2: string;
-  mask1?: string | null;
-  mask2?: string | null;
-}
 
 interface ShaderLocations {
   a_position: number;
@@ -97,6 +160,9 @@ interface ShaderLocations {
   u_has_mask1: WebGLUniformLocation | null;
   u_has_mask2: WebGLUniformLocation | null;
   u_progress: WebGLUniformLocation | null;
+  u_view_mode: WebGLUniformLocation | null;
+  u_split_enabled: WebGLUniformLocation | null;
+  u_split_position: WebGLUniformLocation | null;
 }
 
 export class ProgressionShaderRenderer {
@@ -124,6 +190,11 @@ export class ProgressionShaderRenderer {
   private imgStage2: HTMLImageElement | null = null;
 
   private currentProgress = 0.0;
+  private viewMode: ProgressionViewMode = 'rgb';
+  private viewModeNum = 0.0;
+  private splitEnabled = false;
+  private splitPosition = 0.5;
+
   private isLoaded = false;
   private animFrameId: number | null = null;
   private currentLoadId = 0;
@@ -168,7 +239,7 @@ export class ProgressionShaderRenderer {
         if (this.isWebGL) return;
       }
     } catch {
-      // Fallback
+      // Fallback to 2D
     }
 
     this.isWebGL = false;
@@ -231,6 +302,9 @@ export class ProgressionShaderRenderer {
       u_has_mask1: gl.getUniformLocation(program, 'u_has_mask1'),
       u_has_mask2: gl.getUniformLocation(program, 'u_has_mask2'),
       u_progress: gl.getUniformLocation(program, 'u_progress'),
+      u_view_mode: gl.getUniformLocation(program, 'u_view_mode'),
+      u_split_enabled: gl.getUniformLocation(program, 'u_split_enabled'),
+      u_split_position: gl.getUniformLocation(program, 'u_split_position'),
     };
 
     // Full screen quad geometry
@@ -338,6 +412,63 @@ export class ProgressionShaderRenderer {
   }
 
   /**
+   * Sets the active view mode (RGB, Cross-Attention Heatmap, Difference Mask).
+   */
+  public setViewMode(mode: ProgressionViewMode | number): void {
+    if (typeof mode === 'number') {
+      this.viewModeNum = mode;
+      if (mode >= 1.5) {
+        this.viewMode = 'mask';
+      } else if (mode >= 0.5) {
+        this.viewMode = 'attention';
+      } else {
+        this.viewMode = 'rgb';
+      }
+    } else {
+      this.viewMode = mode;
+      switch (mode) {
+        case 'attention':
+          this.viewModeNum = 1.0;
+          break;
+        case 'mask':
+          this.viewModeNum = 2.0;
+          break;
+        case 'rgb':
+        default:
+          this.viewModeNum = 0.0;
+          break;
+      }
+    }
+    this.render(this.currentProgress);
+  }
+
+  /**
+   * Returns current active view mode.
+   */
+  public getViewMode(): ProgressionViewMode {
+    return this.viewMode;
+  }
+
+  /**
+   * Configures split-screen swipe comparison (Healthy baseline vs. Predicted state).
+   */
+  public setSplitCompare(enabled: boolean, position = 0.5): void {
+    this.splitEnabled = enabled;
+    this.splitPosition = Math.max(0.0, Math.min(1.0, position));
+    this.render(this.currentProgress);
+  }
+
+  /**
+   * Returns current split comparison status.
+   */
+  public getSplitCompare(): { enabled: boolean; position: number } {
+    return {
+      enabled: this.splitEnabled,
+      position: this.splitPosition,
+    };
+  }
+
+  /**
    * Schedules a frame render via requestAnimationFrame for 60 FPS performance.
    * progress: normalized number between 0.0 (Stage 0) and 1.0 (Stage 2).
    */
@@ -401,7 +532,7 @@ export class ProgressionShaderRenderer {
       gl.bindTexture(gl.TEXTURE_2D, this.texMask1);
       gl.uniform1i(locs.u_mask1, 3);
       gl.uniform1f(locs.u_has_mask1, 1.0);
-    } else {
+    } else if (locs.u_has_mask1) {
       gl.uniform1f(locs.u_has_mask1, 0.0);
     }
     if (this.texMask2 && locs.u_mask2) {
@@ -409,12 +540,23 @@ export class ProgressionShaderRenderer {
       gl.bindTexture(gl.TEXTURE_2D, this.texMask2);
       gl.uniform1i(locs.u_mask2, 4);
       gl.uniform1f(locs.u_has_mask2, 1.0);
-    } else {
+    } else if (locs.u_has_mask2) {
       gl.uniform1f(locs.u_has_mask2, 0.0);
     }
 
-    // Set Progress Uniform
-    gl.uniform1f(locs.u_progress, this.currentProgress);
+    // Set Progression & View Mode Uniforms
+    if (locs.u_progress) {
+      gl.uniform1f(locs.u_progress, this.currentProgress);
+    }
+    if (locs.u_view_mode) {
+      gl.uniform1f(locs.u_view_mode, this.viewModeNum);
+    }
+    if (locs.u_split_enabled) {
+      gl.uniform1f(locs.u_split_enabled, this.splitEnabled ? 1.0 : 0.0);
+    }
+    if (locs.u_split_position) {
+      gl.uniform1f(locs.u_split_position, this.splitPosition);
+    }
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
@@ -427,24 +569,68 @@ export class ProgressionShaderRenderer {
 
     ctx.clearRect(0, 0, w, h);
 
-    if (this.currentProgress <= 0.5) {
-      const t = this.currentProgress / 0.5;
-      ctx.globalAlpha = 1.0;
-      ctx.drawImage(this.imgStage0, 0, 0, w, h);
-      ctx.globalAlpha = t;
-      ctx.drawImage(this.imgStage1, 0, 0, w, h);
-    } else {
-      const t = (this.currentProgress - 0.5) / 0.5;
-      ctx.globalAlpha = 1.0;
-      ctx.drawImage(this.imgStage1, 0, 0, w, h);
-      ctx.globalAlpha = t;
-      ctx.drawImage(this.imgStage2, 0, 0, w, h);
-    }
+    const drawProgression = (targetCtx: CanvasRenderingContext2D, width: number, height: number) => {
+      if (this.currentProgress <= 0.5) {
+        const t = this.currentProgress / 0.5;
+        targetCtx.globalAlpha = 1.0;
+        targetCtx.drawImage(this.imgStage0!, 0, 0, width, height);
+        targetCtx.globalAlpha = t;
+        targetCtx.drawImage(this.imgStage1!, 0, 0, width, height);
+      } else {
+        const t = (this.currentProgress - 0.5) / 0.5;
+        targetCtx.globalAlpha = 1.0;
+        targetCtx.drawImage(this.imgStage1!, 0, 0, width, height);
+        targetCtx.globalAlpha = t;
+        targetCtx.drawImage(this.imgStage2!, 0, 0, width, height);
+      }
+      targetCtx.globalAlpha = 1.0;
 
-    ctx.globalAlpha = 1.0;
+      // 2D View Mode Overlays
+      if (this.viewMode === 'attention') {
+        targetCtx.save();
+        targetCtx.fillStyle = 'rgba(245, 158, 11, 0.35)';
+        targetCtx.fillRect(0, 0, width, height);
+        targetCtx.restore();
+      } else if (this.viewMode === 'mask') {
+        targetCtx.save();
+        targetCtx.filter = 'grayscale(100%) contrast(180%)';
+        targetCtx.drawImage(targetCtx.canvas, 0, 0);
+        targetCtx.restore();
+      }
+    };
+
+    if (this.splitEnabled) {
+      const splitX = Math.round(w * this.splitPosition);
+
+      // Draw Stage 0 Healthy on left
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, splitX, h);
+      ctx.clip();
+      ctx.drawImage(this.imgStage0, 0, 0, w, h);
+      ctx.restore();
+
+      // Draw active progression state on right
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(splitX, 0, w - splitX, h);
+      ctx.clip();
+      drawProgression(ctx, w, h);
+      ctx.restore();
+
+      // 1px Divider Line
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(splitX, 0);
+      ctx.lineTo(splitX, h);
+      ctx.stroke();
+    } else {
+      drawProgression(ctx, w, h);
+    }
   }
 
-  public resize(width: number, height: number, dpr = window.devicePixelRatio || 1) {
+  public resize(width: number, height: number, dpr = (typeof window !== 'undefined' ? window.devicePixelRatio : 1) || 1) {
     const w = Math.floor(width * dpr);
     const h = Math.floor(height * dpr);
     if (this.canvas.width !== w || this.canvas.height !== h) {
@@ -479,9 +665,6 @@ export class ProgressionShaderRenderer {
       if (this.positionBuffer) gl.deleteBuffer(this.positionBuffer);
       if (this.texCoordBuffer) gl.deleteBuffer(this.texCoordBuffer);
       if (this.program) gl.deleteProgram(this.program);
-      // Note: Do NOT call loseExt?.loseContext() here. In React 19 / StrictMode,
-      // unmount is immediately followed by remount on the same canvas DOM node.
-      // Calling loseContext() permanently kills the context for the remounted component.
     }
     this.gl = null;
 

@@ -1,321 +1,226 @@
-# AI Leaf Diagnostics Page Implementation Plan
+# Disease Progression Studio: Integration & Light-Mode Refactor Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **MANDATORY REVIEW GATE:** As explicitly instructed by the user, **after EACH task** of this plan, a specialized subagent (`code-reviewer`) MUST be invoked to inspect and review the code for visual fidelity against `design/AI_Leaf_Diagnostics_Spec.md`, token correctness, and functional edge cases before proceeding to the next task.
+> **MANDATORY REVIEW GATE:** As explicitly instructed by the user, **after EACH task** of this plan, a specialized subagent (`code-reviewer`) MUST be invoked to inspect and review the code for visual fidelity against `design/DISEASE_PROGRESSION_SPEC.md` (`SPEC-UI-007`), token correctness, and functional edge cases before proceeding to the next task.
 
-**Goal:** Implement the dedicated, high-precision AI Leaf Diagnostics page (`/diagnostics` and `/leaf-scanner`) adhering strictly to `design/AI_Leaf_Diagnostics_Spec.md` (SPEC-UI-006) and the platform design foundations.
+**Goal:** Integrate and refactor the experimental Prompt-to-Prompt Disease Progression Studio (`/disease-progression-experimental`) into the platform's primary production route (`/disease-progression`), adopting the standardized "Precision Ag-Intelligence" light-mode design system (`#F8FAFC` canvas, `#FFFFFF` surfaces, `#0F172A` ink, and `#0F766E` brand accents).
 
-**Architecture:** A focused dual-panel workbench (5 cols / 7 cols desktop grid, stacking into a mobile-first field inspection viewport) featuring client-side pre-flight image validation (MIME, size, resolution), an in-flight telemetry laser scan beam with a tabular elapsed timer, an animated dual-coded diagnostic verdict card (4-tier severity ramp, top-3 class probabilities, and immediate agronomic action banners), and a resilient dual-mode API service (FastAPI `/api/v1/classify-leaf` with clinical sample fallback).
+**Architecture:** A responsive 12-column engineering workbench (7 cols left / 5 cols right on desktop, stacking into a mobile-first field viewport) featuring an 8-crop selector rail, a 60 FPS two-phase WebGL fragment shader with cross-attention heatmaps and difference masks, interactive anatomical symptom hotspots, a bi-directional Magarey Beta timeline scrubber, a 4-tab docked parameter inspector rail (microclimate, treatment branching, prompt diff, media export), and safe GPU context disposal.
 
-**Tech Stack:** React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, HTML5 File & Camera API (`capture="environment"`).
+**Tech Stack:** React 19, TypeScript, Vite, Tailwind CSS v4, WebGL 1.0 GLSL Fragment Shaders, HTML5 Canvas 2D fallback, MediaRecorder API (`canvas.captureStream()`), Lucide Icons.
 
-**Spec:** [`design/AI_Leaf_Diagnostics_Spec.md`](file:///f:/Okul/Graduation%20Project/Project/design/AI_Leaf_Diagnostics_Spec.md)  
-**Foundations:** [`design/FOUNDATIONS.md`](file:///f:/Okul/Graduation%20Project/Project/design/FOUNDATIONS.md), [`design/MOTION_AND_INTERACTION.md`](file:///f:/Okul/Graduation%20Project/Project/design/MOTION_AND_INTERACTION.md), [`design/MOBILE_AND_OUTDOOR_SPEC.md`](file:///f:/Okul/Graduation%20Project/Project/design/MOBILE_AND_OUTDOOR_SPEC.md)
+**Spec:** [`design/DISEASE_PROGRESSION_SPEC.md`](file:///f:/Okul/Graduation%20Project/Project/design/DISEASE_PROGRESSION_SPEC.md) (`SPEC-UI-007`)  
+**Foundations:** [`design/FOUNDATIONS.md`](file:///f:/Okul/Graduation%20Project/Project/design/FOUNDATIONS.md), [`design/COMPONENTS.md`](file:///f:/Okul/Graduation%20Project/Project/design/COMPONENTS.md), [`design/MOTION_AND_INTERACTION.md`](file:///f:/Okul/Graduation%20Project/Project/design/MOTION_AND_INTERACTION.md), [`design/MOBILE_AND_OUTDOOR_SPEC.md`](file:///f:/Okul/Graduation%20Project/Project/design/MOBILE_AND_OUTDOOR_SPEC.md)
 
 ---
 
 ## Global Constraints
 
-- **Default Light Mode:** Root canvas `#F8FAFC`, cards/surfaces `#FFFFFF`, primary ink `#0F172A` ($15.8:1$ AAA), brand `#0F766E`.
-- **Rigid Tabular Numerals:** All confidence percentages, latency values, and elapsed timer readouts MUST use `font-variant-numeric: tabular-nums` (`.ag-tabular-numeric`) to prevent metric jitter.
-- **Dual Coding Severity:** Never use color alone. Every severity level MUST display: (1) color fill/stroke, (2) icon glyph (`CheckCircle`, `AlertTriangle`, `AlertCircle`, `OctagonAlert`), and (3) explicit status label.
-- **Outdoor Touch Ergonomics:** 48px minimum touch targets on mobile viewports; 16px minimum input font size to prevent iOS Safari auto-zoom.
-- **Non-Zero Scale Entrances:** Modals, tooltips, and verdict cards must animate in from `scale(0.96)` with opacity 0; never from `scale(0)`.
-- **Tactile Feedback:** Interactive buttons compress on `:active` with `transform: scale(0.97)` and respond on `pointerdown`.
+- **Default Light Mode:** Root canvas `#F8FAFC` (`--ag-canvas`), cards/surfaces `#FFFFFF` (`--ag-surface`), primary ink `#0F172A` ($15.8:1$ AAA), brand `#0F766E` (`--ag-brand`). Purge all dark mode styles (`bg-slate-950`, `bg-slate-900`, `border-white/10`).
+- **Rigid Tabular Numerals:** All elapsed days (`Day 4.2`), temperature readouts (`24.0°C`), humidity (`88.0%`), and severity percentages (`25.0%`) MUST use `font-variant-numeric: tabular-nums` (`.ag-tabular-numeric`) to prevent metric jitter.
+- **Dual Coding Severity:** Never use color alone. Every severity level and intervention alert MUST display semantic color, icon glyph, and explicit textual status label.
+- **Outdoor Touch Ergonomics:** 48px minimum touch targets on mobile viewports; 44px+ on crop selector pills and secondary triggers; direct pointer tracking on sliders with `setPointerCapture`.
+- **Non-Zero Scale Entrances:** Modals, tooltips, and popovers enter from `scale(0.96)` and opacity 0 over 200ms.
+- **WebGL Context Safety:** All GPU textures, buffers, and shader programs MUST be cleaned up via `renderer.dispose()` on unmount to prevent GPU memory leaks across navigation switches.
 
 ---
 
 ## Review Focus
 
-1. **Undersized Image Upload:** Uploading an image with resolution below $224 \times 224\text{ px}$ must be caught client-side and display an informative error before calling the backend.
-2. **Payload Limit Exceeded:** Files exceeding 10 MB must trigger a client pre-flight rejection with a clear size warning.
-3. **Invalid File Type:** Non-JPEG/PNG files must be rejected with helpful user guidance.
-4. **Low-Confidence Diagnosis ($< 70\%$):** Inference returning confidence below 0.70 must render an Amber warning disclaimer advising re-sampling before chemical intervention.
-5. **Network Outage / ML Service Offline:** If the FastAPI backend is unreachable or times out (30s), render an offline banner with a retry action and provide verified clinical specimen presets for demonstration.
+1. **WebGL Context Loss & Restoration:** If hardware acceleration is lost or unavailable, the system must smoothly fall back to multi-layer HTML5 2D canvas cross-dissolving without breaking the timeline scrubber.
+2. **Tabular Numerals Alignment:** Scrubbing at 60 FPS must not shift neighboring controls or cause metric jitter in temperature, humidity, days, or severity badges.
+3. **High-Sunlight Outdoor Contrast:** All text must meet WCAG AAA contrast ($15.8:1$) against `#F8FAFC` and white surfaces.
+4. **Treatment Branching Calculation Consistency:** When treatment intervention is toggled at Day $D_{\text{int}}$, the treated curve must plateau smoothly at the predicted ceiling without negative deltas or division by zero.
+5. **Prompt Attention Token Diff Integrity:** Needleman-Wunsch prompt token comparison must cleanly separate common background tokens from newly injected disease tokens with appropriate Bio-Teal badges.
 
 ---
 
 ## Task Breakdown
 
-### Task 1: Foundations, CSS Tokens, Animation Keyframes & TypeScript Domain Models
+### Task 1: Domain Model Promotion, Canonical Services & Test Backward Compatibility
 
 **Files:**
-- Create: `frontend/src/types/diagnostics.ts`
-- Modify: `frontend/src/index.css`
+- Create: `frontend/src/models/agronomicTimelineModel.ts`
+- Create: `frontend/src/models/treatmentBranchingModel.ts`
+- Create: `frontend/src/models/hotspotRegistry.ts`
+- Create: `frontend/src/models/exportReportModel.ts`
+- Create: `frontend/src/utils/timelapseRecorder.ts`
+- Create: `frontend/src/services/progressionService.ts`
+- Create: `frontend/src/hooks/useProgressionData.ts`
+- Modify: `frontend/src/p2p-experimental/models/agronomicTimelineModel.ts` (re-export aliases)
+- Modify: `frontend/src/p2p-experimental/models/treatmentBranchingModel.ts` (re-export aliases)
+- Modify: `frontend/src/p2p-experimental/models/hotspotRegistry.ts` (re-export aliases)
+- Modify: `frontend/src/p2p-experimental/models/exportReportModel.ts` (re-export aliases)
+- Modify: `frontend/src/p2p-experimental/utils/timelapseRecorder.ts` (re-export aliases)
 
 **Interfaces:**
-- Consumes: Token specifications from `FOUNDATIONS.md` and `AI_Leaf_Diagnostics_Spec.md`.
-- Produces: `DiagnosticPrediction`, `DiagnosticState`, `AgronomicAdvisory`, `TopProbability`, and CSS classes `.ag-telemetry-scan-beam`, `.ag-tabular-numeric`, and `--ag-*` theme tokens.
+- Consumes: Mathematical specifications from `SPEC-UI-007` and empirical pathology datasets.
+- Produces: Canonical domain types `SupportedCropId`, `ProgressionDynamicOutput`, `FungicideCategory`, `InterventionEfficacyResult`, `YieldRetentionAnalyticsResult`, `AgronomicFieldReportData`, and progression hooks.
 
-- [x] **Step 1: Define TypeScript domain interfaces in `frontend/src/types/diagnostics.ts`**
-  ```typescript
-  export type CropSpecies = 'Tomato' | 'Potato' | 'Corn' | 'Apple';
-  export type SeverityTier = 'Tier 0' | 'Tier 1' | 'Tier 2' | 'Tier 3';
-  export type SeverityIndex = 'Healthy' | 'Low' | 'Moderate' | 'Critical';
-
-  export interface TopProbability {
-    label: string;
-    probability: number;
-    displayName: string;
-  }
-
-  export interface AgronomicAdvisory {
-    immediateAction: string;
-    fungicideTreatments: string[];
-    environmentalRiskFactors: string;
-  }
-
-  export interface DiagnosticPrediction {
-    inferenceId: string;
-    crop: CropSpecies;
-    condition: string;
-    scientificName: string;
-    confidenceScore: number;
-    severityIndex: SeverityIndex;
-    severityTier: SeverityTier;
-    topProbabilities: TopProbability[];
-    agronomicAdvisory: AgronomicAdvisory;
-    executionTimeMs: number;
-    requiresRescan?: boolean;
-    rescanInstructions?: string[];
-  }
-
-  export type DiagnosticUIState =
-    | 'IDLE'
-    | 'DRAG_OVER'
-    | 'VALIDATING'
-    | 'INFERENCING'
-    | 'SUCCESS'
-    | 'LOW_CONFIDENCE'
-    | 'REJECTED'
-    | 'ERROR';
-  ```
-
-- [x] **Step 2: Add `--ag-*` CSS tokens, tabular numerals rule, and `@keyframes telemetryScanBeam` to `frontend/src/index.css`**
-  - Add light mode semantic variables (`--ag-canvas`, `--ag-surface`, `--ag-border`, `--ag-border-field`, `--ag-ink`, `--ag-brand`, `--ag-scan-beam`, etc.).
-  - Add `.ag-tabular-numeric` utility class with `font-variant-numeric: tabular-nums`.
-  - Add `@keyframes telemetryScanBeam` and `.ag-telemetry-scan-beam` (Cyan 400 `#38BDF8` line traveling vertically with box-shadow glow).
-  - Scope dark landing page styles away from root so default pages render in Light Mode.
-
-- [x] **Step 3: Verification check**
-  - Run: `npm run build` in `frontend/`
-  - Expected: Clean TypeScript compilation without errors.
-
-- [x] **Step 4: Commit**
-  - `git commit -m "feat(diagnostics): add domain models, design tokens and scan beam keyframes"`
-
-- [x] **Step 5: Mandatory Subagent Review Gate**
-  - Launch `code-reviewer` subagent to audit `types/diagnostics.ts` and `index.css` against `design/AI_Leaf_Diagnostics_Spec.md` and `design/FOUNDATIONS.md`.
-  - Fix any identified issues before moving to Task 2.
+- [ ] **Step 1: Promote models and utilities into `frontend/src/models/` and `frontend/src/utils/`**
+- [ ] **Step 2: Add backward-compatible re-exports in `frontend/src/p2p-experimental/`**
+- [ ] **Step 3: Run existing unit test suites to verify zero regressions**
+  - Run: `npm --prefix frontend run test:agronomy`
+  - Run: `npm --prefix frontend run test:crops`
+  - Run: `npm --prefix frontend run test:treatment`
+  - Run: `npm --prefix frontend run test:hotspots`
+  - Run: `npm --prefix frontend run test:export`
+  - Expected: 100% PASS across all existing test suites.
+- [ ] **Step 4: Commit**
+  - `git commit -m "feat(progression): promote canonical models, services and recorder utilities"`
+- [ ] **Step 5: Mandatory Subagent Review Gate**
+  - Launch `code-reviewer` subagent to audit promoted models, type definitions, and backward compatibility.
 
 ---
 
-### Task 2: Client Pre-Flight Validation Utility & Diagnostic Service Layer
+### Task 2: WebGL Shader View Mode Extension & Attention Map Colormap
 
 **Files:**
-- Create: `frontend/src/utils/imageValidation.ts`
-- Create: `frontend/src/services/diagnosticsService.ts`
-- Create: `frontend/scripts/test_diagnostics_validation.js`
+- Modify: `frontend/src/components/DiseaseProgressionViewer/ProgressionShaderRenderer.ts`
+- Create: `frontend/src/components/DiseaseProgressionViewer/types.ts`
+- Create: `frontend/scripts/test_shader_modes.js`
 
 **Interfaces:**
-- Consumes: HTML File/Blob inputs, `VITE_ML_URL` environment configuration.
-- Produces: `validateLeafImage(file: File): Promise<ValidationResult>`, `classifyLeafImage(file: File, abortSignal?: AbortSignal): Promise<DiagnosticPrediction>`, and verified clinical sample presets.
+- Consumes: Image textures ($S_0, S_1, S_2$), difference masks ($M_1, M_2$), `u_view_mode`, `u_progress`, split curtain position.
+- Produces: 60 FPS GLSL shader rendering with 3 view modes (Standard RGB, Cross-Attention Heatmap, Difference Mask) and split compare curtain.
 
-- [x] **Step 1: Write test script `frontend/scripts/test_diagnostics_validation.js`**
-  - Test format validation (rejection of non-JPEG/PNG).
-  - Test file size capping (rejection of > 10MB).
-  - Test resolution checks (< 224x224 rejected, >= 224x224 accepted).
-  - Test clinical sample presets match the 4 target crops (Tomato, Potato, Corn, Apple).
-
-- [x] **Step 2: Run test script to verify failure**
-  - Run: `node frontend/scripts/test_diagnostics_validation.js`
-  - Expected: FAIL ("modules not found").
-
-- [x] **Step 3: Implement `frontend/src/utils/imageValidation.ts`**
-  - Validate MIME types (`image/jpeg`, `image/png`).
-  - Validate file size $\le 10\text{ MB}$ ($10 \times 1024 \times 1024$ bytes).
-  - Load image in-memory to check natural width and height $\ge 224\text{ px}$.
-  - Return typed `{ valid: boolean; error?: string; width?: number; height?: number }`.
-
-- [x] **Step 4: Implement `frontend/src/services/diagnosticsService.ts`**
-  - Build `classifyLeafImage(file: File, signal?: AbortSignal)` calling `POST /api/v1/classify-leaf`.
-  - Map backend response payload to typed `DiagnosticPrediction` (including 4-tier severity mapping: Healthy $\to$ Tier 0, Low $\to$ Tier 1, Moderate $\to$ Tier 2, Critical/High $\to$ Tier 3).
-  - Handle low-confidence $(< 70\%)$ flag `requiresRescan` and map advisory instructions.
-  - Implement clinical specimen fallback presets (Tomato Late Blight, Potato Late Blight, Corn Common Rust, Apple Scab) for zero-latency testing and offline defense mode.
-
-- [x] **Step 5: Run test script to verify passing**
-  - Run: `node frontend/scripts/test_diagnostics_validation.js`
-  - Expected: PASS (all validation and mapper checks pass).
-
-- [x] **Step 6: Commit**
-  - `git commit -m "feat(diagnostics): implement image validation and diagnostics API service"`
-
-- [x] **Step 7: Mandatory Subagent Review Gate**
-  - Launch `code-reviewer` subagent to audit `imageValidation.ts` and `diagnosticsService.ts` for security, edge cases, and compliance with `SPEC-UI-006`.
-  - Address feedback before moving to Task 3.
+- [ ] **Step 1: Write verification script `frontend/scripts/test_shader_modes.js`**
+  - Validate view mode constants (0 = RGB, 1 = Attention Heatmap, 2 = Difference Mask).
+  - Verify shader sources compile cleanly and uniform locations are properly bound.
+- [ ] **Step 2: Extend `ProgressionShaderRenderer.ts` with `u_view_mode` and attention colormap**
+  - Add `uniform float u_view_mode;` in fragment shader.
+  - Implement Viridis/Turbo colormap ramp in GLSL: Deep Teal `#0F766E` $\to$ Warm Amber `#F59E0B` $\to$ Vivid Red `#DC2626`.
+  - Add Difference Mask mode rendering isolated high-pass lesion contours.
+  - Add Split Curtain compare divider support.
+  - Ensure `renderer.dispose()` cleanly frees textures, buffers, and programs.
+- [ ] **Step 3: Run test script and build check**
+  - Run: `node --experimental-strip-types frontend/scripts/test_shader_modes.js`
+  - Run: `npm --prefix frontend run build`
+  - Expected: PASS
+- [ ] **Step 4: Commit**
+  - `git commit -m "feat(progression): implement WebGL view modes, attention heatmap shader and split curtain"`
+- [ ] **Step 5: Mandatory Subagent Review Gate**
+  - Launch `code-reviewer` subagent to audit GLSL shader compilation, colormap formulas, and context management.
 
 ---
 
-### Task 3: Leaf Image Dropzone & In-Flight Telemetry Scan Viewport
+### Task 3: Studio Parameter Inspector Rail & Prompt Attention Inspector (Light Mode)
 
 **Files:**
-- Create: `frontend/src/components/Diagnostics/LeafImageDropzone.tsx`
-- Create: `frontend/src/components/Diagnostics/TelemetryScanBeam.tsx`
-- Create: `frontend/src/components/Diagnostics/SamplingBestPracticesCard.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/PromptAttentionInspector.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/MicroclimateControlPanel.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/TreatmentBranchingControls.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/TreatmentOutcomeCard.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/ExportToolbar.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/DiagnosticPdfReportModal.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/StudioInspectorRail.tsx`
 
 **Interfaces:**
-- Consumes: Drag-and-drop events, file picker events, mobile camera capture, in-flight state.
-- Produces: Trigger callbacks `onImageSelected(file: File)`, `onClear()`, `onAbort()`, and rendering of the scanning viewfinder.
+- Consumes: Microclimate state, treatment state, prompt tokens, export actions.
+- Produces: 4-tab docked parameter inspector in light mode with tactile tab switching.
 
-- [x] **Step 1: Implement `<TelemetryScanBeam />` in `frontend/src/components/Diagnostics/TelemetryScanBeam.tsx`**
-  - Cyan 400 (`#38BDF8`) laser line traveling vertically across leaf preview with infinite alternate animation.
-  - Live timer readout ticking in milliseconds with `.ag-tabular-numeric` fixed font.
-  - Informative status caption: *"Analyzing foliar cellular structure on ONNX Runtime..."*
-  - Prominent "Cancel Scan" button to abort in-flight requests.
-
-- [x] **Step 2: Implement `<SamplingBestPracticesCard />` in `frontend/src/components/Diagnostics/SamplingBestPracticesCard.tsx`**
-  - Render field operator tips: single leaf center frame, avoid heavy shadows/motion blur, target active lesions rather than desiccated foliage.
-  - High-sunlight light mode styling with `#F8FAFC` background and `#475569` secondary text.
-
-- [x] **Step 3: Implement `<LeafImageDropzone />` in `frontend/src/components/Diagnostics/LeafImageDropzone.tsx`**
-  - Idle state: `2px dashed #CBD5E1`, foliar icon, "Upload or Drop Leaf Photo", helper text.
-  - Drag-over state: transitions to `2px dashed #0F766E`, `#F0FDFA` background, icon scale `1.08x`.
-  - Mobile camera integration: `<input type="file" accept="image/jpeg,image/png" capture="environment" />` with full-width 52px CTA `[ (Camera Icon) Take Leaf Photo ]` on mobile viewports.
-  - Active preview state: 1:1 aspect ratio container (`aspect-square`), displaying image preview with centered scan beam during `INFERENCING`.
-  - Action buttons: "Upload New Photo", "Retake Photo", and image metadata chip (file name, size, resolution).
-
-- [x] **Step 4: Verification check**
-  - Run: `npm run build`
-  - Expected: Clean TypeScript compilation.
-
-- [x] **Step 5: Commit**
-  - `git commit -m "feat(diagnostics): build leaf dropzone, telemetry scan beam and best practices card"`
-
-- [x] **Step 6: Mandatory Subagent Review Gate**
-  - Launch `code-reviewer` subagent to audit dropzone ergonomics, touch targets, and mobile camera integration against `design/MOBILE_AND_OUTDOOR_SPEC.md` and `design/AI_Leaf_Diagnostics_Spec.md`.
-  - Address feedback before moving to Task 4.
-
----
-
-### Task 4: Diagnostic Verdict Card, Probability Bars & Agronomic Advisory
-
-**Files:**
-- Create: `frontend/src/components/Diagnostics/DiagnosticVerdictCard.tsx`
-- Create: `frontend/src/components/Diagnostics/VerdictSkeletonLoader.tsx`
-
-**Interfaces:**
-- Consumes: `DiagnosticPrediction`, `DiagnosticUIState`, `onRetake()`, `onNewScan()`.
-- Produces: Dual-coded severity pill (Tier 0-3), tabular confidence score, top-3 animated probability bars, immediate action banner, fungicide recommendations, and environmental risk correlation.
-
-- [x] **Step 1: Implement `<VerdictSkeletonLoader />` in `frontend/src/components/Diagnostics/VerdictSkeletonLoader.tsx`**
-  - Render animated pulse skeletons (`bg-slate-100 animate-pulse rounded`) mirroring the verdict card layout to eliminate Cumulative Layout Shift (CLS).
-
-- [x] **Step 2: Implement `<DiagnosticVerdictCard />` in `frontend/src/components/Diagnostics/DiagnosticVerdictCard.tsx`**
-  - **Header:** Latency badge (`Geist Mono`, e.g. `64.2 ms`), crop and condition title (`Geist Sans 20px`), scientific Latin nomenclature (`Inter 14px italic`).
-  - **Dual-Coded Severity Badge:**
-    - Tier 0: Emerald `#ECFDF5` / `#065F46` / `CheckCircle`
-    - Tier 1: Amber `#FFFBEB` / `#78350F` / `AlertTriangle`
-    - Tier 2: Orange `#FFF7ED` / `#7C2D12` / `AlertCircle`
-    - Tier 3: Red `#FEF2F2` / `#7F1D1D` / `OctagonAlert`
-  - **Confidence Readout:** `24px` `Geist Mono` Bold with `.ag-tabular-numeric` formatting.
-  - **Probability Distribution:** Top-3 predictions with 6px rounded progress track (`#F1F5F9`) and animated `#0F766E` fill (`transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1)`).
-  - **Immediate Agronomic Action Banner:** Solid Amber 50 background (`#FFFBEB`), 1px Amber 200 border (`#FDE68A`), bold action text.
-  - **Treatment & Environmental Risk Callouts:** Bulleted list of preventative/curative chemical and biological interventions, and ambient risk triggers (humidity/temperature).
-  - **Tactile CTAs:** "Upload Another Photo", "Retake Scan", and "Copy Summary" with Emil Kowalski press physics (`scale(0.97)` on active).
-  - **Entrance Transition:** Smooth non-zero scale entrance from `scale(0.96)` and opacity 0 to `scale(1.0)` over 200ms.
-
-- [x] **Step 3: Verification check**
-  - Run: `npm run build`
+- [ ] **Step 1: Implement `<PromptAttentionInspector />`**
+  - Needleman-Wunsch prompt token comparison displaying common tokens in slate and newly injected disease tokens in Bio-Teal badges.
+  - Hyperparameter readouts ($\tau_{\text{cross}}=0.75, \tau_{\text{self}}=0.50, \tau_{\text{blend}}=0.30$) with `.ag-tabular-numeric`.
+  - Attention map tensor download trigger.
+- [ ] **Step 2: Refactor `<MicroclimateControlPanel />` into light mode**
+  - `#FFFFFF` surface card, `--ag-brand` sliders, real-time sporulation acceleration factor, and interactive cardinal curve mini-SVG.
+- [ ] **Step 3: Refactor `<TreatmentBranchingControls />` & `<TreatmentOutcomeCard />` into light mode**
+  - What-if intervention checkpoint, curative vs protectant vs bio-control selection, FRAC code details, trajectory plateau, and yield retention ($+38.5\%$).
+- [ ] **Step 4: Refactor `<ExportToolbar />` and `<DiagnosticPdfReportModal />` into light mode**
+  - 60 FPS WebM timelapse recorder, snapshot download, and multi-page field PDF report generator.
+- [ ] **Step 5: Assemble `<StudioInspectorRail />` with tactile tab switching**
+  - Tab 1: Climate, Tab 2: Treatment, Tab 3: Prompts, Tab 4: Export.
+  - Emil Kowalski tactile active scale (`scale(0.97)`).
+- [ ] **Step 6: Build verification and commit**
+  - Run: `npm --prefix frontend run build`
   - Expected: Clean compilation.
-
-- [x] **Step 4: Commit**
-  - `git commit -m "feat(diagnostics): build diagnostic verdict card and skeleton loader"`
-
-- [x] **Step 5: Mandatory Subagent Review Gate**
-  - Launch `code-reviewer` subagent to audit dual-coding compliance, typography contrast ratios, and motion curves against `SPEC-DES-002` and `SPEC-DES-004`.
-  - Address feedback before moving to Task 5.
+  - `git commit -m "feat(progression): build light-mode parameter inspector rail and prompt attention inspector"`
+- [ ] **Step 7: Mandatory Subagent Review Gate**
+  - Launch `code-reviewer` subagent to audit inspector tabs, contrast ratios, and prompt diff visualizer.
 
 ---
 
-### Task 5: Dedicated AI Leaf Diagnostics Page Assembly & Route Integration
+### Task 4: Interactive Foliar Canvas Viewport, Hotspots & Agronomic Scrubber (Light Mode)
 
 **Files:**
-- Create: `frontend/src/pages/LeafDiagnosticsPage.tsx`
-- Create: `frontend/src/components/Diagnostics/index.ts`
+- Create: `frontend/src/components/DiseaseProgressionViewer/CompactCropSelectorRail.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/LeafHotspotOverlay.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/AgronomicTimelineSlider.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/ProgressionCanvasViewport.tsx`
+- Create: `frontend/src/components/DiseaseProgressionViewer/index.ts`
+
+**Interfaces:**
+- Consumes: Crop profiles, progression progress, WebGL canvas, symptom hotspots.
+- Produces: Interactive foliar canvas stage with toolbar, 24 anatomical hotspot pins, and bi-directional Magarey Beta timeline scrubber.
+
+- [ ] **Step 1: Refactor `<CompactCropSelectorRail />` in light mode**
+  - 8-crop selector with `#FFFFFF` background, active pill in `#F0FDFA` with `1.5px solid #0F766E` border, smooth auto-scroll into view, and 44px+ hit targets.
+- [ ] **Step 2: Refactor `<LeafHotspotOverlay />` in light mode**
+  - 24 registered anatomical pins with glassmorphic light-mode circular badges (`bg-white/95 text-slate-900 border border-slate-300`).
+  - Active biological window detection with pulsating emerald halo (`ring-2 ring-teal-600 animate-pulse`).
+  - Hover/tap popover with anatomical structure, microscopic sporulation description, and canopy loss %.
+- [ ] **Step 3: Refactor `<AgronomicTimelineSlider />` in light mode**
+  - Bi-directional sync between elapsed days ($0\to 18\text{ days}$) and severity % ($0\to 100\%$) with `.ag-tabular-numeric`.
+  - Play/Pause automated 4.5s loop with instant interruptibility.
+  - Milestone tick marks (`Day 0.0`, `Day 3.5`, `Day 8.0`, `Day 14.0`) and intervention marker pin.
+  - Direct touch tracking with `setPointerCapture`.
+- [ ] **Step 4: Assemble `<ProgressionCanvasViewport />` and export barrel**
+  - Viewport toolbar with View Mode pills (RGB, Attention, Mask), Split Compare toggle, and Trajectory Mode.
+  - Canvas container with WebGL shader and 2D fallback.
+  - Export all components in `index.ts`.
+- [ ] **Step 5: Build verification and commit**
+  - Run: `npm --prefix frontend run build`
+  - Expected: Clean compilation.
+  - `git commit -m "feat(progression): build light-mode crop selector rail, hotspot overlay and timeline scrubber"`
+- [ ] **Step 6: Mandatory Subagent Review Gate**
+  - Launch `code-reviewer` subagent to audit touch ergonomics, 60fps tracking, and accessibility.
+
+---
+
+### Task 5: Production Page Assembly, Experimental Route Deprecation & End-to-End Verification
+
+**Files:**
+- Modify: `frontend/src/pages/DiseaseProgressionPage.tsx`
 - Modify: `frontend/src/App.tsx`
+- Modify: `frontend/src/components/LandingHero/Navbar.tsx` & `frontend/src/pages/LandingPage.tsx`
+- Create: `PROJECT_DETAILS/Reports/Phase 1/TODO-112-disease-progression-studio.md`
 
 **Interfaces:**
-- Consumes: All diagnostic components, routing from `react-router-dom`.
-- Produces: Fully interactive page mounted at `/diagnostics` and `/leaf-scanner`.
+- Consumes: All promoted components and routing system.
+- Produces: Complete production `/disease-progression` studio page, redirect from experimental route, and formal completion report.
 
-- [x] **Step 1: Export all diagnostics components in `frontend/src/components/Diagnostics/index.ts`**
-
-- [x] **Step 2: Assemble `<LeafDiagnosticsPage />` in `frontend/src/pages/LeafDiagnosticsPage.tsx`**
-  - Breadcrumbs navigation: `Operations / Agronomy Intelligence / AI Leaf Diagnostics`.
-  - Action toolbar: Clinical sample quick-selector pills (Tomato Late Blight, Potato Late Blight, Corn Rust, Apple Scab), Clear button.
-  - Dual-panel workbench layout:
-    - Left Panel (Cols 1-5 / ~42% width): `<LeafImageDropzone />` + `<SamplingBestPracticesCard />`.
-    - Right Panel (Cols 6-12 / ~58% width): Empty state placeholder, `<VerdictSkeletonLoader />` during in-flight, or `<DiagnosticVerdictCard />` on completion.
-  - State machine management: Clean transitions across `IDLE`, `DRAG_OVER`, `VALIDATING`, `INFERENCING`, `SUCCESS`, `LOW_CONFIDENCE`, `REJECTED`, and `ERROR`.
-  - Toast / notification banner for pre-flight validation errors (file size > 10MB, resolution < 224x224).
-
-- [x] **Step 3: Register `/diagnostics` and `/leaf-scanner` routes in `frontend/src/App.tsx`**
-  - Add `<Route path="/diagnostics" element={<LeafDiagnosticsPage />} />`
-  - Add `<Route path="/leaf-scanner" element={<LeafDiagnosticsPage />} />`
-
-- [x] **Step 4: Verification check**
-  - Run: `npm run build`
-  - Expected: Clean Vite build producing production bundles without warnings.
-
-- [x] **Step 5: Commit**
-  - `git commit -m "feat(diagnostics): assemble leaf diagnostics page and register routes"`
-
-- [x] **Step 6: Mandatory Subagent Review Gate**
-  - Launch `code-reviewer` subagent to audit the integrated page flow, keyboard navigation, responsive layout stacking, and route registration.
-  - Address feedback before moving to Task 6.
-
----
-
-### Task 6: End-to-End Verification, Outdoor Mobile Polish & Documentation
-
-**Files:**
-- Modify: `tasks/todo.md`
-- Create: `PROJECT_DETAILS/Reports/Phase 1/TODO-111-ai-leaf-diagnostics-page.md`
-
-**Interfaces:**
-- Consumes: Completed diagnostics page, build pipeline, test scripts.
-- Produces: Verified end-to-end user journeys, mobile touch target verification, and formal DoD completion report.
-
-- [x] **Step 1: Run comprehensive build & lint validation**
-  - Run: `npm run build` in `frontend/`
-  - Run: `npm run lint` (or `npx oxlint`)
-  - Run: `node frontend/scripts/test_diagnostics_validation.js`
-  - Expected: 100% passing across all checks.
-
-- [x] **Step 2: Mobile Viewport & High-Sunlight Verification**
-  - Verify that mobile viewports ($375\text{px} - 430\text{px}$) stack vertically with:
-    - 48px minimum touch targets on all interactive triggers.
-    - 16px minimum text input size (no iOS Safari auto-zoom).
-    - Clear distinction between dropzone and camera capture.
-
-- [x] **Step 3: Generate Definition of Done (DoD) Completion Report**
-  - Record completion report in `PROJECT_DETAILS/Reports/Phase 1/TODO-111-ai-leaf-diagnostics-page.md`.
-  - Update `tasks/todo.md` marking all subtasks complete.
-
-- [x] **Step 4: Final Whole-Feature Subagent Code Review**
-  - Launch `code-reviewer` subagent for a comprehensive review across all files modified in this feature.
-  - Confirm all acceptance criteria from `design/AI_Leaf_Diagnostics_Spec.md` are 100% satisfied.
-
-- [x] **Step 5: Final Commit**
-  - `git commit -m "docs(diagnostics): complete AI leaf diagnostics page and add completion report"`
+- [ ] **Step 1: Assemble `<DiseaseProgressionPage />` in `frontend/src/pages/DiseaseProgressionPage.tsx`**
+  - Implement 12-column responsive layout (Top 12 cols: Crop Rail; Left 7 cols: Canvas + Scrubber; Right 5 cols: Inspector Rail).
+  - Manage 8-state state machine (`LOADING`, `SCRUBBING`, `PLAYBACK`, `ATTENTION_MAP`, `TREATMENT_BRANCHING`, `RECORDING`, `FALLBACK_2D`, `ERROR`).
+  - Sticky breadcrumbs bar with quick actions (Snapshot, Timelapse, PDF Report).
+  - Context disposal in `useEffect` cleanup.
+- [ ] **Step 2: Update routing in `frontend/src/App.tsx`**
+  - Route `/disease-progression` to upgraded `DiseaseProgressionPage`.
+  - Redirect `/disease-progression-experimental` to `/disease-progression`.
+- [ ] **Step 3: Update navigation links in `Navbar.tsx` and `LandingPage.tsx`**
+- [ ] **Step 4: Full automated verification run**
+  - Run: `npm --prefix frontend run test:agronomy`
+  - Run: `npm --prefix frontend run test:crops`
+  - Run: `npm --prefix frontend run test:treatment`
+  - Run: `npm --prefix frontend run test:hotspots`
+  - Run: `npm --prefix frontend run test:export`
+  - Run: `npm --prefix frontend run test:diagnostics`
+  - Run: `npm --prefix frontend run lint` (`oxlint` with 0 warnings, 0 errors)
+  - Run: `npm --prefix frontend run build` (Clean production bundle)
+- [ ] **Step 5: Generate completion report in `PROJECT_DETAILS/Reports/Phase 1/TODO-112-disease-progression-studio.md`**
+- [ ] **Step 6: Final whole-feature subagent code review**
+  - Launch `code-reviewer` subagent for comprehensive audit against `SPEC-UI-007`.
+- [ ] **Step 7: Final commit and sign-off**
+  - `git commit -m "docs(progression): complete disease progression studio integration and light-mode refactor"`
 
 ---
 
 ## Plan Self-Review Checklist
 
-- [x] **Spec Coverage:** Every requirement in `design/AI_Leaf_Diagnostics_Spec.md` (dropzone, scan beam, timer, dual-coded verdict card, probability bars, immediate action banner, mobile camera, 8 state matrix) maps directly to a task.
-- [x] **Subagent Gate Integration:** As requested, every single task explicitly defines a dedicated Subagent Review Step with `code-reviewer`.
-- [x] **Light Mode & Design Tokens:** Enforces `#F8FAFC` canvas, `#FFFFFF` containers, `#0F172A` ink, and tabular numerals.
-- [x] **Right-Sized Tasks:** Each task touches 2–4 files with explicit interfaces, testable steps, and verification commands.
-- [x] **Review Focus Pinned:** All 5 failure modes (undersized, oversized, invalid type, low confidence, offline service) have explicit test steps in the tasks.
+- [x] **Spec Coverage:** Every requirement in `design/DISEASE_PROGRESSION_SPEC.md` (`SPEC-UI-007`) is addressed (WebGL view modes, attention heatmap, difference mask, 8-crop selector, hotspots, scrubber, treatment branching, prompt diff, media export, 8-state machine).
+- [x] **Subagent Gate Integration:** As explicitly requested, every single task ends with a mandatory `code-reviewer` subagent review gate.
+- [x] **Design Tokens & Light Mode:** Enforces `#F8FAFC` canvas, `#FFFFFF` containers, `#0F172A` ink, and `.ag-tabular-numeric`.
+- [x] **Zero Regressions:** Preserves 100% green status across all existing automated test suites.
+- [x] **Right-Sized Slices:** 5 focused tasks touching 2–5 files each, with checkable steps.

@@ -1,57 +1,63 @@
-# TODO-111: Dedicated AI Leaf Diagnostics Page Implementation
+# TODO-112: Disease Progression Studio Integration & Light-Mode Refactor
 
-## Current Status: COMPLETED (100% DONE)
+## Current Status: READY FOR APPROVAL
 **Assignee:** Senior Front-End Engineer  
-**Phase:** Phase 1 — Machine Learning Core & Diagnostics  
-**Spec:** `design/AI_Leaf_Diagnostics_Spec.md` (SPEC-UI-006)  
+**Phase:** Phase 1 — Prompt-to-Prompt Cross-Attention Progression Core  
+**Spec:** `design/DISEASE_PROGRESSION_SPEC.md` (SPEC-UI-007)  
 **Plan:** `tasks/plan.md`  
-**Completion Report:** `PROJECT_DETAILS/Reports/Phase 1/TODO-111-ai-leaf-diagnostics-page.md`
+**Artifact:** `Disease_Progression_Studio_Implementation_Plan.md`
 
 ---
 
 ### Task List & Subagent Review Cadence
 
-- [x] **Task 1: Foundations, CSS Tokens, Animation Keyframes & TypeScript Domain Models**
-  - [x] Define TypeScript domain interfaces in `frontend/src/types/diagnostics.ts`
-  - [x] Add `--ag-*` light-mode CSS tokens, `.ag-tabular-numeric`, and `@keyframes telemetryScanBeam` in `frontend/src/index.css`
-  - [x] Verify build compiles cleanly with `npm run build`
-  - [x] Commit changes (`8bb5831`, `581e58e`)
-  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent against `design/AI_Leaf_Diagnostics_Spec.md` and `design/FOUNDATIONS.md` (APPROVED)
+- [x] **Task 1: Domain Model Promotion, Canonical Services & Test Backward Compatibility**
+  - [x] Promote domain models from `p2p-experimental/models/` to canonical `frontend/src/models/`
+  - [x] Promote `timelapseRecorder.ts` to `frontend/src/utils/timelapseRecorder.ts`
+  - [x] Promote progression service & hook to `frontend/src/services/` and `frontend/src/hooks/`
+  - [x] Provide backward-compatible aliases in `frontend/src/p2p-experimental/`
+  - [x] Verify existing test suites pass: `npm run test:agronomy`, `npm run test:crops`, `npm run test:treatment`, `npm run test:hotspots`, `npm run test:export`
+  - [x] Commit changes
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [x] **Task 2: Client Pre-Flight Validation Utility & Diagnostic Service Layer**
-  - [x] Write unit validation test script in `frontend/scripts/test_diagnostics_validation.js`
-  - [x] Implement `frontend/src/utils/imageValidation.ts` (MIME, size <=10MB, resolution >=224x224)
-  - [x] Implement `frontend/src/services/diagnosticsService.ts` (FastAPI client, 4-tier severity mapping, clinical sample presets)
-  - [x] Verify unit test passes: `npm --prefix frontend run test:diagnostics`
-  - [x] Commit changes (`742e431`, `0572776`)
-  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent for security, edge cases, and compliance (APPROVED)
-
-- [x] **Task 3: Leaf Image Dropzone & In-Flight Telemetry Scan Viewport**
-  - [x] Implement `<TelemetryScanBeam />` with vertical sweep, millisecond tabular timer, and cancel action
-  - [x] Implement `<SamplingBestPracticesCard />` with operator guidance
-  - [x] Implement `<LeafImageDropzone />` with drag-and-drop, mobile camera capture (`capture="environment"`), and active image preview
+- [x] **Task 2: WebGL Shader View Mode Extension & Attention Map Colormap**
+  - [x] Create test script `frontend/scripts/test_shader_modes.js`
+  - [x] Extend `ProgressionShaderRenderer.ts` with `u_view_mode` (RGB, Attention Heatmap, Difference Mask)
+  - [x] Implement Turbo/Viridis color-coded attention heatmap gradient in GLSL
+  - [x] Implement difference mask mode & split curtain support
+  - [x] Verify WebGL context disposal hygiene
   - [x] Verify compilation: `npm run build`
-  - [x] Commit changes (`e0431f3`, `3cd5eb7`)
-  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent for mobile ergonomics, touch targets, and visual fidelity (APPROVED)
+  - [x] Commit changes
+  - [ ] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [x] **Task 4: Diagnostic Verdict Card, Probability Bars & Agronomic Advisory**
-  - [x] Implement `<VerdictSkeletonLoader />` to eliminate Cumulative Layout Shift (CLS) during inference
-  - [x] Implement `<DiagnosticVerdictCard />` with dual-coded severity badges (Tier 0-3), tabular confidence score, top-3 animated probability bars, and immediate action banner
-  - [x] Verify compilation: `npm run build`
-  - [x] Commit changes (`df09614`, `a026edf`)
-  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent for dual-coding contrast ratios, typography, and motion curves (APPROVED)
+- [ ] **Task 3: Studio Parameter Inspector Rail & Prompt Attention Inspector (Light Mode)**
+  - [ ] Implement `<PromptAttentionInspector />` with Needleman-Wunsch prompt diff token visualizer & hyperparameters
+  - [ ] Refactor `<MicroclimateControlPanel />` into light-mode tokens with interactive cardinal curve mini-SVG
+  - [ ] Refactor `<TreatmentBranchingControls />` & `<TreatmentOutcomeCard />` into light mode with dual-coded severity callouts
+  - [ ] Refactor `<ExportToolbar />` and `<DiagnosticPdfReportModal />` into light mode
+  - [ ] Assemble `<StudioInspectorRail />` with tactile tab switching and light-mode tokens
+  - [ ] Verify compilation: `npm run build`
+  - [ ] Commit changes
+  - [ ] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [x] **Task 5: Dedicated AI Leaf Diagnostics Page Assembly & Route Integration**
-  - [x] Export components in `frontend/src/components/Diagnostics/index.ts`
-  - [x] Assemble `<LeafDiagnosticsPage />` in `frontend/src/pages/LeafDiagnosticsPage.tsx` with dual-panel workbench (5 cols / 7 cols) and 8-state state machine
-  - [x] Register `/diagnostics` and `/leaf-scanner` routes in `frontend/src/App.tsx`
-  - [x] Verify production build: `npm run build`
-  - [x] Commit changes (`9eabc0f`, `91dc9eb`)
-  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent for routing, keyboard accessibility, and responsive layout (APPROVED)
+- [ ] **Task 4: Interactive Foliar Canvas Viewport, Hotspots & Agronomic Scrubber (Light Mode)**
+  - [ ] Refactor `<CompactCropSelectorRail />` in light mode with auto-scrolling active pill and 44px+ hit targets
+  - [ ] Refactor `<LeafHotspotOverlay />` in light mode with 24 registered anatomical pins and popover cards
+  - [ ] Refactor `<AgronomicTimelineSlider />` in light mode with Magarey Beta days $\longleftrightarrow$ severity sync, tabular numerals, play/pause loop, milestone tick marks, and `setPointerCapture`
+  - [ ] Assemble `<ProgressionCanvasViewport />` with view mode toolbar, WebGL canvas, and 2D fallback
+  - [ ] Export components in `frontend/src/components/DiseaseProgressionViewer/index.ts`
+  - [ ] Verify compilation: `npm run build`
+  - [ ] Commit changes
+  - [ ] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [x] **Task 6: End-to-End Verification, Outdoor Mobile Polish & Documentation**
-  - [x] Run full build, linting (`npm run lint`), and unit validation tests (`npm run test:diagnostics`)
-  - [x] Audit mobile viewport ($375\text{px}$) for 48px touch targets and high-sunlight contrast
-  - [x] Generate completion report in `PROJECT_DETAILS/Reports/Phase 1/TODO-111-ai-leaf-diagnostics-page.md`
-  - [x] Final whole-feature subagent code review
-  - [x] Final commit and sign-off
+- [ ] **Task 5: Production Page Assembly, Route Deprecation & End-to-End Verification**
+  - [ ] Assemble `<DiseaseProgressionPage />` in `frontend/src/pages/DiseaseProgressionPage.tsx` with 12-column responsive layout (7 cols left / 5 cols right)
+  - [ ] Manage 8-state state machine with zero memory leaks
+  - [ ] Wire `/disease-progression` route and redirect `/disease-progression-experimental`
+  - [ ] Update navigation links in `Navbar.tsx` and `LandingPage.tsx`
+  - [ ] Run full automated verification: `test:agronomy`, `test:crops`, `test:treatment`, `test:hotspots`, `test:export`, `test:diagnostics`
+  - [ ] Run linter: `npm run lint` (`oxlint` 0 warnings, 0 errors)
+  - [ ] Run production build: `npm run build`
+  - [ ] Generate completion report `PROJECT_DETAILS/Reports/Phase 1/TODO-112-disease-progression-studio.md`
+  - [ ] Final whole-feature code review subagent gate
+  - [ ] Final commit and sign-off

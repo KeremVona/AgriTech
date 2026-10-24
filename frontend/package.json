@@ -13,6 +13,7 @@
     "test:treatment": "node --experimental-strip-types scripts/test_treatment_branching.js",
     "test:export": "node --experimental-strip-types scripts/test_export_utilities.js",
     "test:crops": "node --experimental-strip-types scripts/test_8crops_expansion.js",
+    "test:shader": "node --experimental-strip-types scripts/test_shader_modes.js",
     "test:diagnostics": "node --experimental-strip-types scripts/test_diagnostics_validation.js",
     "preview": "vite preview"
   },
