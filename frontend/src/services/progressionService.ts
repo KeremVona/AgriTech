@@ -1,5 +1,5 @@
 import type { SupportedCropId } from '../models/agronomicTimelineModel.ts';
-import type { ProgressionStage } from '../types/progression';
+import type { ProgressionStage } from '../types/progression.ts';
 
 export interface ExperimentalCropProgressionData {
   crop_id: SupportedCropId;
@@ -526,3 +526,10 @@ export function resolveExperimentalStage(
   }
   return stages[stages.length - 1];
 }
+
+// Canonical production aliases
+export const getProgressionManifest = getExperimentalProgressionManifest;
+export const getCropProgression = getExperimentalCropProgression;
+export const resolveProgressionStage = resolveExperimentalStage;
+export const CROP_PROGRESSION_MANIFEST = EXPERIMENTAL_8CROPS_MANIFEST;
+export type CropProgressionManifest = ExperimentalProgressionManifest;

@@ -145,7 +145,7 @@ export async function recordProgressionTimelapse(
         return;
       }
 
-      const normalizedProgress = currentFrame / (totalFrames - 1);
+      const normalizedProgress = totalFrames > 1 ? currentFrame / (totalFrames - 1) : 1;
       const currentPct = normalizedProgress * targetMaxPercentage;
 
       onSetSliderPercentage(currentPct);
