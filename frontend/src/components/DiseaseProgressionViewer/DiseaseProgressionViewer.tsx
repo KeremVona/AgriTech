@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import type { CropId } from '../../types/progression';
+import type { CropId, ProgressionStage } from '../../types/progression';
 import { useProgressionData } from '../../hooks/useProgressionData';
 import { ProgressionShaderRenderer } from './ProgressionShaderRenderer';
 import { ProgressionSlider } from './ProgressionSlider';
@@ -44,11 +44,11 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
 
   const { cropData, activeStage, loading: dataLoading, error } = useProgressionData(cropId, sliderValue);
 
-  const stage0Url = cropData?.stages.find((s) => s.stage_order === 0)?.assets.base_image_url;
-  const stage1Url = cropData?.stages.find((s) => s.stage_order === 1)?.assets.base_image_url;
-  const stage2Url = cropData?.stages.find((s) => s.stage_order === 2)?.assets.base_image_url;
-  const mask1Url = cropData?.stages.find((s) => s.stage_order === 1)?.assets.mask_image_url;
-  const mask2Url = cropData?.stages.find((s) => s.stage_order === 2)?.assets.mask_image_url;
+  const stage0Url = cropData?.stages.find((s: ProgressionStage) => s.stage_order === 0)?.assets.base_image_url;
+  const stage1Url = cropData?.stages.find((s: ProgressionStage) => s.stage_order === 1)?.assets.base_image_url;
+  const stage2Url = cropData?.stages.find((s: ProgressionStage) => s.stage_order === 2)?.assets.base_image_url;
+  const mask1Url = cropData?.stages.find((s: ProgressionStage) => s.stage_order === 1)?.assets.mask_image_url;
+  const mask2Url = cropData?.stages.find((s: ProgressionStage) => s.stage_order === 2)?.assets.mask_image_url;
 
   // Initialize WebGL/2D renderer
   useEffect(() => {
