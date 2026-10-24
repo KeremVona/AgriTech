@@ -121,6 +121,24 @@ DEBUG=false
 
 STUB mode returns deterministic dummy probabilities so the full API pipeline (validation, advisory engine, response shaping) can be exercised without a model.
 
+## Optional plant-ml backend
+
+`MODEL_BACKEND=plantml` swaps the ONNX model for the plant-ml classifier (33 crop/disease classes, with
+"retake" / "unsupported" answers). The default stays `onnx`. The plant-ml code and model weights are **not part of this
+repository** and are supplied separately (they must never be committed). With them available, set in `.env`:
+
+```env
+MODEL_BACKEND=plantml
+PLANTML_SYSTEM=<path>/configs/final_system.yaml
+PLANTML_RUNS_DIR=<path>/runs
+PLANTML_THRESHOLDS=<path>/configs/inference.yaml
+PLANTML_MODE=best        # or light (single model, faster)
+PLANTML_DEVICE=          # empty = auto, or cpu
+```
+
+and run the service with a Python environment that has `torch` and the `plantml` package importable. If the model
+cannot be loaded, `/api/v1/classify-leaf` returns 503 and `/health/ready` reports the error.
+
 ## Docker Image Details (TODO-106)
 
 | Property | Value |
