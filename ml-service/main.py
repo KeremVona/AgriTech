@@ -342,9 +342,11 @@ async def classify_leaf(
     # ------------------------------------------------------------------
     if low_conf is not None:
         logger.info(
-            "classify-leaf | LOW_CONFIDENCE | label=%s confidence=%.4f time=%.1fms",
+            "classify-leaf | LOW_CONFIDENCE | status=%s label=%s confidence=%.4f plant_score=%s time=%.1fms",
+            status,
             top_label,
             confidence,
+            result.get("plant_score", "n/a"),
             result["execution_time_ms"],
         )
         return ClassifyLeafLowConfidenceResponse(

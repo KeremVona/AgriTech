@@ -96,6 +96,7 @@ class PlantmlEngine:
             "model_version": f"plantml-{pred.mode}",
             "model_loaded": True,
             "status": pred.status,
+            "plant_score": float(pred.plant_score),
         }
 
     def meta(self, label: str) -> dict:
