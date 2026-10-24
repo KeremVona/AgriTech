@@ -46,14 +46,17 @@ class PlantmlEngine:
     def __init__(self) -> None:
         self._predictor = None
         self._lock = threading.Lock()
+        self.load_error: Optional[str] = None
 
     def load(self, predictor_factory: Optional[Callable[[], object]] = None) -> None:
         """Build the predictor once. Failures leave the engine unloaded (logged)."""
         try:
             self._predictor = (predictor_factory or self._default_factory)()
+            self.load_error = None
         except Exception as exc:  # noqa: BLE001
             logger.error("plant-ml engine failed to load: %s", exc)
             self._predictor = None
+            self.load_error = f"{type(exc).__name__}: {exc}"
 
     @staticmethod
     def _default_factory():
