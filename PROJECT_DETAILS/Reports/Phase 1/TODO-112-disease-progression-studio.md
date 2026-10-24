@@ -85,7 +85,7 @@ In accordance with strict pairing requirements, a specialized `code-reviewer` su
 | **Task 2** | WebGL Shader View Modes & Bio-Agronomic Colormap | APPROVE WITH RECOMMENDATIONS | Midpoint progression discontinuity at 0.50; difference mask foliar alpha; 2D canvas recursive call | Continuous piecewise linear interpolation; foliar alpha preservation; non-recursive canvas filter drawing | APPROVED | `3b76021`, `32ea789` |
 | **Task 3** | Studio Parameter Inspector Rail & Prompt Attention (Light Mode) | APPROVE WITH RECOMMENDATIONS | NumPy binary header alignment; hardcoded untreated loss; PDF print pagination; tab key trap | Compliant NumPy v1.0 serializer (`npySerializer.ts`); calibrated yield metrics; multi-page A4 print styles; roving arrow key nav | APPROVED | `e4604dd`, `63f17e8` |
 | **Task 4** | Foliar Canvas Stage, Hotspot Overlay & Timeline Scrubber | APPROVE WITH RECOMMENDATIONS | Hotspot pin touch hit target < 44px; stale hotspot popover on crop switch; autoplay loop interval recreation | Invisible pseudo-element padding (`after:-inset-2`); pure derived `selectedHotspot` state; `useRef` stabilized playback loop; ResizeObserver DPR calibration | APPROVED | `89663bb`, `9638dce` |
-| **Task 5** | Production Page Assembly, Route Deprecation & E2E Verification | PENDING AUDIT | Final whole-feature integration audit | Under final subagent review gate | PENDING | Pending |
+| **Task 5** | Production Page Assembly, Route Deprecation & E2E Verification | APPROVE WITH RECOMMENDATIONS | CompareHealthyToggle dark classes; treatment slider aria-valuetext | Refactored toggle to light-mode tokens; added descriptive aria-valuetext | APPROVED | `4a95ed1` |
 
 ---
 
