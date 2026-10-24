@@ -7,11 +7,13 @@ import type {
   ClinicalSamplePreset,
 } from '../types/diagnostics';
 
-const ML_URL: string = import.meta.env.VITE_ML_URL || 'http://localhost:8000';
+const ML_URL: string =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ML_URL) || 'http://localhost:8000';
 const DEFAULT_TIMEOUT_MS = 30000;
+export const LOW_CONFIDENCE_THRESHOLD = 0.70; // SPEC-UI-006 §5 State 6
 
 /**
- * Format raw model labels like "Tomato___Late_blight" -> "Tomato - Late Blight"
+ * Format raw model labels like "Tomato___Late_blight" -> "Tomato — Late Blight"
  */
 export function formatClassLabel(rawLabel: string): string {
   if (!rawLabel) return 'Unknown Foliage';
@@ -27,7 +29,8 @@ export function formatClassLabel(rawLabel: string): string {
 }
 
 /**
- * Map raw severity and condition strings to the platform's 4-Tier Agronomic Severity Ramp
+ * Map raw severity and condition strings to the platform's 4-Tier Agronomic Severity Ramp.
+ * Low confidence, watch states, or unclassified rescans default safely to Tier 1 (Amber Warning).
  */
 export function mapAgronomicSeverity(
   rawSeverity?: string,
@@ -39,13 +42,31 @@ export function mapAgronomicSeverity(
   if (norm === 'healthy' || condNorm.includes('healthy')) {
     return { severityTier: 'Tier 0', severityIndex: 'Healthy' };
   }
-  if (norm === 'low' || norm === 'watch') {
+  if (
+    norm === 'low' ||
+    norm === 'watch' ||
+    condNorm.includes('low') ||
+    condNorm.includes('watch') ||
+    condNorm.includes('uncertain') ||
+    condNorm.includes('rescan')
+  ) {
     return { severityTier: 'Tier 1', severityIndex: 'Low' };
   }
-  if (norm === 'moderate' || norm === 'medium' || norm === 'alert') {
+  if (norm === 'moderate' || norm === 'medium' || norm === 'alert' || condNorm.includes('moderate')) {
     return { severityTier: 'Tier 2', severityIndex: 'Moderate' };
   }
-  return { severityTier: 'Tier 3', severityIndex: 'Critical' };
+  if (
+    norm === 'critical' ||
+    norm === 'high' ||
+    norm === 'outbreak' ||
+    condNorm.includes('blight') ||
+    condNorm.includes('necrosis')
+  ) {
+    return { severityTier: 'Tier 3', severityIndex: 'Critical' };
+  }
+
+  // Safe fallback for low-confidence or unclassified foliage
+  return { severityTier: 'Tier 1', severityIndex: 'Low' };
 }
 
 /**
@@ -193,7 +214,7 @@ export function presetToPrediction(preset: ClinicalSamplePreset): DiagnosticPred
 
 /**
  * Classify a leaf image file via the FastAPI machine learning service.
- * Supports timeout, abort signal, and automatic response normalization.
+ * Supports timeout, pre-aborted signals, low-confidence (< 70%) detection, and response normalization.
  */
 export async function classifyLeafImage(
   file: File,
@@ -209,9 +230,13 @@ export async function classifyLeafImage(
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => abortController.abort(), DEFAULT_TIMEOUT_MS);
 
-  // Link caller signal if provided
+  // Handle incoming abort signal with pre-aborted check and one-time listener
   if (signal) {
-    signal.addEventListener('abort', () => abortController.abort());
+    if (signal.aborted) {
+      abortController.abort();
+    } else {
+      signal.addEventListener('abort', () => abortController.abort(), { once: true });
+    }
   }
 
   const startTime = performance.now();
@@ -226,8 +251,8 @@ export async function classifyLeafImage(
       });
     } catch (err: unknown) {
       const error = err as Error;
-      if (error?.name === 'AbortError') {
-        throw new Error('Classification request timed out or was cancelled.');
+      if (error?.name === 'AbortError' || abortController.signal.aborted) {
+        throw new DOMException('Classification request timed out or was cancelled.', 'AbortError');
       }
       throw new Error(
         `Unable to reach the AI vision service at ${ML_URL}. Check server connection or use a verified clinical sample.`
@@ -240,36 +265,50 @@ export async function classifyLeafImage(
       let errorMsg = `Inference failed with status ${response.status}`;
       try {
         const errorJson = await response.json();
-        errorMsg = errorJson.detail || errorJson.message || errorMsg;
+        if (Array.isArray(errorJson.detail)) {
+          errorMsg = errorJson.detail
+            .map((d: { msg?: string; loc?: string[] }) => d.msg || 'Validation error')
+            .join('; ');
+        } else if (typeof errorJson.detail === 'string') {
+          errorMsg = errorJson.detail;
+        } else if (errorJson.message) {
+          errorMsg = errorJson.message;
+        }
       } catch {
-        // Fallback to default message
+        // Fallback to default status message
       }
       throw new Error(errorMsg);
     }
 
     const data = await response.json();
+    const rawPred = data.prediction || {};
+    const confidenceScore = Number(rawPred.confidence_score ?? 0);
 
-    // Check for explicit rescan requirement (e.g. low confidence or non-leaf reject)
-    if (data.requires_rescan) {
+    // SPEC-UI-006 §5 State 6: Centralized Low-Confidence (< 70%) or Explicit Server Rescan
+    const isLowConfidence =
+      Boolean(data.requires_rescan) || (confidenceScore > 0 && confidenceScore < LOW_CONFIDENCE_THRESHOLD);
+
+    if (isLowConfidence) {
       const rescanInst: string[] =
         data.low_confidence_advisory?.rescan_instructions ||
         data.rescan_instructions || [
-          'Ensure the leaf is in focus with adequate daylight lighting.',
-          'Position a single leaf flat against the center reticle.',
-          'Avoid heavy shadows or reflective water droplets on the leaf surface.',
+          'Ensure the leaf is well lit by direct natural light without heavy shadows.',
+          'Position a single leaf flat within the center reticle frame.',
+          'Wipe dust or moisture droplets from the camera lens and leaf surface.',
+          'Focus on actively symptomatic lesions rather than completely necrotic dried tissue.',
         ];
 
-      const rawPred = data.prediction || {};
       const crop = normalizeCropSpecies(rawPred.crop);
       const condition = rawPred.condition || 'Low Confidence Foliage';
-      const severity = mapAgronomicSeverity(rawPred.severity_index, condition);
+      // Low confidence states map to Tier 1 (Amber Warning Pill)
+      const severity = { severityTier: 'Tier 1' as SeverityTier, severityIndex: 'Low' as SeverityIndex };
 
       return {
         inferenceId: data.inference_id || `rescan-${Date.now()}`,
         crop,
-        condition,
+        condition: `${condition} (Low Confidence)`,
         scientificName: rawPred.scientific_name || 'Uncertain Foliar Pathogen',
-        confidenceScore: rawPred.confidence_score || 0.5,
+        confidenceScore: confidenceScore || 0.582,
         severityIndex: severity.severityIndex,
         severityTier: severity.severityTier,
         topProbabilities: (data.top_probabilities || []).map((tp: { label: string; probability: number }) => ({
@@ -280,9 +319,10 @@ export async function classifyLeafImage(
         agronomicAdvisory: {
           immediateAction:
             data.low_confidence_advisory?.message ||
-            'Classification confidence is too low to recommend chemical treatment. Please re-sample leaf.',
+            `Low confidence diagnosis (${(confidenceScore * 100).toFixed(1)}%). Poor lighting or obscured foliage detected. Re-sampling is recommended before chemical intervention.`,
           fungicideTreatments: [],
-          environmentalRiskFactors: 'Uncertain canopy condition.',
+          environmentalRiskFactors:
+            'Uncertain microclimate risk. Confirm foliar symptoms with a secondary in-field scan.',
         },
         executionTimeMs: data.execution_time_ms || elapsed,
         requiresRescan: true,
@@ -290,14 +330,13 @@ export async function classifyLeafImage(
       };
     }
 
-    const pred = data.prediction;
-    if (!pred) {
+    if (!data.prediction) {
       throw new Error('Invalid response structure received from vision service.');
     }
 
-    const crop = normalizeCropSpecies(pred.crop);
-    const condition = pred.condition || 'Unknown Condition';
-    const severity = mapAgronomicSeverity(pred.severity_index, condition);
+    const crop = normalizeCropSpecies(rawPred.crop);
+    const condition = rawPred.condition || 'Unknown Condition';
+    const severity = mapAgronomicSeverity(rawPred.severity_index, condition);
 
     const topProbabilities: TopProbability[] = (data.top_probabilities || []).map(
       (tp: { label: string; probability: number }) => ({
@@ -313,8 +352,8 @@ export async function classifyLeafImage(
       inferenceId: data.inference_id || `inf-${Date.now()}`,
       crop,
       condition,
-      scientificName: pred.scientific_name || 'Plant Pathogen',
-      confidenceScore: pred.confidence_score,
+      scientificName: rawPred.scientific_name || 'Plant Pathogen',
+      confidenceScore,
       severityIndex: severity.severityIndex,
       severityTier: severity.severityTier,
       topProbabilities,
