@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     # Populated by TODO-103 (ONNX export). Service starts in stub mode when absent.
     onnx_model_path: str = "models/agritech_classifier.onnx"
 
+    # Inference backend: "onnx" (default) or "plantml" (optional, local; needs torch + plantml)
+    model_backend: str = "onnx"
+    plantml_system: str = ""
+    plantml_runs_dir: str = ""
+    plantml_mode: str = "best"
+    plantml_thresholds: str = ""
+
     # Image preprocessing parameters (must match training pipeline: TODO-102)
     image_input_size: int = 224
     imagenet_mean: list[float] = [0.485, 0.456, 0.406]
