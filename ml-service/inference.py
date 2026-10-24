@@ -342,6 +342,10 @@ def _stub_probabilities() -> np.ndarray:
 
 def get_class_meta(label: str) -> dict:
     """Returns human-readable metadata dict for a given class label string."""
+    if label not in _CLASS_META and settings.model_backend == "plantml":
+        from plantml_engine import plantml_engine
+
+        return plantml_engine.meta(label)
     return _CLASS_META.get(label, {
         "crop": "Unknown",
         "condition": label,

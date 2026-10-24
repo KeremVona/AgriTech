@@ -28,10 +28,12 @@ from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from advisory import get_advisory, get_kb_version, get_kb_class_count, is_kb_loaded
+from advisory import _RESCAN_INSTRUCTIONS, get_advisory, get_kb_version, get_kb_class_count, is_kb_loaded
 from config import settings
 from inference import get_class_meta, inference_engine
+from plantml_engine import plantml_engine
 from schemas import (
+    LowConfidenceAdvisory,
     ClassifyLeafLowConfidenceResponse,
     ClassifyLeafResponse,
     ErrorDetail,
@@ -44,6 +46,21 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+def _engine():
+    """Active inference engine for the configured MODEL_BACKEND."""
+    return plantml_engine if settings.model_backend == "plantml" else inference_engine
+
+
+_UNSUPPORTED_MESSAGE = (
+    "This does not look like a leaf of a supported crop (tomato, potato, corn, "
+    "apple, grape, rice, cassava). Photograph a single leaf of one of these crops."
+)
+_RETAKE_MESSAGE = (
+    "The model is not confident enough in this photo. Please re-capture the leaf "
+    "following the instructions below before taking any agronomic action."
+)
 
 
 # ---------------------------------------------------------------------------
@@ -59,12 +76,15 @@ async def lifespan(app: FastAPI):
     per request (TODO-104 acceptance criterion).
     """
     logger.info("=== AgriTech ML Service starting up ===")
-    logger.info("Loading ONNX model from: %s", settings.onnx_model_path)
+    if settings.model_backend == "plantml":
+        logger.info("Loading plant-ml system from: %s", settings.plantml_system)
+        plantml_engine.load()
+    else:
+        logger.info("Loading ONNX model from: %s", settings.onnx_model_path)
+        # Model loading is synchronous but runs only once; safe in startup context
+        inference_engine.load(settings.onnx_model_path)
 
-    # Model loading is synchronous but runs only once; safe in startup context
-    inference_engine.load(settings.onnx_model_path)
-
-    if inference_engine.is_loaded():
+    if _engine().is_loaded():
         logger.info("ONNX model loaded successfully — LIVE inference mode active.")
     else:
         logger.warning(
@@ -145,8 +165,9 @@ async def health_ready():
     """
     return {
         "status": "ready",
-        "model_loaded": inference_engine.is_loaded(),
-        "mode": "LIVE" if inference_engine.is_loaded() else "STUB",
+        "model_loaded": _engine().is_loaded(),
+        "mode": "LIVE" if _engine().is_loaded() else "STUB",
+        "backend": settings.model_backend,
         "advisory_kb": {
             "loaded": is_kb_loaded(),
             "version": get_kb_version(),
@@ -154,7 +175,7 @@ async def health_ready():
         },
         "note": (
             None
-            if inference_engine.is_loaded()
+            if _engine().is_loaded()
             else "Running in stub mode — ML-102 (training) and ML-103 (ONNX export) are pending."
         ),
     }
@@ -249,13 +270,14 @@ async def classify_leaf(
         )
 
     loop = asyncio.get_running_loop()
+    engine = _engine()
     try:
         if crop_hint:
             result = await loop.run_in_executor(
-                None, lambda: inference_engine.run(image_bytes, crop_hint=crop_hint)
+                None, lambda: engine.run(image_bytes, crop_hint=crop_hint)
             )
         else:
-            result = await loop.run_in_executor(None, inference_engine.run, image_bytes)
+            result = await loop.run_in_executor(None, engine.run, image_bytes)
     except ValueError as exc:
         return JSONResponse(
             status_code=400,
@@ -278,7 +300,21 @@ async def classify_leaf(
         for p in result["top_probabilities"]
     ]
 
-    advisory, telemetry_hints, low_conf = get_advisory(top_label, confidence)
+    status: str = result.get("status", "ok")
+    if status != "ok":
+        low_conf = LowConfidenceAdvisory(
+            requires_rescan=True,
+            confidence_score=round(confidence, 4),
+            threshold=0.0,
+            message=_UNSUPPORTED_MESSAGE if status == "unsupported" else _RETAKE_MESSAGE,
+            rescan_instructions=_RESCAN_INSTRUCTIONS,
+        )
+        advisory, telemetry_hints = None, None
+    elif settings.model_backend == "plantml":
+        # plant-ml has its own calibrated thresholds; skip AgriTech's 0.60 rule.
+        advisory, telemetry_hints, low_conf = get_advisory(top_label, 1.0)
+    else:
+        advisory, telemetry_hints, low_conf = get_advisory(top_label, confidence)
 
     # ------------------------------------------------------------------
     # Low-confidence path: return rescan advisory instead of prediction
