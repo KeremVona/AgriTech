@@ -176,6 +176,7 @@ async def health_ready():
         "model_loaded": _engine().is_loaded(),
         "mode": "LIVE" if _engine().is_loaded() else ("UNAVAILABLE" if settings.model_backend == "plantml" else "STUB"),
         "backend": settings.model_backend,
+        **({"plantml_mode": settings.plantml_mode} if settings.model_backend == "plantml" else {}),
         "advisory_kb": {
             "loaded": is_kb_loaded(),
             "version": get_kb_version(),
@@ -319,6 +320,8 @@ async def classify_leaf(
     ]
 
     status: str = result.get("status", "ok")
+    if status == "unsupported":
+        top_probs = []  # near-uniform classes for a non-plant image would mislead
     if status != "ok":
         low_conf = LowConfidenceAdvisory(
             requires_rescan=True,

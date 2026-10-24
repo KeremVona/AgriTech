@@ -68,7 +68,8 @@ class PlantmlEngine:
         if settings.plantml_thresholds:
             kwargs["thresholds"] = Path(settings.plantml_thresholds)
         predictor = Predictor.from_system(
-            Path(settings.plantml_system), mode=settings.plantml_mode, **kwargs
+            Path(settings.plantml_system), mode=settings.plantml_mode,
+            device=settings.plantml_device or None, **kwargs
         )
         predictor.load()
         return predictor

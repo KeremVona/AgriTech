@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     plantml_runs_dir: str = ""
     plantml_mode: str = "best"
     plantml_thresholds: str = ""
+    plantml_device: str = ""  # empty = auto; "cpu" avoids GPU out-of-memory
 
     # Image preprocessing parameters (must match training pipeline: TODO-102)
     image_input_size: int = 224
