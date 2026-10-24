@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { DiseaseProgressionPage } from './pages/DiseaseProgressionPage';
 import { DiseaseProgressionExperimentalPage } from './p2p-experimental/pages/DiseaseProgressionExperimentalPage';
+import { LeafDiagnosticsPage } from './pages/LeafDiagnosticsPage';
 
 function App() {
   return (
@@ -15,6 +16,10 @@ function App() {
 
         {/* Experimental P2P Laboratory Route (Tier 1 Features) */}
         <Route path="/disease-progression-experimental" element={<DiseaseProgressionExperimentalPage />} />
+
+        {/* Dedicated AI Leaf Diagnostics Workbench Routes (SPEC-UI-006) */}
+        <Route path="/diagnostics" element={<LeafDiagnosticsPage />} />
+        <Route path="/leaf-scanner" element={<LeafDiagnosticsPage />} />
 
         {/* Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />

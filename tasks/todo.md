@@ -1,48 +1,57 @@
-# TODO-204: NetTopologySuite & GeoJSON Serializer Configuration
+# TODO-111: Dedicated AI Leaf Diagnostics Page Implementation
 
-## Current Status: COMPLETED
-**Branch:** `feat/backend-todo204-geojson-serialization`  
-**Assignee:** Backend Engineer  
-**Phase:** Phase 2 — Spatial Foundation, GIS & Relational Data Layer  
+## Current Status: COMPLETED (100% DONE)
+**Assignee:** Senior Front-End Engineer  
+**Phase:** Phase 1 — Machine Learning Core & Diagnostics  
+**Spec:** `design/AI_Leaf_Diagnostics_Spec.md` (SPEC-UI-006)  
+**Plan:** `tasks/plan.md`  
+**Completion Report:** `PROJECT_DETAILS/Reports/Phase 1/TODO-111-ai-leaf-diagnostics-page.md`
 
 ---
 
-- [x] **Subtask 1: Spatial & GeoJSON NuGet Integration**
-  - Verified `Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite` (v10.0.3) for PostGIS spatial mapping in EF Core.
-  - Added `NetTopologySuite.IO.GeoJSON4STJ` (v4.0.0) providing native System.Text.Json (STJ) GeoJSON converters.
+### Task List & Subagent Review Cadence
 
-- [x] **Subtask 2: System.Text.Json Custom Serializer Configuration (`GeoJsonSerializationExtensions.cs`)**
-  - Implemented `ConfigureGeoJsonOptions` configuring `GeoJsonConverterFactory` with `GeometryFactory(srid: 4326)`.
-  - Enforced WGS 84 (EPSG:4326) coordinate reference system tagging on all incoming geometries.
-  - Streamlined zero-overhead JSON serialization reading/writing directly via `Utf8JsonReader` and `Utf8JsonWriter` without intermediate string conversions.
-  - Implemented domain entity mapping extension methods (`ToGeoJsonFeature`, `ToGeoJsonFeatureCollection`) for `Parcel`, `Field`, and `SensorNode`.
+- [x] **Task 1: Foundations, CSS Tokens, Animation Keyframes & TypeScript Domain Models**
+  - [x] Define TypeScript domain interfaces in `frontend/src/types/diagnostics.ts`
+  - [x] Add `--ag-*` light-mode CSS tokens, `.ag-tabular-numeric`, and `@keyframes telemetryScanBeam` in `frontend/src/index.css`
+  - [x] Verify build compiles cleanly with `npm run build`
+  - [x] Commit changes (`8bb5831`, `581e58e`)
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent against `design/AI_Leaf_Diagnostics_Spec.md` and `design/FOUNDATIONS.md` (APPROVED)
 
-- [x] **Subtask 3: ASP.NET Core Web API Pipeline Registration (`Program.cs`)**
-  - Registered `.AddGeoJsonSerialization(srid: 4326)` on `IMvcBuilder` in `Program.cs`.
-  - Enabled automatic model binding and validation of GeoJSON payloads across all API controllers.
+- [x] **Task 2: Client Pre-Flight Validation Utility & Diagnostic Service Layer**
+  - [x] Write unit validation test script in `frontend/scripts/test_diagnostics_validation.js`
+  - [x] Implement `frontend/src/utils/imageValidation.ts` (MIME, size <=10MB, resolution >=224x224)
+  - [x] Implement `frontend/src/services/diagnosticsService.ts` (FastAPI client, 4-tier severity mapping, clinical sample presets)
+  - [x] Verify unit test passes: `npm --prefix frontend run test:diagnostics`
+  - [x] Commit changes (`742e431`, `0572776`)
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent for security, edge cases, and compliance (APPROVED)
 
-- [x] **Subtask 4: Spatial DTOs & Validation Models (`Models/DTOs/`)**
-  - Created `CreateParcelGeoJsonRequest.cs` binding incoming GeoJSON geometry directly into `NetTopologySuite.Geometries.Polygon`.
-  - Created `GeometryTestRequest.cs` supporting polymorphic GeoJSON geometry deserialization.
-  - Created `GeoJsonValidationResponse.cs` reporting geometry type, coordinate count, SRID, and centroid metrics.
+- [x] **Task 3: Leaf Image Dropzone & In-Flight Telemetry Scan Viewport**
+  - [x] Implement `<TelemetryScanBeam />` with vertical sweep, millisecond tabular timer, and cancel action
+  - [x] Implement `<SamplingBestPracticesCard />` with operator guidance
+  - [x] Implement `<LeafImageDropzone />` with drag-and-drop, mobile camera capture (`capture="environment"`), and active image preview
+  - [x] Verify compilation: `npm run build`
+  - [x] Commit changes (`e0431f3`, `3cd5eb7`)
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent for mobile ergonomics, touch targets, and visual fidelity (APPROVED)
 
-- [x] **Subtask 5: Spatial GeoJSON Controller Endpoints (`SpatialGeoJsonController.cs`)**
-  - `POST /api/v1/spatial/geojson/deserialize-polygon` — Ingests client GeoJSON and automatically deserializes into `Polygon` (AC 1).
-  - `POST /api/v1/spatial/geojson/deserialize-geometry` — Polymorphic geometry deserialization.
-  - `GET /api/v1/spatial/geojson/sample-feature` — Produces valid RFC 7946 GeoJSON `Feature` (AC 2a).
-  - `GET /api/v1/spatial/geojson/sample-feature-collection` — Produces valid RFC 7946 GeoJSON `FeatureCollection` (AC 2b).
-  - `POST /api/v1/spatial/geojson/echo-feature` — Verifies roundtrip Feature deserialization as `IFeature` (`StjFeature`).
-  - `GET /api/v1/spatial/geojson/parcels` — Streams live database parcels as RFC 7946 `FeatureCollection`.
+- [x] **Task 4: Diagnostic Verdict Card, Probability Bars & Agronomic Advisory**
+  - [x] Implement `<VerdictSkeletonLoader />` to eliminate Cumulative Layout Shift (CLS) during inference
+  - [x] Implement `<DiagnosticVerdictCard />` with dual-coded severity badges (Tier 0-3), tabular confidence score, top-3 animated probability bars, and immediate action banner
+  - [x] Verify compilation: `npm run build`
+  - [x] Commit changes (`df09614`, `a026edf`)
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent for dual-coding contrast ratios, typography, and motion curves (APPROVED)
 
-- [x] **Subtask 6: Automated Verification Test Harness (`scripts/verify_geojson_serialization.ps1`)**
-  - Automated PowerShell test harness executing:
-    - Test 1: NuGet package & compilation check -> PASS.
-    - Test 2: Web API bootstrapping on test port -> PASS.
-    - Test 3: Deserialization into `NetTopologySuite.Geometries.Polygon` with SRID 4326 -> PASS.
-    - Test 4: RFC 7946 GeoJSON `Feature` output validation -> PASS.
-    - Test 5: RFC 7946 GeoJSON `FeatureCollection` output validation -> PASS.
-    - Bonus: Roundtrip `IFeature` echo without string conversion overhead -> PASS.
+- [x] **Task 5: Dedicated AI Leaf Diagnostics Page Assembly & Route Integration**
+  - [x] Export components in `frontend/src/components/Diagnostics/index.ts`
+  - [x] Assemble `<LeafDiagnosticsPage />` in `frontend/src/pages/LeafDiagnosticsPage.tsx` with dual-panel workbench (5 cols / 7 cols) and 8-state state machine
+  - [x] Register `/diagnostics` and `/leaf-scanner` routes in `frontend/src/App.tsx`
+  - [x] Verify production build: `npm run build`
+  - [x] Commit changes (`9eabc0f`, `91dc9eb`)
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent for routing, keyboard accessibility, and responsive layout (APPROVED)
 
-- [x] **Subtask 7: Formal Completion Report (DoD) & Documentation**
-  - Created `PROJECT_DETAILS/Reports/Phase 2/TODO-204-geojson-serialization.md`.
-  - Updated `tasks/todo.md`.
+- [x] **Task 6: End-to-End Verification, Outdoor Mobile Polish & Documentation**
+  - [x] Run full build, linting (`npm run lint`), and unit validation tests (`npm run test:diagnostics`)
+  - [x] Audit mobile viewport ($375\text{px}$) for 48px touch targets and high-sunlight contrast
+  - [x] Generate completion report in `PROJECT_DETAILS/Reports/Phase 1/TODO-111-ai-leaf-diagnostics-page.md`
+  - [x] Final whole-feature subagent code review
+  - [x] Final commit and sign-off
