@@ -1,10 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Geist Sans', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Geist Sans', 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
 
+  /* Precision Ag-Intelligence Semantic Tokens */
+  --color-ag-canvas: #F8FAFC;
+  --color-ag-surface: #FFFFFF;
+  --color-ag-surface-muted: #F1F5F9;
+  --color-ag-border: #E2E8F0;
+  --color-ag-border-field: #9CA3AF;
+  --color-ag-border-active: #0F766E;
+  --color-ag-ink: #0F172A;
+  --color-ag-ink-secondary: #475569;
+  --color-ag-ink-tertiary: #64748B;
+  --color-ag-brand: #0F766E;
+  --color-ag-brand-hover: #115E59;
+  --color-ag-brand-subtle: #F0FDFA;
+  --color-ag-scan-beam: #38BDF8;
+  --color-ag-telemetry-vwc: #0891B2;
+  --color-ag-valve-active: #10B981;
+  --color-ag-valve-idle: #64748B;
+  --color-ag-risk-healthy: #059669;
+  --color-ag-risk-low: #D97706;
+  --color-ag-risk-moderate: #EA580C;
+  --color-ag-risk-critical: #DC2626;
+
+  /* Classic Theme Colors for Existing Pages */
   --color-agri-50: #f0fdf4;
   --color-agri-100: #dcfce7;
   --color-agri-200: #bbf7d0;
@@ -19,8 +42,33 @@
 }
 
 :root {
-  --font-display: 'Outfit', sans-serif;
-  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --ag-canvas: #F8FAFC;
+  --ag-surface: #FFFFFF;
+  --ag-surface-muted: #F1F5F9;
+  --ag-border: #E2E8F0;
+  --ag-border-field: #9CA3AF;
+  --ag-border-active: #0F766E;
+  --ag-ink: #0F172A;
+  --ag-ink-secondary: #475569;
+  --ag-ink-tertiary: #64748B;
+  --ag-brand: #0F766E;
+  --ag-brand-hover: #115E59;
+  --ag-brand-subtle: #F0FDFA;
+  --ag-scan-beam: #38BDF8;
+  --ag-telemetry-vwc: #0891B2;
+  --ag-valve-active: #10B981;
+  --ag-valve-idle: #64748B;
+  --ag-risk-healthy: #059669;
+  --ag-risk-low: #D97706;
+  --ag-risk-moderate: #EA580C;
+  --ag-risk-critical: #DC2626;
+
+  --ag-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ag-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ag-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --font-display: 'Geist Sans', 'Outfit', sans-serif;
+  --font-body: 'Geist Sans', 'Inter', 'Plus Jakarta Sans', sans-serif;
   --color-primary: #10b981;
   --color-accent: #22c55e;
   --color-bg-dark: #030712;
@@ -28,13 +76,56 @@
 
 body {
   font-family: var(--font-body);
-  background-color: #030712;
-  color: #f3f4f6;
+  background-color: var(--ag-canvas);
+  color: var(--ag-ink);
   overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
+}
+
+/* Rigid Tabular Numerals Rule */
+.ag-tabular-numeric {
+  font-family: var(--font-mono, 'Geist Mono', 'JetBrains Mono', monospace);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'cv01' 1, 'zero' 1;
+}
+
+/* Telemetry Laser Scan Beam Animation */
+@keyframes telemetryScanBeam {
+  0% {
+    top: 0%;
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0.9;
+  }
+}
+
+.ag-telemetry-scan-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #38BDF8;
+  box-shadow: 0 0 12px 2px rgba(56, 189, 248, 0.75);
+  animation: telemetryScanBeam 1.6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Interactive Tactile Press Response */
+.ag-interactive {
+  transition: transform 120ms var(--ag-ease-out), background-color 150ms ease, border-color 150ms ease;
+  will-change: transform;
+}
+.ag-interactive:active {
+  transform: scale(0.97);
 }
 
 /* Hero Stagger & Fade Animations */
@@ -88,5 +179,11 @@ h1, h2, h3, h4, h5, h6 {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .ag-telemetry-scan-beam {
+    animation: none !important;
+    top: 50% !important;
+    opacity: 0.8 !important;
   }
 }
