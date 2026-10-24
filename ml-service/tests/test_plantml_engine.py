@@ -88,8 +88,10 @@ async def test_responses_validate_for_each_status(plantml, status, conf):
         ClassifyLeafLowConfidenceResponse.model_validate(body)
         msg = body["low_confidence_advisory"]["message"]
         assert ("supported crop" in msg) == (status == "unsupported")
+        assert (body["top_probabilities"] == []) == (status == "unsupported")
     h = (await _get("/health/ready")).json()
     assert h["backend"] == "plantml" and h["model_loaded"] is True
+    assert h["plantml_mode"] == settings.plantml_mode
 
 
 async def test_crop_hint_unknown_is_ignored(plantml):

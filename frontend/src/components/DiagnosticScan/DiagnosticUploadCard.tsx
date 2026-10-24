@@ -188,6 +188,11 @@ export const DiagnosticUploadCard: React.FC<DiagnosticUploadCardProps> = ({
         return;
       }
 
+      if (!data?.prediction) {
+        setNotice({ kind: 'error', title: 'ML service error', message: 'Unexpected response from ML service' });
+        return;
+      }
+
       const pred = data.prediction;
       const cropLower = String(pred.crop).toLowerCase();
       const supported = (SUPPORTED_CROPS as string[]).includes(cropLower);
