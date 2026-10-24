@@ -58,12 +58,19 @@ export function Navbar() {
         </div>
 
         {/* Center: Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-7" aria-label="Main Navigation">
+        <nav className="hidden md:flex items-center gap-6" aria-label="Main Navigation">
           <Link
             to="/"
             className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
           >
             Platform
+          </Link>
+          <Link
+            to="/diagnostics"
+            className="text-sm font-medium text-teal-300 hover:text-teal-200 transition-colors flex items-center gap-1.5"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+            AI Leaf Scanner
           </Link>
           <Link
             to="/disease-progression"
@@ -84,29 +91,23 @@ export function Navbar() {
           >
             Field GIS
           </a>
-          <a
-            href="/#features"
-            className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-          >
-            Research & Model
-          </a>
         </nav>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
           <Link
-            to="/disease-progression"
+            to="/diagnostics"
             className="hidden sm:inline-block text-sm font-medium text-slate-300 hover:text-white px-3 py-1.5 transition-colors"
           >
-            Field Portal
+            Leaf Scanner
           </Link>
 
           {/* Primary Pill Button (Codex Style) */}
           <Link
-            to="/disease-progression"
+            to="/diagnostics"
             className="relative inline-flex items-center justify-center gap-2 px-4.5 py-2 rounded-full text-xs sm:text-sm font-semibold text-slate-950 bg-white hover:bg-emerald-50 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95 transition-all duration-200 cursor-pointer group"
           >
-            <span>Launch Engine</span>
+            <span>Scan Foliage</span>
             <span className="text-xs group-hover:translate-x-0.5 transition-transform duration-200">
               ↗
             </span>
@@ -139,6 +140,13 @@ export function Navbar() {
             className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800/70"
           >
             Platform
+          </Link>
+          <Link
+            to="/diagnostics"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-md text-base font-medium text-teal-300 hover:bg-slate-800/70"
+          >
+            🔬 AI Leaf Scanner
           </Link>
           <Link
             to="/disease-progression"

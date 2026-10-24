@@ -16,12 +16,12 @@ export function LandingPage() {
         {/* 3. Core Platform Pillars (PROJECT_DETAILS.md: Vision, FAO-56, Spatial GIS) */}
         <FeaturePillars />
 
-        {/* 4. Feature Spotlight Banner Linking to Disease Progression */}
+        {/* 4. Feature Spotlight Banner Linking to Disease Progression & AI Diagnostics */}
         <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="relative rounded-3xl overflow-hidden border border-emerald-500/30 bg-gradient-to-r from-emerald-950/80 via-slate-900/90 to-emerald-950/80 p-8 sm:p-12 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 group">
             <div className="space-y-3 max-w-xl text-center md:text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-xs font-mono text-emerald-300">
-                <span>FEATURE #1 READY</span>
+                <span>FEATURE READY</span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 Inspect Real-Time Foliar Pathology
@@ -31,13 +31,21 @@ export function LandingPage() {
               </p>
             </div>
 
-            <Link
-              to="/disease-progression"
-              className="shrink-0 px-8 py-4 rounded-full text-sm sm:text-base font-semibold text-slate-950 bg-white hover:bg-emerald-50 hover:shadow-xl hover:shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 cursor-pointer group/btn"
-            >
-              <span>Launch Disease Progression</span>
-              <span className="group-hover/btn:translate-x-1 transition-transform duration-200">→</span>
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+              <Link
+                to="/diagnostics"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-full text-sm font-semibold text-white bg-teal-600 hover:bg-teal-500 hover:shadow-xl hover:shadow-teal-500/20 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>🔬 AI Leaf Scanner</span>
+              </Link>
+              <Link
+                to="/disease-progression"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-full text-sm font-semibold text-slate-950 bg-white hover:bg-emerald-50 hover:shadow-xl hover:shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer group/btn"
+              >
+                <span>Progression Engine</span>
+                <span className="group-hover/btn:translate-x-1 transition-transform duration-200">→</span>
+              </Link>
+            </div>
           </div>
         </section>
       </main>
@@ -64,13 +72,13 @@ export function LandingPage() {
               </h4>
               <ul className="space-y-2 text-xs text-slate-400">
                 <li>
-                  <Link to="/disease-progression" className="hover:text-emerald-400 transition-colors">
-                    Disease Progression Slider
+                  <Link to="/diagnostics" className="hover:text-emerald-400 transition-colors">
+                    AI Foliar Diagnostics
                   </Link>
                 </li>
                 <li>
                   <Link to="/disease-progression" className="hover:text-emerald-400 transition-colors">
-                    Foliage CNN Inference
+                    Disease Progression Slider
                   </Link>
                 </li>
                 <li>
@@ -144,6 +152,9 @@ export function LandingPage() {
               © {new Date().getFullYear()} AgriTech Platform. Precision Field Operations & Crop Health.
             </p>
             <div className="flex items-center gap-6">
+              <Link to="/diagnostics" className="hover:text-slate-300 transition-colors">
+                Foliar Diagnostics
+              </Link>
               <Link to="/disease-progression" className="hover:text-slate-300 transition-colors">
                 Disease Progression Engine
               </Link>
