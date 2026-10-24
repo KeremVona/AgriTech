@@ -27,16 +27,18 @@ export const LeafHotspotOverlay: React.FC<LeafHotspotOverlayProps> = ({
   onToggleEnabled,
   className = '',
 }) => {
-  const [selectedHotspot, setSelectedHotspot] = useState<SymptomHotspot | null>(null);
+  const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(null);
   const detailCardRef = useRef<HTMLDivElement | null>(null);
 
   const activeHotspots = getActiveHotspotsForProgress(cropId, sliderPercentage);
+  // Pure derived state: automatically null if hotspot is not active in current crop / slider tier
+  const selectedHotspot = activeHotspots.find((h) => h.id === selectedHotspotId) || null;
 
   // Close hotspot detail on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setSelectedHotspot(null);
+        setSelectedHotspotId(null);
       }
     };
     if (selectedHotspot) {
@@ -51,7 +53,7 @@ export const LeafHotspotOverlay: React.FC<LeafHotspotOverlayProps> = ({
       if (detailCardRef.current && !detailCardRef.current.contains(e.target as Node)) {
         const target = e.target as HTMLElement;
         if (!target.closest('[data-hotspot-pin]')) {
-          setSelectedHotspot(null);
+          setSelectedHotspotId(null);
         }
       }
     };
@@ -132,12 +134,13 @@ export const LeafHotspotOverlay: React.FC<LeafHotspotOverlayProps> = ({
               <button
                 type="button"
                 data-hotspot-pin={hotspot.id}
-                onClick={() => setSelectedHotspot(isSelected ? null : hotspot)}
-                className={`relative group w-7 h-7 rounded-full border-2 flex items-center justify-center font-mono text-[11px] font-bold transition-transform duration-150 active:scale-90 cursor-pointer shadow-md ${
+                onClick={() => setSelectedHotspotId(isSelected ? null : hotspot.id)}
+                className={`relative group w-7 h-7 rounded-full border-2 flex items-center justify-center font-mono text-[11px] font-bold transition-transform duration-150 active:scale-90 cursor-pointer shadow-md after:content-[''] after:absolute after:-inset-2 after:rounded-full ${
                   styling.pin
                 } ${isSelected ? 'scale-125 ring-4 ring-teal-600 shadow-lg z-30' : styling.glow}`}
                 aria-label={`Hotspot: ${hotspot.title}`}
                 aria-expanded={isSelected}
+                aria-haspopup="dialog"
               >
                 {/* Pulsing ring animation */}
                 <span
@@ -179,7 +182,7 @@ export const LeafHotspotOverlay: React.FC<LeafHotspotOverlayProps> = ({
 
             <button
               type="button"
-              onClick={() => setSelectedHotspot(null)}
+              onClick={() => setSelectedHotspotId(null)}
               className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 text-xs cursor-pointer"
               aria-label="Close hotspot popover"
             >
@@ -196,7 +199,7 @@ export const LeafHotspotOverlay: React.FC<LeafHotspotOverlayProps> = ({
             </p>
           </div>
 
-          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] font-mono text-slate-500">
+          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] font-mono tabular-nums text-slate-500">
             <span>
               Threshold:{' '}
               <strong className="text-teal-700">

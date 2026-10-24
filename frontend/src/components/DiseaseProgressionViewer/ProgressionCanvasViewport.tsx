@@ -8,7 +8,7 @@
  * - Integrated agronomic timeline scrubber
  */
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { SupportedCropId, ProgressionDynamicOutput } from '../../models/agronomicTimelineModel.ts';
 import type { ProgressionViewMode, TextureSources } from './types.ts';
 import { ProgressionShaderRenderer } from './ProgressionShaderRenderer.ts';
@@ -106,19 +106,40 @@ export const ProgressionCanvasViewport: React.FC<ProgressionCanvasViewportProps>
     }
   }, [splitEnabled, splitPosition]);
 
-  // Responsive Canvas Resize Observer
-  const handleResize = useCallback(() => {
-    if (!canvasRef.current || !rendererRef.current) return;
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-    rendererRef.current.resize(rect.width, rect.height, dpr);
-  }, []);
-
+  // Responsive Canvas Resize Observer with DPR Calibration
   useEffect(() => {
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [handleResize]);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleResize = () => {
+      if (!canvasRef.current || !rendererRef.current) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+      rendererRef.current.resize(rect.width, rect.height, dpr);
+    };
+
+    // Initial resize trigger
+    handleResize();
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        handleResize();
+      });
+      resizeObserver.observe(canvas);
+    } else {
+      window.addEventListener('resize', handleResize);
+    }
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener('resize', handleResize);
+      }
+    };
+  }, []);
 
   return (
     <div
@@ -219,6 +240,10 @@ export const ProgressionCanvasViewport: React.FC<ProgressionCanvasViewportProps>
             onChange={(e) => setSplitPosition(parseFloat(e.target.value))}
             className="w-full accent-teal-700 bg-slate-200 rounded-lg h-2 cursor-pointer"
             aria-label="Split Screen Curtain Position"
+            aria-valuemin={5}
+            aria-valuemax={95}
+            aria-valuenow={Math.round(splitPosition * 100)}
+            aria-valuetext={`Split curtain at ${Math.round(splitPosition * 100)} percent`}
           />
           <span className="font-mono tabular-nums text-teal-800 font-bold shrink-0">
             {Math.round(splitPosition * 100)}%
