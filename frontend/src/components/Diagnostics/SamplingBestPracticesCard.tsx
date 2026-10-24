@@ -4,11 +4,11 @@ export const SamplingBestPracticesCard: React.FC<{ className?: string }> = ({ cl
   return (
     <div className={`bg-ag-surface border border-ag-border rounded-lg p-5 shadow-xs space-y-3.5 ${className}`}>
       <div className="flex items-center gap-2 pb-2 border-b border-ag-border">
-        <span className="text-base">📋</span>
+        <span className="text-base" aria-hidden="true">📋</span>
         <h4 className="text-sm font-semibold text-ag-ink">Field Sampling Best Practices</h4>
       </div>
 
-      <ul className="space-y-2 text-xs text-ag-ink-secondary leading-relaxed">
+      <ul className="space-y-2.5 text-xs text-ag-ink-secondary leading-relaxed">
         <li className="flex items-start gap-2">
           <span className="text-ag-brand font-bold shrink-0">1.</span>
           <span>
@@ -35,9 +35,9 @@ export const SamplingBestPracticesCard: React.FC<{ className?: string }> = ({ cl
         </li>
       </ul>
 
-      <div className="p-2.5 rounded bg-ag-brand-subtle border border-emerald-200 text-[11px] text-teal-900 flex items-center gap-2">
-        <span className="text-ag-brand font-bold">💡</span>
-        <span>Resolution threshold: minimum <code className="font-mono font-semibold">224x224 px</code> required.</span>
+      <div className="p-3 rounded-md bg-ag-brand-subtle border border-emerald-200 text-xs text-teal-900 flex items-center gap-2">
+        <span className="text-ag-brand font-bold text-sm" aria-hidden="true">💡</span>
+        <span>Resolution threshold: minimum <code className="font-mono font-semibold">224×224 px</code> required for neural feature extraction.</span>
       </div>
     </div>
   );
