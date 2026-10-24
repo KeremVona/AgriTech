@@ -38,16 +38,16 @@
   - [x] Assemble `<StudioInspectorRail />` with tactile tab switching and light-mode tokens
   - [x] Verify compilation: `npm run build`
   - [x] Commit changes
-  - [ ] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [ ] **Task 4: Interactive Foliar Canvas Viewport, Hotspots & Agronomic Scrubber (Light Mode)**
-  - [ ] Refactor `<CompactCropSelectorRail />` in light mode with auto-scrolling active pill and 44px+ hit targets
-  - [ ] Refactor `<LeafHotspotOverlay />` in light mode with 24 registered anatomical pins and popover cards
-  - [ ] Refactor `<AgronomicTimelineSlider />` in light mode with Magarey Beta days $\longleftrightarrow$ severity sync, tabular numerals, play/pause loop, milestone tick marks, and `setPointerCapture`
-  - [ ] Assemble `<ProgressionCanvasViewport />` with view mode toolbar, WebGL canvas, and 2D fallback
-  - [ ] Export components in `frontend/src/components/DiseaseProgressionViewer/index.ts`
-  - [ ] Verify compilation: `npm run build`
-  - [ ] Commit changes
+- [x] **Task 4: Interactive Foliar Canvas Viewport, Hotspots & Agronomic Scrubber (Light Mode)**
+  - [x] Refactor `<CompactCropSelectorRail />` in light mode with auto-scrolling active pill and 44px+ hit targets
+  - [x] Refactor `<LeafHotspotOverlay />` in light mode with 24 registered anatomical pins and popover cards
+  - [x] Refactor `<AgronomicTimelineSlider />` in light mode with Magarey Beta days $\longleftrightarrow$ severity sync, tabular numerals, play/pause loop, milestone tick marks, and `setPointerCapture`
+  - [x] Assemble `<ProgressionCanvasViewport />` with view mode toolbar, WebGL canvas, and 2D fallback
+  - [x] Export components in `frontend/src/components/DiseaseProgressionViewer/index.ts`
+  - [x] Verify compilation: `npm run build`
+  - [x] Commit changes
   - [ ] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
 - [ ] **Task 5: Production Page Assembly, Route Deprecation & End-to-End Verification**

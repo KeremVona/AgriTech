@@ -15,6 +15,7 @@
     "test:crops": "node --experimental-strip-types scripts/test_8crops_expansion.js",
     "test:shader": "node --experimental-strip-types scripts/test_shader_modes.js",
     "test:inspector": "node --experimental-strip-types scripts/test_studio_inspector.js",
+    "test:canvas": "node --experimental-strip-types scripts/test_canvas_stage.js",
     "test:diagnostics": "node --experimental-strip-types scripts/test_diagnostics_validation.js",
     "preview": "vite preview"
   },

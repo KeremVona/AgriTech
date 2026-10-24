@@ -31,3 +31,14 @@ export interface CropSpecimenItem {
   subtitle: string;
   family: string;
 }
+
+export const DEFAULT_CROP_SPECIMENS: CropSpecimenItem[] = [
+  { id: 'tomato', label: 'Tomato', icon: '🍅', subtitle: 'Early Blight', family: 'Solanaceae' },
+  { id: 'potato', label: 'Potato', icon: '🥔', subtitle: 'Late Blight', family: 'Solanaceae' },
+  { id: 'corn', label: 'Corn', icon: '🌽', subtitle: 'Common Rust', family: 'Poaceae' },
+  { id: 'apple', label: 'Apple', icon: '🍎', subtitle: 'Apple Scab', family: 'Rosaceae' },
+  { id: 'grape', label: 'Grape', icon: '🍇', subtitle: 'Black Rot', family: 'Vitaceae' },
+  { id: 'pepper', label: 'Pepper', icon: '🫑', subtitle: 'Bacterial Spot', family: 'Solanaceae' },
+  { id: 'peach', label: 'Peach', icon: '🍑', subtitle: 'Bacterial Spot', family: 'Rosaceae' },
+  { id: 'squash', label: 'Squash', icon: '🎃', subtitle: 'Powdery Mildew', family: 'Cucurbitaceae' },
+];

@@ -26,3 +26,13 @@ export { DiagnosticPdfReportModal } from './DiagnosticPdfReportModal.tsx';
 export type { DiagnosticPdfReportModalProps } from './DiagnosticPdfReportModal.tsx';
 export { StudioInspectorRail } from './StudioInspectorRail.tsx';
 export type { StudioInspectorRailProps, InspectorTab } from './StudioInspectorRail.tsx';
+
+// Task 4 Promoted Canvas Viewport & Foliar Components (SPEC-UI-007)
+export { CompactCropSelectorRail, DEFAULT_CROP_SPECIMENS } from './CompactCropSelectorRail.tsx';
+export type { CompactCropSelectorRailProps } from './CompactCropSelectorRail.tsx';
+export { LeafHotspotOverlay } from './LeafHotspotOverlay.tsx';
+export type { LeafHotspotOverlayProps } from './LeafHotspotOverlay.tsx';
+export { AgronomicTimelineSlider } from './AgronomicTimelineSlider.tsx';
+export type { AgronomicTimelineSliderProps } from './AgronomicTimelineSlider.tsx';
+export { ProgressionCanvasViewport } from './ProgressionCanvasViewport.tsx';
+export type { ProgressionCanvasViewportProps } from './ProgressionCanvasViewport.tsx';
