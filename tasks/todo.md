@@ -28,16 +28,16 @@
   - [x] Verify WebGL context disposal hygiene
   - [x] Verify compilation: `npm run build`
   - [x] Commit changes
-  - [ ] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [ ] **Task 3: Studio Parameter Inspector Rail & Prompt Attention Inspector (Light Mode)**
-  - [ ] Implement `<PromptAttentionInspector />` with Needleman-Wunsch prompt diff token visualizer & hyperparameters
-  - [ ] Refactor `<MicroclimateControlPanel />` into light-mode tokens with interactive cardinal curve mini-SVG
-  - [ ] Refactor `<TreatmentBranchingControls />` & `<TreatmentOutcomeCard />` into light mode with dual-coded severity callouts
-  - [ ] Refactor `<ExportToolbar />` and `<DiagnosticPdfReportModal />` into light mode
-  - [ ] Assemble `<StudioInspectorRail />` with tactile tab switching and light-mode tokens
-  - [ ] Verify compilation: `npm run build`
-  - [ ] Commit changes
+- [x] **Task 3: Studio Parameter Inspector Rail & Prompt Attention Inspector (Light Mode)**
+  - [x] Implement `<PromptAttentionInspector />` with Needleman-Wunsch prompt diff token visualizer & hyperparameters
+  - [x] Refactor `<MicroclimateControlPanel />` into light-mode tokens with interactive cardinal curve mini-SVG
+  - [x] Refactor `<TreatmentBranchingControls />` & `<TreatmentOutcomeCard />` into light mode with dual-coded severity callouts
+  - [x] Refactor `<ExportToolbar />` and `<DiagnosticPdfReportModal />` into light mode
+  - [x] Assemble `<StudioInspectorRail />` with tactile tab switching and light-mode tokens
+  - [x] Verify compilation: `npm run build`
+  - [x] Commit changes
   - [ ] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
 - [ ] **Task 4: Interactive Foliar Canvas Viewport, Hotspots & Agronomic Scrubber (Light Mode)**
