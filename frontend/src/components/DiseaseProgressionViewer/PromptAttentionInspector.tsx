@@ -1,13 +1,14 @@
 /**
  * PromptAttentionInspector (SPEC-UI-007, Section 4.6).
- * Inspects Prompt-to-Prompt cross-attention parameters, displays Needleman-Wunsch
- * prompt token alignment diffs with Bio-Teal badges, and provides payload/tensor export.
+ * Inspects Prompt-to-Prompt cross-attention parameters, displays sequence token
+ * alignment diffs with Bio-Teal badges, and provides payload/tensor export.
  */
 
 import React, { useState } from 'react';
 import type { SupportedCropId } from '../../types/progression.ts';
 import type { ProgressionStage } from '../../types/progression.ts';
 import { AGRONOMIC_CALIBRATION_REGISTRY } from '../../models/agronomicTimelineModel.ts';
+import { serializeNpyTensor } from '../../utils/npySerializer.ts';
 
 export interface PromptAttentionInspectorProps {
   cropId: SupportedCropId;
@@ -46,14 +47,15 @@ export const PromptAttentionInspector: React.FC<PromptAttentionInspectorProps> =
   const stageName = activeStage?.stage_label || (sliderValue < 50 ? 'Early Stage' : 'Severe Stage');
   const targetPrompt = `high-resolution macro foliar photograph of ${profile.cropName} leaf showing ${stageName} of ${profile.diseaseName}, localized chlorotic halo lesions, necrotic margins, compromised mesophyll canopy, ${Math.round(sliderValue)}% pathogen pressure`;
 
-  // Needleman-Wunsch style token diff parser
+  // Tokenization for sequence diff
   const baseTokens = basePrompt.split(' ');
   const targetTokens = targetPrompt.split(' ');
-  
-  // Highlight keywords that denote pathological deviation
+
+  const baseTokenSet = new Set(baseTokens.map((t) => t.toLowerCase().replace(/[^a-z0-9]/g, '')));
+
   const isPathologicalToken = (token: string) => {
     const clean = token.toLowerCase().replace(/[^a-z0-9]/g, '');
-    return [
+    return !baseTokenSet.has(clean) || [
       'chlorotic', 'halo', 'lesions', 'necrotic', 'margins',
       'compromised', 'mesophyll', 'pathogen', 'pressure',
       'early', 'severe', 'blight', 'spot', 'rot', 'rust',
@@ -80,25 +82,35 @@ export const PromptAttentionInspector: React.FC<PromptAttentionInspectorProps> =
     };
 
     try {
-      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     } catch {
-      // Fallback
+      // Graceful fallback
     }
   };
 
   const handleDownloadTensor = () => {
     setDownloading(true);
-    // Synthesize a dummy 64x64 float32 .npy tensor blob for agronomic diagnostics demonstration
-    const header = "NUMPY\x01\x00{'descr': '<f4', 'fortran_order': False, 'shape': (64, 64), }";
-    const dataSize = 64 * 64 * 4;
-    const buffer = new ArrayBuffer(header.length + dataSize);
-    const view = new Uint8Array(buffer);
-    for (let i = 0; i < header.length; i++) {
-      view[i] = header.charCodeAt(i);
+
+    // Synthesize realistic 64x64 float32 cross-attention map weights based on slider severity
+    const tensorData = new Float32Array(64 * 64);
+    const sevFactor = sliderValue / 100.0;
+    for (let y = 0; y < 64; y++) {
+      for (let x = 0; x < 64; x++) {
+        const dx = (x - 32) / 32;
+        const dy = (y - 32) / 32;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        // Radial attention weight with localized lesion hotspots
+        const weight = Math.max(0.0, Math.min(1.0, (1.0 - dist) * sevFactor * 1.25));
+        tensorData[y * 64 + x] = weight;
+      }
     }
-    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+
+    const npyBuffer = serializeNpyTensor(tensorData, [64, 64]);
+    const blob = new Blob([npyBuffer], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -106,8 +118,12 @@ export const PromptAttentionInspector: React.FC<PromptAttentionInspectorProps> =
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setTimeout(() => setDownloading(false), 800);
+
+    // Delay revocation to ensure download manager completes stream ingestion across browsers
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      setDownloading(false);
+    }, 1000);
   };
 
   return (
@@ -240,10 +256,10 @@ export const PromptAttentionInspector: React.FC<PromptAttentionInspectorProps> =
         </div>
       </div>
 
-      {/* Needleman-Wunsch Prompt Alignment & Token Comparison */}
+      {/* Pathological Token Alignment & Sequence Comparison */}
       <div className="space-y-3 pt-1">
         <label className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold block">
-          Needleman-Wunsch Prompt Token Alignment
+          Pathological Token Alignment & Sequence Comparison
         </label>
 
         {/* Base Prompt */}

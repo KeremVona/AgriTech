@@ -11,6 +11,7 @@ export type { DiagnosticOverlayCardProps } from './DiagnosticOverlayCard.tsx';
 
 // Task 2 & Task 3 Promoted Studio Inspector Components (SPEC-UI-007)
 export * from './types.ts';
+export { serializeNpyTensor } from '../../utils/npySerializer.ts';
 export { PromptAttentionInspector } from './PromptAttentionInspector.tsx';
 export type { PromptAttentionInspectorProps, AttentionHyperparameters } from './PromptAttentionInspector.tsx';
 export { MicroclimateControlPanel } from './MicroclimateControlPanel.tsx';
