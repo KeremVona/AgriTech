@@ -48,16 +48,16 @@
   - [x] Export components in `frontend/src/components/DiseaseProgressionViewer/index.ts`
   - [x] Verify compilation: `npm run build`
   - [x] Commit changes
-  - [ ] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
 - [ ] **Task 5: Production Page Assembly, Route Deprecation & End-to-End Verification**
-  - [ ] Assemble `<DiseaseProgressionPage />` in `frontend/src/pages/DiseaseProgressionPage.tsx` with 12-column responsive layout (7 cols left / 5 cols right)
-  - [ ] Manage 8-state state machine with zero memory leaks
-  - [ ] Wire `/disease-progression` route and redirect `/disease-progression-experimental`
-  - [ ] Update navigation links in `Navbar.tsx` and `LandingPage.tsx`
-  - [ ] Run full automated verification: `test:agronomy`, `test:crops`, `test:treatment`, `test:hotspots`, `test:export`, `test:diagnostics`
-  - [ ] Run linter: `npm run lint` (`oxlint` 0 warnings, 0 errors)
-  - [ ] Run production build: `npm run build`
-  - [ ] Generate completion report `PROJECT_DETAILS/Reports/Phase 1/TODO-112-disease-progression-studio.md`
+  - [x] Assemble `<DiseaseProgressionPage />` in `frontend/src/pages/DiseaseProgressionPage.tsx` with 12-column responsive layout (7 cols left / 5 cols right)
+  - [x] Manage 8-state state machine with zero memory leaks
+  - [x] Wire `/disease-progression` route and redirect `/disease-progression-experimental`
+  - [x] Update navigation links in `Navbar.tsx` and `LandingPage.tsx`
+  - [x] Run full automated verification: `test:agronomy`, `test:crops`, `test:treatment`, `test:hotspots`, `test:export`, `test:diagnostics`, `test:shader`, `test:inspector`, `test:canvas`, `test:assembly`
+  - [x] Run linter: `npm run lint` (`oxlint` 0 warnings, 0 errors)
+  - [x] Run production build: `npm run build`
+  - [x] Generate completion report `PROJECT_DETAILS/Reports/Phase 1/TODO-112-disease-progression-studio.md`
   - [ ] Final whole-feature code review subagent gate
   - [ ] Final commit and sign-off

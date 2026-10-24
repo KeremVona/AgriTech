@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { DiseaseProgressionPage } from './pages/DiseaseProgressionPage';
-import { DiseaseProgressionExperimentalPage } from './p2p-experimental/pages/DiseaseProgressionExperimentalPage';
 import { LeafDiagnosticsPage } from './pages/LeafDiagnosticsPage';
 
 function App() {
@@ -11,11 +10,11 @@ function App() {
         {/* Landing Page Route */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Dedicated Disease Progression Page Route (Presentation) */}
+        {/* Dedicated Disease Progression Studio (SPEC-UI-007) */}
         <Route path="/disease-progression" element={<DiseaseProgressionPage />} />
 
-        {/* Experimental P2P Laboratory Route (Tier 1 Features) */}
-        <Route path="/disease-progression-experimental" element={<DiseaseProgressionExperimentalPage />} />
+        {/* Deprecated Experimental Sandbox Route: Redirect to Canonical Production Studio */}
+        <Route path="/disease-progression-experimental" element={<Navigate to="/disease-progression" replace />} />
 
         {/* Dedicated AI Leaf Diagnostics Workbench Routes (SPEC-UI-006) */}
         <Route path="/diagnostics" element={<LeafDiagnosticsPage />} />
