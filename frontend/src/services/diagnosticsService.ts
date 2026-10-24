@@ -96,6 +96,7 @@ export const CLINICAL_SAMPLE_PRESETS: ClinicalSamplePreset[] = [
     severityIndex: 'Critical',
     severityTier: 'Tier 3',
     executionTimeMs: 64.2,
+    sampleImageUrl: '/progression/tomato/tomato_stage2_severe.webp',
     agronomicAdvisory: {
       immediateAction:
         'Isolate affected perimeter immediately. Restrict overhead sprinkler irrigation to reduce canopy wetness duration and slow fungal spore dispersal.',
@@ -124,6 +125,7 @@ export const CLINICAL_SAMPLE_PRESETS: ClinicalSamplePreset[] = [
     severityIndex: 'Moderate',
     severityTier: 'Tier 2',
     executionTimeMs: 58.4,
+    sampleImageUrl: '/progression/potato/potato_stage1_early.webp',
     agronomicAdvisory: {
       immediateAction:
         'Prune affected lower canopy leaves with concentric ring lesions. Ensure balanced nitrogen nutrition to prevent premature plant senescence.',
@@ -151,6 +153,7 @@ export const CLINICAL_SAMPLE_PRESETS: ClinicalSamplePreset[] = [
     severityIndex: 'Low',
     severityTier: 'Tier 1',
     executionTimeMs: 72.1,
+    sampleImageUrl: '/progression/corn/corn_stage1_early.webp',
     agronomicAdvisory: {
       immediateAction:
         'Monitor pustule spread on middle and upper leaves prior to tassel emergence (VT stage). Low threshold does not warrant immediate fungicide.',
@@ -177,6 +180,7 @@ export const CLINICAL_SAMPLE_PRESETS: ClinicalSamplePreset[] = [
     severityIndex: 'Healthy',
     severityTier: 'Tier 0',
     executionTimeMs: 51.6,
+    sampleImageUrl: '/progression/apple/apple_stage0_healthy.webp',
     agronomicAdvisory: {
       immediateAction:
         'Canopy cellular structure asymptomatic. Maintain current IPM sanitation and regular scouting schedule.',
@@ -209,6 +213,7 @@ export function presetToPrediction(preset: ClinicalSamplePreset): DiagnosticPred
     topProbabilities: preset.topProbabilities,
     agronomicAdvisory: preset.agronomicAdvisory,
     executionTimeMs: preset.executionTimeMs,
+    sampleImageUrl: preset.sampleImageUrl,
   };
 }
 
