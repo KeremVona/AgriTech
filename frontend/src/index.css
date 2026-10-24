@@ -147,6 +147,22 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 10;
 }
 
+/* Diagnostic Verdict Card Non-Zero Scale Entrance (SPEC-UI-006 §4.3) */
+@keyframes verdict-entrance {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-verdict-entrance {
+  animation: verdict-entrance 200ms var(--ag-ease-out) forwards;
+}
+
 /* Interactive Tactile Press Response */
 .ag-interactive {
   transition: transform 120ms var(--ag-ease-out), background-color 150ms ease, border-color 150ms ease;
@@ -213,5 +229,11 @@ h1, h2, h3, h4, h5, h6 {
     animation: none !important;
     top: 50% !important;
     opacity: 0.8 !important;
+  }
+
+  .animate-verdict-entrance {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
