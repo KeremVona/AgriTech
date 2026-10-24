@@ -33,6 +33,11 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
   const profile = AGRONOMIC_CALIBRATION_REGISTRY[cropId] || AGRONOMIC_CALIBRATION_REGISTRY.tomato;
   const [isPlaying, setIsPlaying] = useState(false);
   const playTimerRef = useRef<number | null>(null);
+  const sliderPctRef = useRef(sliderPercentage);
+
+  useEffect(() => {
+    sliderPctRef.current = sliderPercentage;
+  }, [sliderPercentage]);
 
   // Play / Pause automated loop (sweeps from 0% to 100% in 4.5 seconds)
   const togglePlay = useCallback(() => {
@@ -40,20 +45,24 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
   }, []);
 
   useEffect(() => {
-    if (isPlaying) {
-      const stepIntervalMs = 50; // 20 updates per second
-      const totalDurationMs = 4500;
-      const stepDeltaPct = (100 / (totalDurationMs / stepIntervalMs));
-
-      playTimerRef.current = window.setInterval(() => {
-        onSliderPercentageChange(
-          sliderPercentage >= 100 ? 0 : Math.min(100, sliderPercentage + stepDeltaPct)
-        );
-      }, stepIntervalMs);
-    } else if (playTimerRef.current !== null) {
-      clearInterval(playTimerRef.current);
-      playTimerRef.current = null;
+    if (!isPlaying) {
+      if (playTimerRef.current !== null) {
+        clearInterval(playTimerRef.current);
+        playTimerRef.current = null;
+      }
+      return;
     }
+
+    const stepIntervalMs = 50; // 20 updates per second
+    const totalDurationMs = 4500;
+    const stepDeltaPct = 100 / (totalDurationMs / stepIntervalMs);
+
+    playTimerRef.current = window.setInterval(() => {
+      const current = sliderPctRef.current;
+      onSliderPercentageChange(
+        current >= 100 ? 0 : Math.min(100, current + stepDeltaPct)
+      );
+    }, stepIntervalMs);
 
     return () => {
       if (playTimerRef.current !== null) {
@@ -61,7 +70,7 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
         playTimerRef.current = null;
       }
     };
-  }, [isPlaying, sliderPercentage, onSliderPercentageChange]);
+  }, [isPlaying, onSliderPercentageChange]);
 
   const handlePercentageScrub = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,6 +173,10 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
             onChange={handlePercentageScrub}
             className="w-full accent-teal-700 bg-slate-200 rounded-lg h-2.5 cursor-pointer transition-all"
             aria-label="Disease Progression Severity Percentage (0 to 100%)"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(sliderPercentage * 10) / 10}
+            aria-valuetext={`Infection severity ${sliderPercentage.toFixed(1)}%, Day ${dynamicOutput.elapsedDays.toFixed(1)}`}
           />
 
           {/* Intervention Checkpoint Pin (if treatment simulated) */}
@@ -198,7 +211,7 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
                 key={m.stageOrder}
                 type="button"
                 onClick={() => handleMilestoneClick(m.minSliderPct)}
-                className={`flex flex-col items-center transition-all duration-150 hover:text-slate-900 cursor-pointer ${
+                className={`flex flex-col items-center justify-center min-h-[44px] transition-all duration-150 hover:text-slate-900 cursor-pointer ${
                   isCurrent
                     ? 'text-teal-800 font-bold scale-105'
                     : isPassed
