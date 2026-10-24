@@ -237,6 +237,10 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
               onChange={(e) => onSetInterventionSeverity(parseFloat(e.target.value))}
               className="w-full accent-teal-700 bg-slate-200 rounded-lg h-2 cursor-pointer"
               aria-label="Intervention Severity Percentage"
+              aria-valuemin={1}
+              aria-valuemax={95}
+              aria-valuenow={interventionSeverity}
+              aria-valuetext={`Intervention set at ${interventionSeverity.toFixed(0)} percent on Day ${interventionDay.toFixed(1)}`}
             />
 
             <div className="flex items-center justify-between text-xs font-mono">

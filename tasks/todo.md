@@ -50,7 +50,7 @@
   - [x] Commit changes
   - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [ ] **Task 5: Production Page Assembly, Route Deprecation & End-to-End Verification**
+- [x] **Task 5: Production Page Assembly, Route Deprecation & End-to-End Verification**
   - [x] Assemble `<DiseaseProgressionPage />` in `frontend/src/pages/DiseaseProgressionPage.tsx` with 12-column responsive layout (7 cols left / 5 cols right)
   - [x] Manage 8-state state machine with zero memory leaks
   - [x] Wire `/disease-progression` route and redirect `/disease-progression-experimental`
@@ -59,5 +59,5 @@
   - [x] Run linter: `npm run lint` (`oxlint` 0 warnings, 0 errors)
   - [x] Run production build: `npm run build`
   - [x] Generate completion report `PROJECT_DETAILS/Reports/Phase 1/TODO-112-disease-progression-studio.md`
-  - [ ] Final whole-feature code review subagent gate
-  - [ ] Final commit and sign-off
+  - [x] Final whole-feature code review subagent gate
+  - [x] Final commit and sign-off
