@@ -1,8 +1,40 @@
 import React, { useState, useRef } from 'react';
 import type { CropId } from '../../types/progression';
 
+interface TopProb {
+  label: string;
+  probability: number;
+}
+
+type Notice =
+  | { kind: 'error'; title: string; message: string }
+  | { kind: 'rescan'; title: string; message: string; instructions: string[]; topProbabilities: TopProb[] };
+
+const ML_URL: string = import.meta.env.VITE_ML_URL || 'http://localhost:8000';
+const ML_TIMEOUT_MS = 30000;
+const SUPPORTED_CROPS = ['tomato', 'potato', 'corn', 'apple'];
+
+/** "Grape___Black_rot" -> "Grape - Black rot" */
+const prettyLabel = (label: string): string =>
+  label.split('___').map((p) => p.replace(/_/g, ' ').trim()).join(' - ');
+
+const TopList: React.FC<{ items: TopProb[] }> = ({ items }) => (
+  <div className="space-y-1">
+    <span className="text-xs font-semibold text-slate-300">Top predictions:</span>
+    <ul className="text-xs text-slate-400 space-y-0.5">
+      {items.slice(0, 3).map((t) => (
+        <li key={t.label} className="flex justify-between gap-3">
+          <span>{prettyLabel(t.label)}</span>
+          <span className="font-mono text-emerald-400">{(t.probability * 100).toFixed(1)}%</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
 export interface DiagnosticResult {
-  cropId: CropId;
+  /** null when the crop has no progression model (not tomato/potato/corn/apple). */
+  cropId: CropId | null;
   cropName: string;
   condition: string;
   scientificName: string;
@@ -10,6 +42,7 @@ export interface DiagnosticResult {
   severityIndex: 'Low' | 'Moderate' | 'High';
   immediateAction: string;
   recommendedSliderPct: number;
+  topProbabilities?: TopProb[];
 }
 
 export interface DiagnosticUploadCardProps {
@@ -68,6 +101,7 @@ export const DiagnosticUploadCard: React.FC<DiagnosticUploadCardProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [result, setResult] = useState<DiagnosticResult | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,12 +110,14 @@ export const DiagnosticUploadCard: React.FC<DiagnosticUploadCardProps> = ({
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setResult(null);
+      setNotice(null);
     }
   };
 
   const handleSelectSample = (sample: typeof PRESET_SAMPLES[0]) => {
     setSelectedFile(null);
     setPreviewUrl(null);
+    setNotice(null);
     setResult({
       cropId: sample.cropId,
       cropName: sample.cropId.charAt(0).toUpperCase() + sample.cropId.slice(1),
@@ -98,61 +134,79 @@ export const DiagnosticUploadCard: React.FC<DiagnosticUploadCardProps> = ({
     if (!selectedFile) return;
 
     setIsAnalyzing(true);
+    setNotice(null);
+    setResult(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ML_TIMEOUT_MS);
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      // Attempt live ML service call with timeout fallback
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-      const res = await fetch('http://localhost:8000/api/v1/classify-leaf', {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-      }).catch(() => null);
-
-      clearTimeout(timeoutId);
-
-      if (res && res.ok) {
-        const data = await res.json();
-        const pred = data.prediction;
-        const cropLower = pred.crop.toLowerCase() as CropId;
-        const targetCrop: CropId = ['tomato', 'potato', 'corn', 'apple'].includes(cropLower) ? cropLower : 'tomato';
-        const severity = (pred.severity_index || 'Moderate') as 'Low' | 'Moderate' | 'High';
-        const sliderPct = severity === 'Low' ? 25.0 : severity === 'Moderate' ? 50.0 : 85.0;
-
-        setResult({
-          cropId: targetCrop,
-          cropName: pred.crop,
-          condition: pred.condition,
-          scientificName: pred.scientific_name || 'Plant Pathogen',
-          confidenceScore: pred.confidence_score,
-          severityIndex: severity,
-          immediateAction: data.agronomic_advisory?.immediate_action || 'Inspect field foliage.',
-          recommendedSliderPct: sliderPct,
+      let res: Response;
+      try {
+        res = await fetch(`${ML_URL}/api/v1/classify-leaf`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
         });
-      } else {
-        // Graceful offline mock diagnosis based on filename or fallback
-        const nameLower = selectedFile.name.toLowerCase();
-        let targetCrop: CropId = 'tomato';
-        if (nameLower.includes('potato')) targetCrop = 'potato';
-        else if (nameLower.includes('corn') || nameLower.includes('maize')) targetCrop = 'corn';
-        else if (nameLower.includes('apple')) targetCrop = 'apple';
-
-        const sample = PRESET_SAMPLES.find((s) => s.cropId === targetCrop) || PRESET_SAMPLES[0];
-        setResult({
-          cropId: targetCrop,
-          cropName: targetCrop.charAt(0).toUpperCase() + targetCrop.slice(1),
-          condition: sample.condition,
-          scientificName: sample.cropId === 'tomato' ? 'Alternaria solani' : sample.cropId === 'potato' ? 'Phytophthora infestans' : sample.cropId === 'corn' ? 'Puccinia sorghi' : 'Venturia inaequalis',
-          confidenceScore: 0.942,
-          severityIndex: 'Moderate',
-          immediateAction: sample.action,
-          recommendedSliderPct: 50.0,
+      } catch {
+        setNotice({
+          kind: 'error',
+          title: 'ML service unreachable',
+          message: `Could not reach the ML service at ${ML_URL} (network error or ${ML_TIMEOUT_MS / 1000}s timeout). No diagnosis was made.`,
         });
+        return;
       }
+
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok) {
+        const msg = data?.message || (typeof data?.detail === 'string' ? data.detail : null) || `HTTP ${res.status}`;
+        setNotice({
+          kind: 'error',
+          title: res.status === 503 ? 'ML model unavailable' : 'ML service error',
+          message: msg,
+        });
+        return;
+      }
+
+      const probs: TopProb[] = Array.isArray(data?.top_probabilities) ? data.top_probabilities : [];
+
+      if (data?.requires_rescan) {
+        setNotice({
+          kind: 'rescan',
+          title: 'Please re-scan the leaf',
+          message: data.low_confidence_advisory?.message || 'Confidence too low for a reliable diagnosis.',
+          instructions: data.low_confidence_advisory?.rescan_instructions || data.rescan_instructions || [],
+          topProbabilities: probs,
+        });
+        return;
+      }
+
+      const pred = data.prediction;
+      const cropLower = String(pred.crop).toLowerCase();
+      const supported = (SUPPORTED_CROPS as string[]).includes(cropLower);
+      const severity = (pred.severity_index || 'Moderate') as 'Low' | 'Moderate' | 'High';
+      const sliderPct = severity === 'Low' ? 25.0 : severity === 'Moderate' ? 50.0 : 85.0;
+
+      setResult({
+        cropId: supported ? (cropLower as CropId) : null,
+        cropName: pred.crop,
+        condition: pred.condition,
+        scientificName: pred.scientific_name || 'Plant Pathogen',
+        confidenceScore: pred.confidence_score,
+        severityIndex: severity,
+        immediateAction: data.agronomic_advisory?.immediate_action || 'Inspect field foliage.',
+        recommendedSliderPct: sliderPct,
+        topProbabilities: probs,
+      });
     } finally {
+      clearTimeout(timeoutId);
       setIsAnalyzing(false);
     }
   };
@@ -244,6 +298,26 @@ export const DiagnosticUploadCard: React.FC<DiagnosticUploadCardProps> = ({
         </div>
       </div>
 
+      {notice && (
+        <div
+          role="alert"
+          className={`rounded-xl p-4 space-y-2 border ${
+            notice.kind === 'error' ? 'bg-red-500/10 border-red-500/30' : 'bg-amber-500/10 border-amber-500/30'
+          }`}
+        >
+          <span className="text-sm font-bold text-white block">{notice.title}</span>
+          <p className="text-xs text-slate-300 leading-relaxed">{notice.message}</p>
+          {notice.kind === 'rescan' && notice.instructions.length > 0 && (
+            <ul className="list-disc pl-5 text-xs text-slate-400 space-y-0.5">
+              {notice.instructions.map((i) => (
+                <li key={i}>{i}</li>
+              ))}
+            </ul>
+          )}
+          {notice.kind === 'rescan' && notice.topProbabilities.length > 0 && <TopList items={notice.topProbabilities} />}
+        </div>
+      )}
+
       {/* Diagnostic Result & Progression Linkage CTA */}
       {result && (
         <div className="bg-slate-950/80 border border-emerald-500/30 rounded-xl p-4 space-y-3 animate-fade-in shadow-inner">
@@ -281,17 +355,27 @@ export const DiagnosticUploadCard: React.FC<DiagnosticUploadCardProps> = ({
             <p className="text-xs text-slate-400 leading-relaxed">{result.immediateAction}</p>
           </div>
 
+          {result.topProbabilities && result.topProbabilities.length > 0 && (
+            <TopList items={result.topProbabilities} />
+          )}
+
           {/* Action Link to Disease Progression Slider */}
+          {result.cropId ? (
           <div className="pt-2 flex items-center justify-end">
             <button
               type="button"
-              onClick={() => onViewProgression(result.cropId, result.recommendedSliderPct)}
+              onClick={() => onViewProgression(result.cropId as CropId, result.recommendedSliderPct)}
               className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg flex items-center gap-2 transition-all cursor-pointer transform hover:scale-[1.02]"
             >
               <span>🔬</span>
               <span>Project Progression Trajectory in Slider ({result.recommendedSliderPct.toFixed(0)}%) →</span>
             </button>
           </div>
+          ) : (
+            <p className="text-[11px] text-slate-500 pt-1">
+              No progression model available for {result.cropName}.
+            </p>
+          )}
         </div>
       )}
     </div>
