@@ -7,7 +7,7 @@
  * Supports 3 Interactive View Modes:
  * - 'rgb': Photorealistic blended foliar surface.
  * - 'attention': 3-stop Bio-Agronomic heatmap (#0F766E Teal -> #F59E0B Amber -> #DC2626 Alert Red).
- * - 'mask': High-contrast isolated lesion mask.
+ * - 'mask': High-contrast isolated lesion mask with foliar silhouette alpha preservation.
  * 
  * Supports Split Curtain Compare:
  * - Splits canvas horizontally between healthy Stage 0 baseline and current progression state.
@@ -15,9 +15,9 @@
  * Includes graceful HTML5 2D Canvas fallback and full context disposal for zero memory leaks.
  */
 
-import type { ProgressionViewMode, TextureSources } from './types.ts';
+import type { ProgressionViewMode, TextureSources, ShaderRenderOptions } from './types.ts';
 
-export type { TextureSources, ProgressionViewMode };
+export type { TextureSources, ProgressionViewMode, ShaderRenderOptions };
 
 export const VERTEX_SHADER_SOURCE = `
 attribute vec2 a_position;
@@ -97,7 +97,8 @@ void main() {
         float blendAlpha = mix(t, organicFactor, 0.65);
 
         rgbColor = mix(col0, col1, blendAlpha);
-        currentMask = (u_has_mask1 > 0.5) ? (m1 * clamp(t * 1.5, 0.05, 1.0)) : t;
+        // Continuous progression: if mask is missing, progress monotonically with u_progress
+        currentMask = (u_has_mask1 > 0.5) ? (m1 * clamp(t * 1.5, 0.05, 1.0)) : u_progress;
     } else {
         // Phase 2: 0.5 -> 1.0 (Stage 1 -> Stage 2)
         float t = (u_progress - 0.5) / 0.5; // Normalized to 0.0 -> 1.0
@@ -108,7 +109,8 @@ void main() {
         float blendAlpha = mix(t, organicFactor, 0.70);
 
         rgbColor = mix(col1, col2, blendAlpha);
-        currentMask = (u_has_mask2 > 0.5) ? mix(m1, m2, t) : mix(0.5, 1.0, t);
+        // Continuous progression across midpoint: blend m1 to m2, or track u_progress monotonically
+        currentMask = (u_has_mask2 > 0.5) ? mix(m1, m2, t) : u_progress;
     }
 
     // Determine output color based on u_view_mode
@@ -117,8 +119,8 @@ void main() {
     // 2.0 = Difference Mask
     vec4 modeColor;
     if (u_view_mode > 1.5) {
-        // Mode 2: Difference Mask (high-contrast monochrome mask showing affected foliar zones)
-        modeColor = vec4(vec3(currentMask), 1.0);
+        // Mode 2: Difference Mask (high-contrast monochrome mask preserving foliar silhouette/alpha)
+        modeColor = vec4(vec3(currentMask), rgbColor.a);
     } else if (u_view_mode > 0.5) {
         // Mode 1: Cross-Attention Heatmap (Bio-Teal #0F766E -> Amber #F59E0B -> Red #DC2626)
         vec3 heatColor = getAttentionColormap(currentMask);
@@ -134,7 +136,7 @@ void main() {
     if (u_split_enabled > 0.5) {
         float splitDelta = uv.x - u_split_position;
         if (abs(splitDelta) < 0.002) {
-            // 1px crisp divider line (white accent)
+            // Crisp divider line (white accent)
             gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
         } else if (splitDelta < 0.0) {
             // Left of divider: Stage 0 (Healthy baseline specimen)
@@ -148,6 +150,32 @@ void main() {
     }
 }
 `;
+
+/**
+ * Analytical pure-function reference implementation of the 3-stop Bio-Agronomic Colormap.
+ */
+export function evaluateAttentionColormap(w: number): [number, number, number] {
+  const clamped = Math.max(0.0, Math.min(1.0, w));
+  const colLow: [number, number, number] = [0.0588, 0.4627, 0.4314];
+  const colMid: [number, number, number] = [0.9608, 0.6196, 0.0431];
+  const colHigh: [number, number, number] = [0.8627, 0.1490, 0.1490];
+
+  if (clamped < 0.35) {
+    const f = clamped / 0.35;
+    return [
+      colLow[0] + (colMid[0] - colLow[0]) * f,
+      colLow[1] + (colMid[1] - colLow[1]) * f,
+      colLow[2] + (colMid[2] - colLow[2]) * f,
+    ];
+  } else {
+    const f = (clamped - 0.35) / 0.65;
+    return [
+      colMid[0] + (colHigh[0] - colMid[0]) * f,
+      colMid[1] + (colHigh[1] - colMid[1]) * f,
+      colMid[2] + (colHigh[2] - colMid[2]) * f,
+    ];
+  }
+}
 
 interface ShaderLocations {
   a_position: number;
@@ -213,7 +241,7 @@ export class ProgressionShaderRenderer {
    * Returns true if WebGL pipeline initialized and active.
    */
   public isAvailable(): boolean {
-    return this.isWebGL && !!this.program && !this.gl?.isContextLost();
+    return this.isWebGL && !this.isDisposed && !!this.program && !this.gl?.isContextLost();
   }
 
   private handleContextLost = (e: Event) => {
@@ -307,6 +335,14 @@ export class ProgressionShaderRenderer {
       u_split_position: gl.getUniformLocation(program, 'u_split_position'),
     };
 
+    // Bind immutable texture sampler units once during pipeline initialization
+    gl.useProgram(program);
+    if (this.locations.u_stage0) gl.uniform1i(this.locations.u_stage0, 0);
+    if (this.locations.u_stage1) gl.uniform1i(this.locations.u_stage1, 1);
+    if (this.locations.u_stage2) gl.uniform1i(this.locations.u_stage2, 2);
+    if (this.locations.u_mask1) gl.uniform1i(this.locations.u_mask1, 3);
+    if (this.locations.u_mask2) gl.uniform1i(this.locations.u_mask2, 4);
+
     // Full screen quad geometry
     const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
     const texCoords = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
@@ -395,8 +431,10 @@ export class ProgressionShaderRenderer {
     });
   }
 
-  private createGLTexture(gl: WebGLRenderingContext, img: HTMLImageElement): WebGLTexture {
-    const texture = gl.createTexture()!;
+  private createGLTexture(gl: WebGLRenderingContext, img: HTMLImageElement): WebGLTexture | null {
+    const texture = gl.createTexture();
+    if (!texture) return null;
+
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 
@@ -409,6 +447,21 @@ export class ProgressionShaderRenderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
     return texture;
+  }
+
+  /**
+   * Sets unified rendering options (viewMode, splitEnabled, splitPosition).
+   */
+  public setOptions(options: ShaderRenderOptions): void {
+    if (options.viewMode !== undefined) {
+      this.setViewMode(options.viewMode);
+    }
+    if (options.splitEnabled !== undefined || options.splitPosition !== undefined) {
+      this.setSplitCompare(
+        options.splitEnabled ?? this.splitEnabled,
+        options.splitPosition ?? this.splitPosition
+      );
+    }
   }
 
   /**
@@ -461,10 +514,17 @@ export class ProgressionShaderRenderer {
   /**
    * Returns current split comparison status.
    */
-  public getSplitCompare(): { enabled: boolean; position: number } {
+  public getSplitCompare(): {
+    enabled: boolean;
+    position: number;
+    splitEnabled: boolean;
+    splitPosition: number;
+  } {
     return {
       enabled: this.splitEnabled,
       position: this.splitPosition,
+      splitEnabled: this.splitEnabled,
+      splitPosition: this.splitPosition,
     };
   }
 
@@ -511,34 +571,29 @@ export class ProgressionShaderRenderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);
     gl.vertexAttribPointer(locs.a_texCoord, 2, gl.FLOAT, false, 0, 0);
 
-    // Bind Textures to Units 0 - 4
-    if (this.texStage0 && locs.u_stage0) {
+    // Bind Textures to Units 0 - 4 (sampler uniforms already assigned during init)
+    if (this.texStage0) {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, this.texStage0);
-      gl.uniform1i(locs.u_stage0, 0);
     }
-    if (this.texStage1 && locs.u_stage1) {
+    if (this.texStage1) {
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, this.texStage1);
-      gl.uniform1i(locs.u_stage1, 1);
     }
-    if (this.texStage2 && locs.u_stage2) {
+    if (this.texStage2) {
       gl.activeTexture(gl.TEXTURE2);
       gl.bindTexture(gl.TEXTURE_2D, this.texStage2);
-      gl.uniform1i(locs.u_stage2, 2);
     }
-    if (this.texMask1 && locs.u_mask1) {
+    if (this.texMask1 && locs.u_has_mask1) {
       gl.activeTexture(gl.TEXTURE3);
       gl.bindTexture(gl.TEXTURE_2D, this.texMask1);
-      gl.uniform1i(locs.u_mask1, 3);
       gl.uniform1f(locs.u_has_mask1, 1.0);
     } else if (locs.u_has_mask1) {
       gl.uniform1f(locs.u_has_mask1, 0.0);
     }
-    if (this.texMask2 && locs.u_mask2) {
+    if (this.texMask2 && locs.u_has_mask2) {
       gl.activeTexture(gl.TEXTURE4);
       gl.bindTexture(gl.TEXTURE_2D, this.texMask2);
-      gl.uniform1i(locs.u_mask2, 4);
       gl.uniform1f(locs.u_has_mask2, 1.0);
     } else if (locs.u_has_mask2) {
       gl.uniform1f(locs.u_has_mask2, 0.0);
@@ -570,6 +625,12 @@ export class ProgressionShaderRenderer {
     ctx.clearRect(0, 0, w, h);
 
     const drawProgression = (targetCtx: CanvasRenderingContext2D, width: number, height: number) => {
+      targetCtx.save();
+      // Apply mask filter directly to source renders rather than copying canvas onto itself
+      if (this.viewMode === 'mask') {
+        targetCtx.filter = 'grayscale(100%) contrast(180%)';
+      }
+
       if (this.currentProgress <= 0.5) {
         const t = this.currentProgress / 0.5;
         targetCtx.globalAlpha = 1.0;
@@ -583,18 +644,13 @@ export class ProgressionShaderRenderer {
         targetCtx.globalAlpha = t;
         targetCtx.drawImage(this.imgStage2!, 0, 0, width, height);
       }
-      targetCtx.globalAlpha = 1.0;
+      targetCtx.restore();
 
-      // 2D View Mode Overlays
+      // 2D Attention Heatmap Tint Overlay
       if (this.viewMode === 'attention') {
         targetCtx.save();
         targetCtx.fillStyle = 'rgba(245, 158, 11, 0.35)';
         targetCtx.fillRect(0, 0, width, height);
-        targetCtx.restore();
-      } else if (this.viewMode === 'mask') {
-        targetCtx.save();
-        targetCtx.filter = 'grayscale(100%) contrast(180%)';
-        targetCtx.drawImage(targetCtx.canvas, 0, 0);
         targetCtx.restore();
       }
     };
@@ -618,7 +674,7 @@ export class ProgressionShaderRenderer {
       drawProgression(ctx, w, h);
       ctx.restore();
 
-      // 1px Divider Line
+      // Divider Line
       ctx.strokeStyle = '#FFFFFF';
       ctx.lineWidth = 2;
       ctx.beginPath();

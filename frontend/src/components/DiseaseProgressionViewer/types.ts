@@ -2,7 +2,7 @@
  * Disease Progression Viewer Types & UI Contracts (SPEC-UI-007)
  */
 
-import type { SupportedCropId } from '../../models/agronomicTimelineModel.ts';
+import type { SupportedCropId } from '../../types/progression.ts';
 
 export type ProgressionViewMode = 'rgb' | 'attention' | 'mask';
 
