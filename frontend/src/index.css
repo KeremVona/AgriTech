@@ -22,10 +22,23 @@
   --color-ag-telemetry-vwc: #0891B2;
   --color-ag-valve-active: #10B981;
   --color-ag-valve-idle: #64748B;
+
+  /* Agronomic 4-Tier Severity Ramp (Text / Background / Border) */
   --color-ag-risk-healthy: #059669;
+  --color-ag-risk-healthy-bg: #ECFDF5;
+  --color-ag-risk-healthy-border: #A7F3D0;
+
   --color-ag-risk-low: #D97706;
+  --color-ag-risk-low-bg: #FFFBEB;
+  --color-ag-risk-low-border: #FDE68A;
+
   --color-ag-risk-moderate: #EA580C;
+  --color-ag-risk-moderate-bg: #FFF7ED;
+  --color-ag-risk-moderate-border: #FDBA74;
+
   --color-ag-risk-critical: #DC2626;
+  --color-ag-risk-critical-bg: #FEF2F2;
+  --color-ag-risk-critical-border: #FCA5A5;
 
   /* Classic Theme Colors for Existing Pages */
   --color-agri-50: #f0fdf4;
@@ -58,10 +71,23 @@
   --ag-telemetry-vwc: #0891B2;
   --ag-valve-active: #10B981;
   --ag-valve-idle: #64748B;
+
+  /* Severity Ramp */
   --ag-risk-healthy: #059669;
+  --ag-risk-healthy-bg: #ECFDF5;
+  --ag-risk-healthy-border: #A7F3D0;
+
   --ag-risk-low: #D97706;
+  --ag-risk-low-bg: #FFFBEB;
+  --ag-risk-low-border: #FDE68A;
+
   --ag-risk-moderate: #EA580C;
+  --ag-risk-moderate-bg: #FFF7ED;
+  --ag-risk-moderate-border: #FDBA74;
+
   --ag-risk-critical: #DC2626;
+  --ag-risk-critical-bg: #FEF2F2;
+  --ag-risk-critical-border: #FCA5A5;
 
   --ag-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ag-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -109,12 +135,14 @@ h1, h2, h3, h4, h5, h6 {
 
 .ag-telemetry-scan-beam {
   position: absolute;
+  top: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background-color: #38BDF8;
+  background-color: var(--ag-scan-beam, #38BDF8);
   box-shadow: 0 0 12px 2px rgba(56, 189, 248, 0.75);
   animation: telemetryScanBeam 1.6s ease-in-out infinite alternate;
+  will-change: top, opacity;
   pointer-events: none;
   z-index: 10;
 }

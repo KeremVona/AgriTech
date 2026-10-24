@@ -12,7 +12,7 @@ export type SeverityIndex = 'Healthy' | 'Low' | 'Moderate' | 'Critical';
 export interface TopProbability {
   label: string;
   probability: number;
-  displayName: string;
+  displayName?: string;
 }
 
 export interface AgronomicAdvisory {
@@ -56,9 +56,7 @@ export interface ClinicalSamplePreset {
   confidenceScore: number;
   severityIndex: SeverityIndex;
   severityTier: SeverityTier;
-  immediateAction: string;
-  fungicideTreatments: string[];
-  environmentalRiskFactors: string;
+  agronomicAdvisory: AgronomicAdvisory;
   topProbabilities: TopProbability[];
   executionTimeMs: number;
   sampleImageUrl?: string;
