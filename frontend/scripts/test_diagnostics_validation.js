@@ -28,8 +28,9 @@ assert.equal(validateMimeType('image/gif').valid, false);
 assert.equal(validateMimeType('application/pdf').valid, false);
 assert.equal(validateMimeType('').valid, false);
 
-// 2. File Size Limit Tests
-console.log('2. Testing validateFileSize()...');
+// 2. File Size Limit & Dimension Bounds Tests
+console.log('2. Testing validateFileSize() and dimension bounds...');
+assert.equal(MIN_IMAGE_DIMENSION_PX, 224, 'Minimum image resolution bound must be 224px per SPEC-UI-006');
 assert.equal(validateFileSize(1024 * 1024).valid, true); // 1MB
 assert.equal(validateFileSize(MAX_FILE_SIZE_BYTES).valid, true); // 10MB exact
 assert.equal(validateFileSize(MAX_FILE_SIZE_BYTES + 1).valid, false); // 10MB + 1 byte
