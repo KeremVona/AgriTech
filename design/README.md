@@ -56,6 +56,7 @@ This `/design` directory contains the exhaustive specification suite required fo
 | **[`MOTION_AND_INTERACTION.md`](./MOTION_AND_INTERACTION.md)** | Fluid Physics & Micro-Interactions | WWDC fluid interface principles, spring physics configs, Emil Kowalski interaction rules, button scale-press states, modal transitions, and `prefers-reduced-motion` fallbacks. |
 | **[`MOBILE_AND_OUTDOOR_SPEC.md`](./MOBILE_AND_OUTDOOR_SPEC.md)** | In-Field PWA Ergonomics | High-sunlight outdoor visibility guidelines, 48px touch targets, 16px iOS zoom prevention, GPS extraction UX, leaf camera guide reticle, and offline connectivity indicators. |
 | **[`AI_LEAF_DIAGNOSTICS_SPEC.md`](./AI_LEAF_DIAGNOSTICS_SPEC.md)** | Page UX/UI Specification | Focused design specification for AI Leaf Diagnostics: Image Ingestion, In-Flight ML Telemetry Beam, Diagnostic Verdict & Severity Card, and State Matrix. |
+| **[`DISEASE_PROGRESSION_SPEC.md`](./DISEASE_PROGRESSION_SPEC.md)** | Page UX/UI Specification | Complete specification for the Disease Progression Studio: Prompt-to-Prompt cross-attention controls, 2-phase WebGL shader, bi-directional timeline scrubber, and treatment branching. |
 
 ---
 
