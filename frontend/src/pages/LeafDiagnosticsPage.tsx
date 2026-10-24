@@ -246,7 +246,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
               onImageSelected={handleImageSelected}
               onRetake={handleReset}
               onAbortScan={handleAbortScan}
-              onRetry={activeFileRef.current ? handleRetryScan : undefined}
+              onRetry={handleRetryScan}
             />
 
             <SamplingBestPracticesCard />
