@@ -16,6 +16,8 @@ export type CropId =
   | 'peach'
   | 'squash';
 
+export type SupportedCropId = CropId;
+
 export interface ProgressionAssetReference {
   base_image_url: string;
   mask_image_url: string | null;

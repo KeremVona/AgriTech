@@ -13,15 +13,8 @@
  */
 
 
-export type SupportedCropId =
-  | 'tomato'
-  | 'potato'
-  | 'corn'
-  | 'apple'
-  | 'grape'
-  | 'pepper'
-  | 'peach'
-  | 'squash';
+import type { SupportedCropId } from '../types/progression.ts';
+export type { SupportedCropId };
 
 export interface CardinalTemperatures {
   min: number;   // T_min: biological lower threshold below which development ceases (°C)

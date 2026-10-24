@@ -4,7 +4,7 @@ import type {
   ExperimentalCropProgressionData,
   ExperimentalProgressionManifest,
 } from '../services/progressionService.ts';
-import type { ProgressionStage } from '../types/progression';
+import type { ProgressionStage } from '../types/progression.ts';
 import {
   getExperimentalProgressionManifest,
   getExperimentalCropProgression,
@@ -30,6 +30,13 @@ export function useExperimentalProgressionData(
   const [cropData, setCropData] = useState<ExperimentalCropProgressionData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const [prevCrop, setPrevCrop] = useState<SupportedCropId>(selectedCrop);
+
+  // React 19 pattern: sync loading state during render when input prop changes
+  if (prevCrop !== selectedCrop) {
+    setPrevCrop(selectedCrop);
+    setLoading(true);
+  }
 
   useEffect(() => {
     let isMounted = true;
