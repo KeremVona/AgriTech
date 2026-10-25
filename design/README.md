@@ -57,6 +57,7 @@ This `/design` directory contains the exhaustive specification suite required fo
 | **[`MOBILE_AND_OUTDOOR_SPEC.md`](./MOBILE_AND_OUTDOOR_SPEC.md)** | In-Field PWA Ergonomics | High-sunlight outdoor visibility guidelines, 48px touch targets, 16px iOS zoom prevention, GPS extraction UX, leaf camera guide reticle, and offline connectivity indicators. |
 | **[`AI_LEAF_DIAGNOSTICS_SPEC.md`](./AI_LEAF_DIAGNOSTICS_SPEC.md)** | Page UX/UI Specification | Focused design specification for AI Leaf Diagnostics: Image Ingestion, In-Flight ML Telemetry Beam, Diagnostic Verdict & Severity Card, and State Matrix. |
 | **[`DISEASE_PROGRESSION_SPEC.md`](./DISEASE_PROGRESSION_SPEC.md)** | Page UX/UI Specification | Complete specification for the Disease Progression Studio: Prompt-to-Prompt cross-attention controls, 2-phase WebGL shader, bi-directional timeline scrubber, and treatment branching. |
+| **[`SPATIAL_PARCEL_BOUNDARY_SPEC.md`](./SPATIAL_PARCEL_BOUNDARY_SPEC.md)** | Subsystem UX/UI Specification | Comprehensive GIS specification for TODO-207, TODO-208, and TODO-209: Map Core, Geoman Drawing, Kink Validation, and Metadata Drawer. |
 
 ---
 
