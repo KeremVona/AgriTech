@@ -18,16 +18,21 @@
     "test:canvas": "node --experimental-strip-types scripts/test_canvas_stage.js",
     "test:assembly": "node --experimental-strip-types scripts/test_production_assembly.js",
     "test:diagnostics": "node --experimental-strip-types scripts/test_diagnostics_validation.js",
+    "test:map": "node --experimental-strip-types scripts/test_farm_map_data.js && node --experimental-strip-types scripts/test_farm_map_viewport.js && node --experimental-strip-types scripts/test_farm_map_page.js",
     "preview": "vite preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "leaflet": "^1.9.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.4",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@types/geojson": "^7946.0.16",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
