@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FarmMapContainer } from '../components/FarmMap/FarmMapContainer';
 import { useFarmMapData } from '../hooks/useFarmMapData';
@@ -27,6 +27,18 @@ type MapViewProps = {
 function FieldMapView({ data, loading, error, reload, explicitSample = false, configurationError = false }: MapViewProps) {
   const { fieldId } = useParams<{ fieldId: string }>();
   const navigate = useNavigate();
+  const menuRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (menuRef.current?.open && !menuRef.current.contains(event.target as Node)) {
+        menuRef.current.open = false;
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, []);
+
   const collection = data?.collection ?? emptyCollection;
   const fields = useMemo(() => getLoadedFields(collection), [collection]);
   const scopedCollection = useMemo(() => filterParcelsByField(collection, fieldId), [collection, fieldId]);
@@ -66,7 +78,7 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
           </select>
         </div>
         <div className="ag-field-map-desktop-status">{status}</div>
-        <details className="ag-field-map-menu" onKeyDown={(event) => {
+        <details ref={menuRef} className="ag-field-map-menu" onKeyDown={(event) => {
           if (event.key === 'Escape') {
             event.currentTarget.open = false;
             event.currentTarget.querySelector('summary')?.focus();
