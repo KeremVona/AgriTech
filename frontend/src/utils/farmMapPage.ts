@@ -1,5 +1,6 @@
 import type { GisDataMode, ParcelFeatureCollection } from '../types/farmMap.ts';
 import type { ParcelMetrics } from '../types/farmMapDrawing.ts';
+import type { ParcelFormData } from '../types/parcelMetadata.ts';
 
 export type FarmMapConfig = { apiBaseUrl: string; parcelsPath: string; mode: GisDataMode };
 type Environment = Partial<Record<'VITE_GIS_API_BASE_URL' | 'VITE_API_BASE_URL' | 'VITE_GIS_PARCELS_PATH' | 'VITE_GIS_DATA_MODE', string>>;
@@ -108,12 +109,75 @@ export function createDrawnParcelFeature(
 }
 
 /**
+ * Immutably updates metadata properties of a matching parcel in a FeatureCollection.
+ * Matches across string, numeric, or properties.id identifiers.
+ */
+export function updateParcelInCollection(
+  collection: ParcelFeatureCollection,
+  parcelId: string | number,
+  data: Partial<ParcelFormData> & Record<string, any>
+): ParcelFeatureCollection {
+  if (!collection || !collection.features) {
+    return collection;
+  }
+  const targetId = String(parcelId);
+  const updatedFeatures = collection.features.map((feature) => {
+    const featId = feature.id !== undefined && feature.id !== null ? String(feature.id) : null;
+    const propId = feature.properties?.id !== undefined && feature.properties?.id !== null ? String(feature.properties.id) : null;
+    if (featId !== targetId && propId !== targetId) {
+      return feature;
+    }
+
+    const cropName = data.cropName ?? data.crop_name ?? data.crop;
+    const cropId = data.cropId ?? data.crop_id;
+    const soilProfileName = data.soilProfileName ?? data.soil_profile_name ?? data.soil;
+    const soilProfileId = data.soilProfileId ?? data.soil_profile_id;
+    const plantingDate = data.plantingDate ?? data.planting_date;
+    const name = data.name;
+    const fieldId = data.fieldId ?? data.field_id;
+    const areaHa = data.area_hectares ?? data.areaHa ?? data.area_ha;
+
+    return {
+      ...feature,
+      properties: {
+        ...feature.properties,
+        ...(name !== undefined && { name }),
+        ...(cropName !== undefined && { crop_name: cropName }),
+        ...(cropId !== undefined && { crop_id: cropId }),
+        ...(soilProfileName !== undefined && { soil_profile_name: soilProfileName }),
+        ...(soilProfileId !== undefined && { soil_profile_id: soilProfileId }),
+        ...(plantingDate !== undefined && { planting_date: plantingDate }),
+        ...(fieldId !== undefined && { field_id: fieldId }),
+        ...(areaHa !== undefined && { area_hectares: areaHa }),
+      },
+    };
+  });
+
+  return {
+    ...collection,
+    features: updatedFeatures,
+  };
+}
+
+/**
  * Formats toast and banner feedback messages for parcel completion and removal events.
  */
 export function formatParcelFeedback(
-  type: 'complete' | 'delete',
+  type: 'complete' | 'delete' | 'register' | 'update',
   metrics?: ParcelMetrics
 ): { type: 'success' | 'info'; message: string } {
+  if (type === 'register') {
+    return {
+      type: 'success',
+      message: 'Parcel successfully registered.',
+    };
+  }
+  if (type === 'update') {
+    return {
+      type: 'success',
+      message: 'Parcel metadata updated.',
+    };
+  }
   if (type === 'complete' && metrics) {
     return {
       type: 'success',
