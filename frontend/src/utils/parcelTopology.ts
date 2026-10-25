@@ -13,7 +13,7 @@ export function normalizeClosedRing(coordinates: [number, number][]): [number, n
   }
   const first = coordinates[0];
   const last = coordinates[coordinates.length - 1];
-  if (first[0] === last[0] && first[1] === last[1]) {
+  if (coordinates.length > 1 && first[0] === last[0] && first[1] === last[1]) {
     return coordinates.map(([lng, lat]): [number, number] => [lng, lat]);
   }
   return [
