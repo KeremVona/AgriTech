@@ -8,6 +8,7 @@ import {
 import {
   updateParcelInCollection,
   formatParcelFeedback,
+  mergeDrawnParcels,
 } from '../src/utils/farmMapPage.ts';
 
 const sampleGeometry = {
@@ -521,4 +522,52 @@ test('formatParcelFeedback formats register, update and delete messages accurate
   const deleteNotice = formatParcelFeedback('delete');
   assert.equal(deleteNotice.type, 'info');
   assert.equal(deleteNotice.message, 'Parcel boundary removed.');
+});
+
+// 6. Edge cases and reconciliation
+test('saveParcel handles empty 201 response safely without throwing SyntaxError', async () => {
+  const mockEmpty201 = async () => new Response('', { status: 201 });
+  const feature = await saveParcel({
+    ...baseOptions,
+    mode: 'api',
+    parcel: sampleParcelData,
+    geometry: sampleGeometry,
+    areaHa: 2.5,
+    fieldId: 'field-101',
+    fetchImpl: mockEmpty201,
+  });
+
+  assert.equal(feature.type, 'Feature');
+  assert.ok(feature.id);
+  assert.equal(feature.properties?.name, 'North Tomato Plot');
+  assert.equal(feature.properties?.crop_name, 'Tomato');
+  assert.equal(feature.properties?.area_hectares, 2.5);
+  assert.deepEqual(feature.geometry, sampleGeometry);
+});
+
+test('mergeDrawnParcels reconciles newly created parcels into the collection', () => {
+  const baseCollection = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        id: 'base-1',
+        geometry: sampleGeometry,
+        properties: { id: 'base-1', name: 'Base Parcel', area_hectares: 1.0, field_id: 'field-1' },
+      },
+    ],
+  };
+
+  const newParcel = {
+    type: 'Feature',
+    id: 'created-1',
+    geometry: sampleGeometry,
+    properties: { id: 'created-1', name: 'Newly Created Parcel', area_hectares: 2.5, field_id: 'field-1' },
+  };
+
+  const merged = mergeDrawnParcels(baseCollection, [newParcel], 'field-1');
+  assert.equal(merged.features.length, 2);
+  assert.equal(merged.features[0].id, 'base-1');
+  assert.equal(merged.features[1].id, 'created-1');
+  assert.equal(merged.features[1].properties.name, 'Newly Created Parcel');
 });

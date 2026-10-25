@@ -253,7 +253,7 @@ function FieldMapView({
         setFeedbackNotice(formatParcelFeedback('register'));
       } else if (drawerMode === 'edit' && selectedParcel) {
         const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
-        const areaHa = selectedParcel.properties?.area_hectares ?? 0;
+        const areaHa = selectedParcel.properties?.area_hectares ?? drawerMetrics?.areaHa ?? 0;
 
         await updateParcelMetadata({
           apiBaseUrl: effectiveConfig.apiBaseUrl,
@@ -316,6 +316,11 @@ function FieldMapView({
         next.add(targetId);
         return next;
       });
+      setParcelOverrides((prev) => {
+        const next = { ...prev };
+        delete next[targetId];
+        return next;
+      });
 
       setSelectedParcel(null);
       setIsDrawerOpen(false);
@@ -344,7 +349,9 @@ function FieldMapView({
   </>;
 
   const noticeTitle =
-    feedbackNotice?.type === 'info'
+    feedbackNotice?.message.startsWith('Failed')
+      ? 'Action Failed'
+      : feedbackNotice?.type === 'info'
       ? 'Parcel Removed'
       : feedbackNotice?.message.includes('registered')
       ? 'Parcel Registered'
