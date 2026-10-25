@@ -239,6 +239,13 @@ export function FarmMapDrawingManager({
         };
       }
 
+      if (!feature.id) {
+        feature.id = `drawn-parcel-${(layer as any)._leaflet_id || Date.now()}`;
+      }
+      (layer as any).feature = feature;
+      if (!feature.properties) feature.properties = {};
+      feature.properties.id = feature.id;
+
       callbacksRef.current.onPolygonComplete?.(feature, metrics);
       callbacksRef.current.onKinksChange?.([]);
       callbacksRef.current.onModeChange('idle');

@@ -62,9 +62,10 @@ export function FarmMapContainer({
   const [metrics, setMetrics] = useState<ParcelMetrics | null>(null);
   const [kinks, setKinks] = useState<[number, number][]>([]);
 
-  // Clean reset: when idle, metrics and kinks evaluate to empty/null
-  const effectiveMetrics = activeMode === 'idle' ? null : metrics;
-  const effectiveKinks = activeMode === 'idle' ? [] : kinks;
+  // When not editable or idle, activeMode evaluates to 'idle', and metrics/kinks evaluate to empty/null
+  const effectiveActiveMode: DrawingMode = editable ? activeMode : 'idle';
+  const effectiveMetrics = effectiveActiveMode === 'idle' ? null : metrics;
+  const effectiveKinks = effectiveActiveMode === 'idle' ? [] : kinks;
 
   const handleModeChange = (mode: DrawingMode) => {
     setActiveMode(mode);
@@ -109,15 +110,15 @@ export function FarmMapContainer({
     >
       {editable && (
         <DrawingToolbar
-          activeMode={activeMode}
+          activeMode={effectiveActiveMode}
           onModeChange={handleModeChange}
           onCancel={handleCancel}
         />
       )}
-      {editable && activeMode !== 'idle' && (
+      {editable && effectiveActiveMode !== 'idle' && (
         <DrawingLiveAreaBadge
           state={drawingState}
-          activeMode={activeMode}
+          activeMode={effectiveActiveMode}
           metrics={effectiveMetrics}
           hasKinks={effectiveKinks.length > 0}
           onCancel={handleCancel}
@@ -156,7 +157,7 @@ export function FarmMapContainer({
           <>
             <FarmMapDrawingManager
               enabled={editable}
-              activeMode={activeMode}
+              activeMode={effectiveActiveMode}
               onModeChange={handleModeChange}
               onMetricsUpdate={setMetrics}
               onKinksChange={setKinks}

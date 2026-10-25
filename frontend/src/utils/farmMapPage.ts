@@ -64,15 +64,33 @@ export function mergeDrawnParcels(
 }
 
 /**
+ * Removes a drawn parcel by matching ID across string, numeric, or property-level IDs.
+ */
+export function removeDrawnParcel(
+  drawnParcels: GeoJSON.Feature<GeoJSON.Polygon>[],
+  parcelId: string | number
+): GeoJSON.Feature<GeoJSON.Polygon>[] {
+  if (!drawnParcels || drawnParcels.length === 0) {
+    return [];
+  }
+  const targetIdStr = String(parcelId);
+  return drawnParcels.filter((p) => {
+    const pId = p.id !== undefined && p.id !== null ? String(p.id) : null;
+    const propId = p.properties?.id !== undefined && p.properties?.id !== null ? String(p.properties.id) : null;
+    return pId !== targetIdStr && propId !== targetIdStr;
+  });
+}
+
+/**
  * Creates or normalizes a completed vector parcel feature with assigned ID,
- * calculated metrics metadata, and field scoping.
+ * calculated metrics metadata, and field scoping compliant with ParcelMapProperties schema.
  */
 export function createDrawnParcelFeature(
   rawFeature: Partial<GeoJSON.Feature<GeoJSON.Polygon>> & { geometry: GeoJSON.Polygon },
   metrics: ParcelMetrics,
   fieldId?: string
 ): GeoJSON.Feature<GeoJSON.Polygon> {
-  const id = rawFeature.id || `drawn-parcel-${Date.now()}`;
+  const id = String(rawFeature.id || (rawFeature.properties as any)?.id || `drawn-parcel-${Date.now()}`);
   return {
     ...rawFeature,
     type: 'Feature',
@@ -80,8 +98,10 @@ export function createDrawnParcelFeature(
     geometry: rawFeature.geometry,
     properties: {
       ...rawFeature.properties,
-      name: `New Parcel (${metrics.areaHa.toFixed(2)} ha)`,
+      id,
+      name: rawFeature.properties?.name ?? `New Parcel (${metrics.areaHa.toFixed(2)} ha)`,
       area_ha: metrics.areaHa,
+      area_hectares: metrics.areaHa,
       field_id: rawFeature.properties?.field_id ?? fieldId ?? null,
     },
   };
