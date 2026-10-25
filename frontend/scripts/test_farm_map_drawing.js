@@ -4,6 +4,14 @@ import {
   validateParcelTopology,
   normalizeClosedRing,
 } from '../src/utils/parcelTopology.ts';
+import {
+  toggleDrawingMode,
+  cancelDrawingMode,
+  handleDrawingKeydown,
+  isDrawingActionLocked,
+  getDrawingState,
+  extractCoordinates,
+} from '../src/utils/drawingState.ts';
 
 let failures = 0;
 let tests = 0;
@@ -233,6 +241,123 @@ test('validateParcelTopology automatically normalizes unclosed valid polygon', (
     kinks: [],
     errorMessage: null,
   });
+});
+
+// 4. Drawing toolbar mode toggling and transitions
+test('toggleDrawingMode toggles tool on when idle', () => {
+  assert.equal(toggleDrawingMode('idle', 'draw'), 'draw');
+  assert.equal(toggleDrawingMode('idle', 'edit'), 'edit');
+  assert.equal(toggleDrawingMode('idle', 'drag'), 'drag');
+  assert.equal(toggleDrawingMode('idle', 'delete'), 'delete');
+});
+
+test('toggleDrawingMode toggles active tool off back to idle', () => {
+  assert.equal(toggleDrawingMode('draw', 'draw'), 'idle');
+  assert.equal(toggleDrawingMode('edit', 'edit'), 'idle');
+  assert.equal(toggleDrawingMode('drag', 'drag'), 'idle');
+  assert.equal(toggleDrawingMode('delete', 'delete'), 'idle');
+});
+
+test('toggleDrawingMode switches directly between different active tools', () => {
+  assert.equal(toggleDrawingMode('draw', 'edit'), 'edit');
+  assert.equal(toggleDrawingMode('edit', 'drag'), 'drag');
+  assert.equal(toggleDrawingMode('drag', 'delete'), 'delete');
+  assert.equal(toggleDrawingMode('delete', 'draw'), 'draw');
+});
+
+test('cancelDrawingMode resets any mode to idle', () => {
+  assert.equal(cancelDrawingMode(), 'idle');
+});
+
+// 5. Action lockout during active drawing/editing
+test('isDrawingActionLocked restricts actions during any active mode', () => {
+  assert.equal(isDrawingActionLocked('idle'), false);
+  assert.equal(isDrawingActionLocked('draw'), true);
+  assert.equal(isDrawingActionLocked('edit'), true);
+  assert.equal(isDrawingActionLocked('drag'), true);
+  assert.equal(isDrawingActionLocked('delete'), true);
+});
+
+// 6. Keyboard handling (Escape cancels active mode)
+test('handleDrawingKeydown maps Escape to idle transition', () => {
+  assert.equal(handleDrawingKeydown('Escape', 'draw'), 'idle');
+  assert.equal(handleDrawingKeydown('Escape', 'edit'), 'idle');
+  assert.equal(handleDrawingKeydown('Escape', 'drag'), 'idle');
+  assert.equal(handleDrawingKeydown('Escape', 'delete'), 'idle');
+  assert.equal(handleDrawingKeydown('Escape', 'idle'), 'idle');
+});
+
+test('handleDrawingKeydown leaves mode intact for non-Escape keys', () => {
+  assert.equal(handleDrawingKeydown('Enter', 'draw'), 'draw');
+  assert.equal(handleDrawingKeydown('Space', 'edit'), 'edit');
+  assert.equal(handleDrawingKeydown('Tab', 'drag'), 'drag');
+});
+
+// 7. Drawing state machine resolution
+test('getDrawingState resolves state accurately across drawing lifecycles', () => {
+  assert.equal(getDrawingState('idle', 0, false), 'IDLE_MAP');
+  assert.equal(getDrawingState('draw', 0, false), 'DRAWING_ACTIVE');
+  assert.equal(getDrawingState('draw', 2, false), 'DRAWING_INVALID_KINK');
+  assert.equal(getDrawingState('draw', 0, true), 'POLYGON_COMPLETED');
+  assert.equal(getDrawingState('idle', 0, true), 'POLYGON_COMPLETED');
+  assert.equal(getDrawingState('edit', 1, false), 'DRAWING_INVALID_KINK');
+  assert.equal(getDrawingState('edit', 0, false), 'DRAWING_ACTIVE');
+});
+
+// 8. Coordinate extraction from Leaflet layers
+test('extractCoordinates handles null, empty, flat and nested latlng structures', () => {
+  assert.deepEqual(extractCoordinates(null), []);
+  assert.deepEqual(extractCoordinates({}), []);
+
+  // Flat latlng array (Polyline / simple Polygon)
+  const flatLayer = {
+    getLatLngs: () => [
+      { lat: 38.420, lng: 27.140 },
+      { lat: 38.420, lng: 27.150 },
+      { lat: 38.430, lng: 27.145 },
+    ],
+  };
+  assert.deepEqual(extractCoordinates(flatLayer), [
+    [27.140, 38.420],
+    [27.150, 38.420],
+    [27.145, 38.430],
+  ]);
+
+  // Nested latlng array (Polygon outer ring)
+  const nestedLayer = {
+    getLatLngs: () => [[
+      { lat: 38.420, lng: 27.140 },
+      { lat: 38.420, lng: 27.150 },
+      { lat: 38.430, lng: 27.145 },
+    ]],
+  };
+  assert.deepEqual(extractCoordinates(nestedLayer), [
+    [27.140, 38.420],
+    [27.150, 38.420],
+    [27.145, 38.430],
+  ]);
+
+  // GeoJSON layer fallback
+  const geojsonLayer = {
+    toGeoJSON: () => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [27.140, 38.420],
+          [27.150, 38.420],
+          [27.145, 38.430],
+          [27.140, 38.420],
+        ]],
+      },
+    }),
+  };
+  assert.deepEqual(extractCoordinates(geojsonLayer), [
+    [27.140, 38.420],
+    [27.150, 38.420],
+    [27.145, 38.430],
+    [27.140, 38.420],
+  ]);
 });
 
 assert.equal(failures, 0, `${failures} of ${tests} farm map drawing tests failed`);
