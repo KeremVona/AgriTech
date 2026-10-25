@@ -69,19 +69,29 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
   };
 
   const handlePolygonDelete = (parcelId: string | number) => {
-    setDrawnParcels((prev) => removeDrawnParcel(prev, parcelId));
+    let wasDeleted = false;
+    setDrawnParcels((prev) => {
+      const updated = removeDrawnParcel(prev, parcelId);
+      if (updated.length !== prev.length) {
+        wasDeleted = true;
+      }
+      return updated;
+    });
     setPendingParcel((curr) => {
       if (curr) {
         const targetStr = String(parcelId);
         const currIdStr = curr.feature.id !== undefined && curr.feature.id !== null ? String(curr.feature.id) : null;
         const currPropIdStr = curr.feature.properties?.id !== undefined && curr.feature.properties?.id !== null ? String(curr.feature.properties.id) : null;
         if (currIdStr === targetStr || currPropIdStr === targetStr) {
+          wasDeleted = true;
           return null;
         }
       }
       return curr;
     });
-    setFeedbackNotice(formatParcelFeedback('delete'));
+    if (wasDeleted) {
+      setFeedbackNotice(formatParcelFeedback('delete'));
+    }
   };
 
   const unknownField = fieldId !== undefined && !fields.some(({ id }) => id === fieldId);
