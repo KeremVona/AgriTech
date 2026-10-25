@@ -23,3 +23,12 @@ export interface TopologyValidationResult {
   kinks: [number, number][];
   errorMessage: string | null;
 }
+
+export {
+  toggleDrawingMode,
+  cancelDrawingMode,
+  handleDrawingKeydown,
+  isDrawingActionLocked,
+  getDrawingState,
+  extractCoordinates,
+} from '../utils/drawingState.ts';
