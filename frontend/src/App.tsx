@@ -1,7 +1,11 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { DiseaseProgressionPage } from './pages/DiseaseProgressionPage';
 import { LeafDiagnosticsPage } from './pages/LeafDiagnosticsPage';
+
+const FieldMapPage = lazy(() => import('./pages/FieldMapPage').then((module) => ({ default: module.FieldMapPage })));
+const fieldMapRoute = <Suspense fallback={<div className="p-6 text-ag-ink" role="status">Loading field map…</div>}><FieldMapPage /></Suspense>;
 
 function App() {
   return (
@@ -19,6 +23,10 @@ function App() {
         {/* Dedicated AI Leaf Diagnostics Workbench Routes (SPEC-UI-006) */}
         <Route path="/diagnostics" element={<LeafDiagnosticsPage />} />
         <Route path="/leaf-scanner" element={<LeafDiagnosticsPage />} />
+
+        <Route path="/map" element={fieldMapRoute} />
+        <Route path="/fields/:fieldId/parcels" element={fieldMapRoute} />
+        <Route path="/field-map" element={<Navigate to="/map" replace />} />
 
         {/* Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />
