@@ -37,18 +37,43 @@ export function ParcelMetadataDrawer({
   onDelete,
   isSaving = false,
 }: ParcelMetadataDrawerProps): React.JSX.Element | null {
+  const currentInitialKey =
+    (initialData as any)?.id ??
+    (initialData as any)?.properties?.id ??
+    initialData?.name ??
+    '';
+
   const [formData, setFormData] = useState<ParcelFormData>(() =>
     getInitialDrawerFormData(mode, initialData),
   );
   const [errors, setErrors] = useState<Partial<Record<keyof ParcelFormData, string>>>({});
-  const [prevDataRef, setPrevDataRef] = useState({ mode, initialData });
+  const [syncState, setSyncState] = useState(() => ({
+    isOpen,
+    mode,
+    initialKey: currentInitialKey,
+  }));
+  const panelRef = useRef<HTMLElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Synchronize form state during render if mode or initialData identity changes
-  if (prevDataRef.mode !== mode || prevDataRef.initialData !== initialData) {
-    setPrevDataRef({ mode, initialData });
+  // Synchronize form state during render only when:
+  // 1) drawer transitions from closed to open (!syncState.isOpen && isOpen)
+  // 2) mode changes (create <-> edit)
+  // 3) stable initialData ID/name changes
+  // This explicitly prevents wiping out user typing on parent re-renders that pass new object references.
+  if (
+    (!syncState.isOpen && isOpen) ||
+    syncState.mode !== mode ||
+    syncState.initialKey !== currentInitialKey
+  ) {
+    setSyncState({
+      isOpen,
+      mode,
+      initialKey: currentInitialKey,
+    });
     setFormData(getInitialDrawerFormData(mode, initialData));
     setErrors({});
+  } else if (syncState.isOpen !== isOpen) {
+    setSyncState((prev) => ({ ...prev, isOpen }));
   }
 
   // Autofocus parcel name input on modal reveal
@@ -61,20 +86,51 @@ export function ParcelMetadataDrawer({
     }
   }, [isOpen]);
 
-  // Keyboard accessibility: Escape key dismisses drawer
+  // Focus trapping and keyboard accessibility (Tab, Shift+Tab, Escape)
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      // Guard Escape dismissal with !isSaving
+      if (e.key === 'Escape' && !isSaving) {
         e.preventDefault();
         onDiscard();
+        return;
+      }
+
+      // Trap focus within drawer dialog
+      if (e.key === 'Tab') {
+        const panel = panelRef.current;
+        if (!panel) return;
+
+        const focusableSelector =
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        const focusableElements = Array.from(
+          panel.querySelectorAll<HTMLElement>(focusableSelector),
+        ).filter((el) => el.offsetParent !== null || el.getClientRects().length > 0);
+
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement || !panel.contains(document.activeElement)) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement || !panel.contains(document.activeElement)) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onDiscard]);
+  }, [isOpen, isSaving, onDiscard]);
 
   if (!isOpen) {
     return null;
@@ -112,6 +168,7 @@ export function ParcelMetadataDrawer({
 
       {/* Drawer Panel */}
       <aside
+        ref={panelRef}
         className="ag-drawer-panel"
         role="dialog"
         aria-modal="true"
@@ -189,7 +246,7 @@ export function ParcelMetadataDrawer({
                   Perimeter
                 </div>
                 <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
-                  {summary.perimeterText}
+                  {summary.perimeterText.replace(/^Perimeter:\s*/, '')}
                 </div>
               </div>
             </div>
@@ -209,6 +266,8 @@ export function ParcelMetadataDrawer({
               type="text"
               value={formData.name}
               disabled={isSaving}
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={errors.name ? 'parcel-name-error' : undefined}
               onChange={(e) => {
                 setFormData((prev) => ({ ...prev, name: e.target.value }));
                 if (errors.name) {
@@ -223,7 +282,7 @@ export function ParcelMetadataDrawer({
               } disabled:opacity-50 disabled:bg-slate-50`}
             />
             {errors.name && (
-              <p className="mt-1.5 text-xs text-rose-600 font-medium" role="alert">
+              <p id="parcel-name-error" className="mt-1.5 text-xs text-rose-600 font-medium" role="alert">
                 {errors.name}
               </p>
             )}
@@ -307,6 +366,8 @@ export function ParcelMetadataDrawer({
               type="date"
               value={formData.plantingDate}
               disabled={isSaving}
+              aria-invalid={Boolean(errors.plantingDate)}
+              aria-describedby={errors.plantingDate ? 'planting-date-error' : undefined}
               onChange={(e) => {
                 setFormData((prev) => ({ ...prev, plantingDate: e.target.value }));
                 if (errors.plantingDate) {
@@ -320,7 +381,7 @@ export function ParcelMetadataDrawer({
               } disabled:opacity-50 disabled:bg-slate-50`}
             />
             {errors.plantingDate && (
-              <p className="mt-1.5 text-xs text-rose-600 font-medium" role="alert">
+              <p id="planting-date-error" className="mt-1.5 text-xs text-rose-600 font-medium" role="alert">
                 {errors.plantingDate}
               </p>
             )}
