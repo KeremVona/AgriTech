@@ -6,7 +6,7 @@
 **Phase:** Phase 2 — Spatial Foundation, GIS & Relational Data Layer  
 **Branch:** `feat/frontend-todo208-vector-drawing`  
 **Base Commit:** `592b1f2`  
-**Commit Range:** `698bc34..3e8490e`  
+**Commit Range:** `698bc34..1e42215`  
 **Spec References:** `design/SPATIAL_PARCEL_BOUNDARY_SPEC.md` (`SPEC-UI-008`), Sections 3 and 5; `PROJECT_DETAILS/Phase Plans/Phase 2.md` (TODO-208)  
 **Foundations:** `design/FOUNDATIONS.md`, `design/MOTION_AND_INTERACTION.md`, `design/MOBILE_AND_OUTDOOR_SPEC.md`
 
@@ -23,7 +23,7 @@ Every drawing interaction is backed by real-time geodesic calculations and topol
 Completed boundaries seamlessly merge into the active GeoJSON collection with field-scoping preservation, setting up a clean, decoupled handoff for TODO-209 metadata registration (sliding drawer, crop taxonomy, and backend persistence).
 
 ### Key Capabilities Delivered:
-1. **Precision Geoman Drawing Engine (`<FarmMapDrawingManager />`):** Integrated `@geoman-io/leaflet-geoman-free` (v2.19.1) into React Leaflet with custom ref-guarded synchronization (`isInternalSyncRef`), isolating React render cycles from Geoman's internal mode transitions.
+1. **Precision Geoman Drawing Engine (`<FarmMapDrawingManager />`):** Integrated `@geoman-io/leaflet-geoman-free` (v2.20.4) into React Leaflet with custom ref-guarded synchronization (`isInternalSyncRef`), isolating React render cycles from Geoman's internal mode transitions.
 2. **Accessible Frosted-Glass Toolbar (`<DrawingToolbar />`):** Custom 40px touch-target tool controls docked at top-left (`z-[1000]`) with high-contrast active states (`bg-teal-50 border border-teal-600 text-teal-800`), dedicated SVG icons, and Leaflet DOM event isolation (`L.DomEvent.disableClickPropagation` and `disableScrollPropagation`).
 3. **Precision Ag Styling & Custom Handles:** Bio-Teal rubber-band guide lines (`2px dashed #0F766E`), 10px circular vertex handles expanding to 14px on hover/drag, 6px midpoint insertion handles, and 14% translucent fill (`rgba(15, 118, 110, 0.14)`).
 4. **Real-Time Geodesic Metrics HUD (`<DrawingLiveAreaBadge />`):** Floating top-center HUD docked at `top-4 left-1/2 -translate-x-1/2 z-[1000]`, rendering instant tabular figures for hectares (`areaHa`), acres, vertex count, and perimeter in meters (`perimeterM`), alongside action guidance microcopy.
@@ -62,7 +62,7 @@ Completed boundaries seamlessly merge into the active GeoJSON collection with fi
 - `PROJECT_DETAILS/Reports/Phase 2/TODO-208-vector-drawing.md` — Formal milestone completion report (this document).
 
 ### Files Modified
-- `frontend/package.json` — Added dependencies `@geoman-io/leaflet-geoman-free@^2.19.1`, `@turf/area@^7.2.0`, `@turf/helpers@^7.2.0`, `@turf/kinks@^7.2.0`, and `@turf/length@^7.2.0`; updated `test:map` script to run `scripts/test_farm_map_drawing.js`.
+- `frontend/package.json` — Added dependencies `@geoman-io/leaflet-geoman-free@^2.20.4`, `@turf/area@^7.4.0`, `@turf/helpers@^7.4.0`, `@turf/kinks@^7.4.0`, and `@turf/length@^7.4.0`; updated `test:map` script to run `scripts/test_farm_map_drawing.js`.
 - `frontend/package-lock.json` — Resolved and locked dependency tree for Geoman and Turf packages.
 - `frontend/src/components/FarmMap/FarmMapContainer.tsx` — Integrated `DrawingToolbar`, `DrawingLiveAreaBadge`, `FarmMapDrawingManager`, and `KinkMarkersLayer`; wired drawing state, metrics, and kink change handlers.
 - `frontend/src/components/FarmMap/farmMap.css` — Added styling tokens for drawing toolbar, active tool states, Geoman precision styling, custom vertex handles (`.farm-map-vertex-handle`, `.farm-map-midpoint-handle`), HUD badge (`.farm-map-drawing-hud`), and pulsing kink markers (`.farm-map-kink-marker`, `.farm-map-kink-ping`).
