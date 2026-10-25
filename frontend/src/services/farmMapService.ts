@@ -175,7 +175,13 @@ export async function saveParcel(options: {
         throw new Error(message);
       }
 
-      const json = await response.json();
+      let json: any = null;
+      try {
+        json = await response.json();
+      } catch {
+        json = null;
+      }
+
       if (json && json.type === 'Feature') {
         return json;
       }
