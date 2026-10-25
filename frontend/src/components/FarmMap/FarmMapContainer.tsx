@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type L from 'leaflet';
 import { GeoJSON, MapContainer, TileLayer } from 'react-leaflet';
-import type { ParcelFeatureCollection } from '../../types/farmMap';
-import { getParcelBounds } from '../../utils/farmMapGeometry';
-import { FarmMapViewport } from './FarmMapViewport';
-import { FarmMapControls } from './FarmMapControls';
-import type { BaseLayer, TileStatus } from './FarmMapControls';
+import type { ParcelFeatureCollection } from '../../types/farmMap.ts';
+import type { DrawingMode, DrawingState, ParcelMetrics } from '../../types/farmMapDrawing.ts';
+import { getDrawingState } from '../../utils/drawingState.ts';
+import { getParcelBounds } from '../../utils/farmMapGeometry.ts';
+import { FarmMapViewport } from './FarmMapViewport.tsx';
+import { FarmMapControls } from './FarmMapControls.tsx';
+import type { BaseLayer, TileStatus } from './FarmMapControls.tsx';
+import { DrawingToolbar } from './DrawingToolbar.tsx';
+import { DrawingLiveAreaBadge } from './DrawingLiveAreaBadge.tsx';
+import { FarmMapDrawingManager } from './FarmMapDrawingManager.tsx';
+import { KinkMarkersLayer } from './KinkMarkersLayer.tsx';
 import 'leaflet/dist/leaflet.css';
 import './farmMap.css';
 
@@ -33,11 +39,57 @@ function ParcelLayer({ collection }: { collection: ParcelFeatureCollection }) {
   return <GeoJSON ref={layer} data={collection} style={parcelStyle} interactive={false} />;
 }
 
-export function FarmMapContainer({ collection }: { collection: ParcelFeatureCollection }): React.JSX.Element {
+export interface FarmMapContainerProps {
+  collection: ParcelFeatureCollection;
+  editable?: boolean;
+  onPolygonComplete?: (feature: GeoJSON.Feature<GeoJSON.Polygon>, metrics: ParcelMetrics) => void;
+  onPolygonDelete?: (parcelId: string | number) => void;
+}
+
+export function FarmMapContainer({
+  collection,
+  editable = true,
+  onPolygonComplete,
+  onPolygonDelete,
+}: FarmMapContainerProps): React.JSX.Element {
   const [baseLayer, setBaseLayer] = useState<BaseLayer>('satellite');
   const [tileStatus, setTileStatus] = useState<TileStatus>('loading');
   const [attempt, setAttempt] = useState(0);
   const [fitRequest, setFitRequest] = useState(0);
+
+  // Drawing state
+  const [activeMode, setActiveMode] = useState<DrawingMode>('idle');
+  const [metrics, setMetrics] = useState<ParcelMetrics | null>(null);
+  const [kinks, setKinks] = useState<[number, number][]>([]);
+
+  // When not editable or idle, activeMode evaluates to 'idle', and metrics/kinks evaluate to empty/null
+  const effectiveActiveMode: DrawingMode = editable ? activeMode : 'idle';
+  const effectiveMetrics = effectiveActiveMode === 'idle' ? null : metrics;
+  const effectiveKinks = effectiveActiveMode === 'idle' ? [] : kinks;
+
+  const handleModeChange = (mode: DrawingMode) => {
+    setActiveMode(mode);
+    if (mode === 'idle') {
+      setMetrics(null);
+      setKinks([]);
+    }
+  };
+
+  const handleCancel = () => {
+    handleModeChange('idle');
+  };
+
+  const handlePolygonComplete = (feature: GeoJSON.Feature<GeoJSON.Polygon>, completedMetrics: ParcelMetrics) => {
+    handleModeChange('idle');
+    onPolygonComplete?.(feature, completedMetrics);
+  };
+
+  const handlePolygonDelete = (parcelId: string | number) => {
+    onPolygonDelete?.(parcelId);
+  };
+
+  const drawingState: DrawingState = getDrawingState(activeMode, effectiveKinks.length, false);
+
   const bounds = useMemo(() => getParcelBounds(collection), [collection]);
   const active = layers[baseLayer];
   const changeLayer = (layer: BaseLayer) => {
@@ -51,18 +103,70 @@ export function FarmMapContainer({ collection }: { collection: ParcelFeatureColl
   };
 
   return (
-    <div className="ag-map-surface" role="region" aria-label="Read-only farm parcel map">
-      <MapContainer className="ag-farm-map" center={[39, 35]} zoom={6} minZoom={2} maxZoom={maxZoom}
-        zoomControl={false} scrollWheelZoom>
-        <TileLayer key={`${baseLayer}-${attempt}`} {...active} maxZoom={maxZoom} eventHandlers={{
-          loading: () => setTileStatus((status) => status === 'error' ? status : 'loading'),
-          load: () => setTileStatus((status) => status === 'error' ? status : 'ready'),
-          tileerror: () => setTileStatus('error'),
-        }} />
+    <div
+      className="ag-map-surface"
+      role="region"
+      aria-label="Interactive farm parcel map"
+    >
+      {editable && (
+        <DrawingToolbar
+          activeMode={effectiveActiveMode}
+          onModeChange={handleModeChange}
+          onCancel={handleCancel}
+        />
+      )}
+      {editable && effectiveActiveMode !== 'idle' && (
+        <DrawingLiveAreaBadge
+          state={drawingState}
+          activeMode={effectiveActiveMode}
+          metrics={effectiveMetrics}
+          hasKinks={effectiveKinks.length > 0}
+          onCancel={handleCancel}
+        />
+      )}
+      <MapContainer
+        className="ag-farm-map"
+        center={[39, 35]}
+        zoom={6}
+        minZoom={2}
+        maxZoom={maxZoom}
+        zoomControl={false}
+        scrollWheelZoom
+      >
+        <TileLayer
+          key={`${baseLayer}-${attempt}`}
+          {...active}
+          maxZoom={maxZoom}
+          eventHandlers={{
+            loading: () => setTileStatus((status) => (status === 'error' ? status : 'loading')),
+            load: () => setTileStatus((status) => (status === 'error' ? status : 'ready')),
+            tileerror: () => setTileStatus('error'),
+          }}
+        />
         <ParcelLayer collection={collection} />
         <FarmMapViewport bounds={bounds} fitRequest={fitRequest} />
-        <FarmMapControls baseLayer={baseLayer} onLayerChange={changeLayer} tileStatus={tileStatus}
-          onRetryTiles={retryTiles} canFit={bounds !== null} onFit={() => setFitRequest((value) => value + 1)} />
+        <FarmMapControls
+          baseLayer={baseLayer}
+          onLayerChange={changeLayer}
+          tileStatus={tileStatus}
+          onRetryTiles={retryTiles}
+          canFit={bounds !== null}
+          onFit={() => setFitRequest((value) => value + 1)}
+        />
+        {editable && (
+          <>
+            <FarmMapDrawingManager
+              enabled={editable}
+              activeMode={effectiveActiveMode}
+              onModeChange={handleModeChange}
+              onMetricsUpdate={setMetrics}
+              onKinksChange={setKinks}
+              onPolygonComplete={handlePolygonComplete}
+              onPolygonDelete={handlePolygonDelete}
+            />
+            <KinkMarkersLayer kinks={effectiveKinks} />
+          </>
+        )}
       </MapContainer>
     </div>
   );

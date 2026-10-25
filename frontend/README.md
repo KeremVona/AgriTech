@@ -15,7 +15,7 @@ The client application powers farm managers and field workers with interactive s
 
 ## GIS Field Map (`/map`)
 
-Delivered in **TODO-207**, the Field GIS Map provides responsive boundary visualization for farm parcels:
+Delivered in **TODO-207** and **TODO-208**, the Field GIS Map provides responsive boundary visualization and interactive vector polygon drawing for farm parcels:
 
 ### Routes
 - `/map` — Main interactive farm map canvas displaying all loaded field parcels.
@@ -41,7 +41,39 @@ Delivered in **TODO-207**, the Field GIS Map provides responsive boundary visual
   - Bottom Safe Zone: 72px mobile margin (`calc(72px + env(safe-area-inset-bottom))`) prevents Leaflet attribution and HUD controls from colliding with mobile system gestures or navigation bars.
   - Accessible touch targets: All interactive controls satisfy the minimum 48 × 48 px mobile touch standard with visible focus rings.
 - **Code Splitting**:
-  - `FieldMapPage` is lazily loaded via `React.lazy()` in `App.tsx`, producing a dedicated ~171 kB chunk and keeping the initial application bundle lean.
+  - `FieldMapPage` is lazily loaded via `React.lazy()` in `App.tsx`, sequestering Leaflet, Geoman, and Turf.js into a dedicated chunk to keep the initial application bundle lean.
+
+### Interactive Vector Polygon Drawing (TODO-208)
+- **Geoman Drawing Engine & Custom Toolbar**:
+  - Integrated via `@geoman-io/leaflet-geoman-free` with custom 40px touch-target controls docked at top-left (`z-[1000]`).
+  - Controls:
+    - `[Draw Polygon]` — Interactive polygon drawing with precision rubber-band guide line (`2px dashed #0F766E`) and vertex snapping (20px snap distance).
+    - `[Edit Vertices]` — Move vertex nodes or click midpoints to reshape existing boundaries.
+    - `[Drag Parcel]` — Translate entire parcel boundaries across the spatial canvas.
+    - `[Delete Parcel]` — Direct removal mode with instant deletion feedback.
+    - `[Cancel / Finish]` — Reset any active tool back to idle.
+- **Precision Ag Styling & Custom Handles**:
+  - High-visibility Bio-Teal stroke (`#0F766E`, 2px dashed during drawing, 2px solid rendered) with 14% translucent fill (`rgba(15, 118, 110, 0.14)`).
+  - Main vertex handles: 10px circular nodes with `#0F766E` fill and white border; expand to 14px on hover/drag.
+  - Midpoint handles: 6px circular nodes for inserting new vertices.
+- **Real-Time Geodesic Metrics HUD (`<DrawingLiveAreaBadge />`)**:
+  - Docked at top-center (`top-4 left-1/2 -translate-x-1/2 z-[1000]`) with frosted-glass card styling.
+  - Real-time Turf.js geodesic calculations on every vertex update:
+    - `areaHa` (hectares to 2 decimal places), `acres` (acres to 2 decimal places), `vertexCount`, and `perimeterM` (perimeter in meters).
+    - Format: `1.84 ha (4.55 acres) • 5 Vertices • Perimeter: 542m`.
+- **Topological Kink Detection & Alerting**:
+  - Powered by `@turf/kinks` to detect self-intersections (bowties / figure-8s) in real time before parcel completion.
+  - On kink detection:
+    - In-progress stroke and fill transition to high-visibility warning red (`#EF4444` stroke, 22% fill).
+    - Pulsing 16px red warning markers (`<KinkMarkersLayer />`) appear at exact intersection coordinates.
+    - Top-center HUD transitions to assertive warning alert: *"Self-intersecting polygon. Uncross boundary lines to complete parcel."*
+    - Hard submission lockout: Self-intersecting polygons cannot be completed or saved until uncrossed.
+- **Keyboard Accessibility**:
+  - Global `[ESC]` key shortcut immediately aborts in-progress drawing, editing, dragging, or deletion and returns map state to idle.
+- **Workspace State Management & TODO-209 Readiness**:
+  - Optimistic in-memory parcel merging into active GeoJSON collection with field-scoping preservation.
+  - Temporary parcel IDs and canonical `ParcelMapProperties` stamping (`area_hectares`, `area_ha`, `field_id`).
+  - Clean handoff boundary for TODO-209 metadata registration (sliding drawer, crop taxonomy, and backend persistence).
 
 ---
 
@@ -108,7 +140,7 @@ Build output will be placed in `dist/`.
 The frontend employs unit test suites, static analysis, and type checking:
 
 ```powershell
-# Run GIS Field Map test suite (90 tests: geometry, bounds, service policies, routing)
+# Run GIS Field Map test suite (126 tests: geometry, bounds, service policies, routing, drawing topology, HUD policies)
 npm run test:map
 
 # Run static linter (oxlint)

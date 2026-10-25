@@ -18,11 +18,16 @@
     "test:canvas": "node --experimental-strip-types scripts/test_canvas_stage.js",
     "test:assembly": "node --experimental-strip-types scripts/test_production_assembly.js",
     "test:diagnostics": "node --experimental-strip-types scripts/test_diagnostics_validation.js",
-    "test:map": "node --experimental-strip-types scripts/test_farm_map_data.js && node --experimental-strip-types scripts/test_farm_map_viewport.js && node --experimental-strip-types scripts/test_farm_map_page.js",
+    "test:map": "node --experimental-strip-types scripts/test_farm_map_data.js && node --experimental-strip-types scripts/test_farm_map_viewport.js && node --experimental-strip-types scripts/test_farm_map_page.js && node --experimental-strip-types scripts/test_farm_map_drawing.js",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@geoman-io/leaflet-geoman-free": "^2.20.4",
     "@tailwindcss/vite": "^4.3.3",
+    "@turf/area": "^7.4.0",
+    "@turf/helpers": "^7.4.0",
+    "@turf/kinks": "^7.4.0",
+    "@turf/length": "^7.4.0",
     "leaflet": "^1.9.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
