@@ -1,12 +1,22 @@
 /**
- * Type definitions for Leaf Disease Progression Engine (Feature #1 / TODO-107).
+ * Type definitions for Leaf Disease Progression Engine (Feature #1 / TODO-107 & SPEC-UI-007).
  * Corresponds to master database schema entities:
  * - diseases
  * - disease_progression_stages
  * - progression_visual_assets
  */
 
-export type CropId = 'tomato' | 'potato' | 'corn' | 'apple';
+export type CropId =
+  | 'tomato'
+  | 'potato'
+  | 'corn'
+  | 'apple'
+  | 'grape'
+  | 'pepper'
+  | 'peach'
+  | 'squash';
+
+export type SupportedCropId = CropId;
 
 export interface ProgressionAssetReference {
   base_image_url: string;
