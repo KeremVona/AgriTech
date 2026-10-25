@@ -9,6 +9,7 @@ import type { BaseLayer, TileStatus } from './FarmMapControls';
 import 'leaflet/dist/leaflet.css';
 import './farmMap.css';
 
+const maxZoom = 22;
 const layers = {
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -51,9 +52,9 @@ export function FarmMapContainer({ collection }: { collection: ParcelFeatureColl
 
   return (
     <div className="ag-map-surface" role="region" aria-label="Read-only farm parcel map">
-      <MapContainer className="ag-farm-map" center={[39, 35]} zoom={6} minZoom={2} maxZoom={22}
+      <MapContainer className="ag-farm-map" center={[39, 35]} zoom={6} minZoom={2} maxZoom={maxZoom}
         zoomControl={false} scrollWheelZoom>
-        <TileLayer key={`${baseLayer}-${attempt}`} {...active} eventHandlers={{
+        <TileLayer key={`${baseLayer}-${attempt}`} {...active} maxZoom={maxZoom} eventHandlers={{
           loading: () => setTileStatus((status) => status === 'error' ? status : 'loading'),
           load: () => setTileStatus((status) => status === 'error' ? status : 'ready'),
           tileerror: () => setTileStatus('error'),
