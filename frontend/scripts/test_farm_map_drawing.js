@@ -402,6 +402,11 @@ test('formatDrawingHudMetrics handles zero metrics safely', () => {
   assert.equal(result, '0.00 ha (0.00 acres) • 0 Vertices • Perimeter: 0m');
 });
 
+test('formatDrawingHudMetrics handles null or undefined metrics safely', () => {
+  assert.equal(formatDrawingHudMetrics(null), '0.00 ha (0.00 acres) • 0 Vertices • Perimeter: 0m');
+  assert.equal(formatDrawingHudMetrics(undefined), '0.00 ha (0.00 acres) • 0 Vertices • Perimeter: 0m');
+});
+
 // 10. getDrawingHudMicrocopy tests
 test('getDrawingHudMicrocopy prioritizes DRAWING_INVALID_KINK error prompt', () => {
   const kinkState = getDrawingHudMicrocopy('DRAWING_INVALID_KINK');

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import L from 'leaflet';
 import type { DrawingMode, DrawingState, ParcelMetrics } from '../../types/farmMapDrawing.ts';
 import { formatDrawingHudMetrics, getDrawingHudMicrocopy } from '../../utils/drawingHudPolicy.ts';
@@ -20,17 +20,15 @@ export function DrawingLiveAreaBadge({
   hasKinks = false,
   onCancel,
 }: DrawingLiveAreaBadgeProps): React.JSX.Element | null {
-  const containerRef = useRef<HTMLDivElement>(null);
   const currentMode = activeMode ?? mode ?? 'idle';
   const isKink = hasKinks || state === 'DRAWING_INVALID_KINK';
 
-  // Leaflet DOM isolation: stop click and scroll propagation so HUD interactions don't affect map
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    L.DomEvent.disableClickPropagation(el);
-    L.DomEvent.disableScrollPropagation(el);
+  // Leaflet DOM isolation: stop click and scroll propagation whenever DOM node mounts
+  const handleContainerRef = useCallback((el: HTMLElement | null) => {
+    if (el) {
+      L.DomEvent.disableClickPropagation(el);
+      L.DomEvent.disableScrollPropagation(el);
+    }
   }, []);
 
   // Hidden when map is idle and not active in any drawing/editing mode
@@ -42,7 +40,7 @@ export function DrawingLiveAreaBadge({
 
   return (
     <aside
-      ref={containerRef}
+      ref={handleContainerRef}
       className={`ag-drawing-hud absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-auto transition-all duration-200 select-none ${
         isKink
           ? 'ag-map-control-card border-red-300 bg-red-50/95 ring-1 ring-red-400/40 text-red-900 shadow-lg px-4 py-2.5 rounded-lg flex items-center gap-3'
@@ -102,7 +100,7 @@ export function DrawingLiveAreaBadge({
         <button
           type="button"
           onClick={onCancel}
-          className={`ml-2 text-xs px-2 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-1 font-medium ${
+          className={`ml-2 text-xs px-2 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-1 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-1 ${
             isKink
               ? 'border border-red-300 bg-red-100/70 text-red-800 hover:bg-red-200/80'
               : 'border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
