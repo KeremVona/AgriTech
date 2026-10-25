@@ -29,10 +29,7 @@ export function KinkMarkersLayer({ kinks }: KinkMarkersLayerProps): null {
 
     kinks.forEach(([first, second]) => {
       // Turf/GeoJSON provides [lng, lat]. Leaflet requires [lat, lng].
-      // Only swap if first is latitude and second is an out-of-bounds longitude (|second| > 90)
-      const isAlreadyLatLng = Math.abs(first) <= 90 && Math.abs(second) > 90;
-      const lat = isAlreadyLatLng ? first : second;
-      const lng = isAlreadyLatLng ? second : first;
+      const [lng, lat] = [first, second];
 
       const marker = L.marker([lat, lng], {
         icon: kinkIcon,
