@@ -1,28 +1,50 @@
 import { useState, useEffect } from 'react';
-import type { CropId, CropProgressionData, ProgressionStage, ProgressionManifest } from '../types/progression';
-import { getProgressionManifest, getCropProgression, resolveStageByPercentage } from '../services/progressionService';
+import type { SupportedCropId } from '../models/agronomicTimelineModel.ts';
+import type {
+  ExperimentalCropProgressionData,
+  ExperimentalProgressionManifest,
+} from '../services/progressionService.ts';
+import type { ProgressionStage } from '../types/progression.ts';
+import {
+  getExperimentalProgressionManifest,
+  getExperimentalCropProgression,
+  resolveExperimentalStage,
+} from '../services/progressionService.ts';
 
-interface UseProgressionDataResult {
-  manifest: ProgressionManifest | null;
-  cropData: CropProgressionData | null;
+export interface UseExperimentalProgressionDataResult {
+  manifest: ExperimentalProgressionManifest | null;
+  cropData: ExperimentalCropProgressionData | null;
   activeStage: ProgressionStage | null;
   loading: boolean;
   error: Error | null;
 }
 
 /**
- * Hook to consume disease progression assets and active stage based on selected crop and slider percentage.
+ * Hook to consume 8-crop disease progression assets and active stage.
  */
-export function useProgressionData(selectedCrop: CropId, sliderPercentage: number): UseProgressionDataResult {
-  const [manifest, setManifest] = useState<ProgressionManifest | null>(null);
-  const [cropData, setCropData] = useState<CropProgressionData | null>(null);
+export function useExperimentalProgressionData(
+  selectedCrop: SupportedCropId,
+  sliderPercentage: number
+): UseExperimentalProgressionDataResult {
+  const [manifest, setManifest] = useState<ExperimentalProgressionManifest | null>(null);
+  const [cropData, setCropData] = useState<ExperimentalCropProgressionData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const [prevCrop, setPrevCrop] = useState<SupportedCropId>(selectedCrop);
+
+  // React 19 pattern: sync loading state during render when input prop changes
+  if (prevCrop !== selectedCrop) {
+    setPrevCrop(selectedCrop);
+    setLoading(true);
+  }
 
   useEffect(() => {
     let isMounted = true;
 
-    Promise.all([getProgressionManifest(), getCropProgression(selectedCrop)])
+    Promise.all([
+      getExperimentalProgressionManifest(),
+      getExperimentalCropProgression(selectedCrop),
+    ])
       .then(([loadedManifest, loadedCrop]) => {
         if (isMounted) {
           setManifest(loadedManifest);
@@ -42,7 +64,9 @@ export function useProgressionData(selectedCrop: CropId, sliderPercentage: numbe
     };
   }, [selectedCrop]);
 
-  const activeStage = cropData ? resolveStageByPercentage(cropData.stages, sliderPercentage) : null;
+  const activeStage = cropData
+    ? resolveExperimentalStage(cropData.stages, sliderPercentage)
+    : null;
 
   return {
     manifest,
@@ -52,3 +76,6 @@ export function useProgressionData(selectedCrop: CropId, sliderPercentage: numbe
     error,
   };
 }
+
+export const useProgressionData = useExperimentalProgressionData;
+export type UseProgressionDataResult = UseExperimentalProgressionDataResult;
