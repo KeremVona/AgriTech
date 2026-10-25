@@ -142,6 +142,7 @@ export function ParcelMetadataDrawer({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
     const result = handleDrawerSubmit(formData);
     if (!result.success) {
       setErrors(result.errors);

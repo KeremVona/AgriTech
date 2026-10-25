@@ -34,6 +34,7 @@ export interface SoilDefinition {
 }
 
 export interface ParcelFormData {
+  id?: string | number;
   name: string;
   cropId: string;
   cropName: string;

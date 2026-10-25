@@ -571,3 +571,54 @@ test('mergeDrawnParcels reconciles newly created parcels into the collection', (
   assert.equal(merged.features[1].id, 'created-1');
   assert.equal(merged.features[1].properties.name, 'Newly Created Parcel');
 });
+
+test('saveParcel normalizes fieldId from options fallback when parcel.fieldId is absent', async () => {
+  let requestPayload = null;
+  const mockFetch = async (_url, init) => {
+    requestPayload = JSON.parse(String(init.body));
+    return new Response(JSON.stringify({ id: 'p-new-77' }), { status: 201 });
+  };
+
+  const parcelWithoutFieldId = {
+    name: 'Apple Orchard',
+    cropId: 'crop-apple',
+    cropName: 'Apple',
+    soilProfileId: 'silt',
+    soilProfileName: 'Silt',
+    plantingDate: '2026-03-01',
+  };
+
+  const feature = await saveParcel({
+    ...baseOptions,
+    mode: 'api',
+    parcel: parcelWithoutFieldId,
+    geometry: sampleGeometry,
+    areaHa: 1.8,
+    fieldId: 'fallback-field-42',
+    fetchImpl: mockFetch,
+  });
+
+  assert.equal(requestPayload.field_id, 'fallback-field-42');
+  assert.equal(feature.properties?.field_id, 'fallback-field-42');
+});
+
+test('updateParcelMetadata accepts MultiPolygon geometry and preserves it', async () => {
+  const multiPolyGeom = {
+    type: 'MultiPolygon',
+    coordinates: [
+      sampleGeometry.coordinates,
+    ],
+  };
+
+  const feature = await updateParcelMetadata({
+    ...baseOptions,
+    mode: 'sample',
+    parcelId: 'parcel-multi-1',
+    data: sampleParcelData,
+    geometry: multiPolyGeom,
+    areaHa: 3.2,
+  });
+
+  assert.equal(feature.geometry.type, 'MultiPolygon');
+  assert.equal(feature.properties?.area_hectares, 3.2);
+});

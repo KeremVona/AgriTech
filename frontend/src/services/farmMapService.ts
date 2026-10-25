@@ -22,13 +22,13 @@ function generateParcelId(): string {
   return `parcel-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function buildOptimisticFeature(
+function buildOptimisticFeature<G extends GeoJSON.Polygon | GeoJSON.MultiPolygon = GeoJSON.Polygon | GeoJSON.MultiPolygon>(
   id: string,
   parcel: ParcelFormData,
-  geometry: GeoJSON.Polygon,
+  geometry: G,
   areaHa: number,
   fieldId?: string | null
-): GeoJSON.Feature<GeoJSON.Polygon> {
+): GeoJSON.Feature<G> {
   const payload = buildParcelCreatePayload(parcel, geometry, areaHa);
   return {
     type: 'Feature',
@@ -130,8 +130,9 @@ export async function saveParcel(options: {
   } = options;
 
   if (signal?.aborted) throw callerAbort();
+  const effectiveParcel = { ...parcel, fieldId: parcel.fieldId ?? fieldId ?? null };
   if (mode === 'sample') {
-    return buildOptimisticFeature(generateParcelId(), parcel, geometry, areaHa, fieldId);
+    return buildOptimisticFeature(generateParcelId(), effectiveParcel, geometry, areaHa, effectiveParcel.fieldId);
   }
 
   const controller = new AbortController();
@@ -150,7 +151,7 @@ export async function saveParcel(options: {
     const request = async (): Promise<GeoJSON.Feature<GeoJSON.Polygon>> => {
       let response: Response;
       const url = `${apiBaseUrl.replace(/\/$/, '')}/${parcelsPath.replace(/^\//, '')}`;
-      const payload = buildParcelCreatePayload(parcel, geometry, areaHa);
+      const payload = buildParcelCreatePayload(effectiveParcel, geometry, areaHa);
 
       try {
         response = await fetchImpl(url, {
@@ -186,14 +187,14 @@ export async function saveParcel(options: {
         return json;
       }
       const respId = String(json?.id ?? generateParcelId());
-      return buildOptimisticFeature(respId, { ...parcel, ...(json?.properties ?? json) }, geometry, areaHa, fieldId);
+      return buildOptimisticFeature(respId, { ...effectiveParcel, ...(json?.properties ?? json) }, geometry, areaHa, effectiveParcel.fieldId);
     };
 
     return await Promise.race([request(), cancelled]);
   } catch (error) {
     if (signal?.aborted) throw callerAbort();
     if (mode === 'auto' && error instanceof AvailabilityError) {
-      return buildOptimisticFeature(generateParcelId(), parcel, geometry, areaHa, fieldId);
+      return buildOptimisticFeature(generateParcelId(), effectiveParcel, geometry, areaHa, effectiveParcel.fieldId);
     }
     throw error;
   } finally {
@@ -209,11 +210,11 @@ export async function updateParcelMetadata(options: {
   mode: GisDataMode;
   parcelId: string;
   data: ParcelFormData;
-  geometry?: GeoJSON.Polygon;
+  geometry?: GeoJSON.Polygon | GeoJSON.MultiPolygon;
   areaHa?: number;
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
-}): Promise<GeoJSON.Feature<GeoJSON.Polygon>> {
+}): Promise<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> {
   const {
     apiBaseUrl,
     parcelsPath,
@@ -227,7 +228,7 @@ export async function updateParcelMetadata(options: {
   } = options;
 
   if (signal?.aborted) throw callerAbort();
-  const effectiveGeom: GeoJSON.Polygon = geometry ?? { type: 'Polygon', coordinates: [] };
+  const effectiveGeom: GeoJSON.Polygon | GeoJSON.MultiPolygon = geometry ?? { type: 'Polygon', coordinates: [] };
   const effectiveArea = areaHa ?? (data as any).area_hectares ?? 0;
 
   if (mode === 'sample') {
@@ -247,7 +248,7 @@ export async function updateParcelMetadata(options: {
   }, 5000);
 
   try {
-    const request = async (): Promise<GeoJSON.Feature<GeoJSON.Polygon>> => {
+    const request = async (): Promise<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> => {
       let response: Response;
       const url = `${apiBaseUrl.replace(/\/$/, '')}/${parcelsPath.replace(/^\//, '')}/${encodeURIComponent(parcelId)}`;
       const payload = buildParcelCreatePayload(data, effectiveGeom, effectiveArea);

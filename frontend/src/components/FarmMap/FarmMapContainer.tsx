@@ -37,7 +37,7 @@ function ParcelLayer({
 }: {
   collection: ParcelFeatureCollection;
   selectedParcelId?: string | number | null;
-  onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon>) => void;
+  onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>) => void;
 }) {
   const layer = useRef<L.GeoJSON>(null);
   const onParcelSelectRef = useRef(onParcelSelect);
@@ -104,7 +104,7 @@ export interface FarmMapContainerProps {
   collection: ParcelFeatureCollection;
   editable?: boolean;
   selectedParcelId?: string | number | null;
-  onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon>) => void;
+  onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>) => void;
   onPolygonComplete?: (feature: GeoJSON.Feature<GeoJSON.Polygon>, metrics: ParcelMetrics) => void;
   onPolygonDelete?: (parcelId: string | number) => void;
 }
