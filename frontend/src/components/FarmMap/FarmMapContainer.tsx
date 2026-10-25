@@ -40,6 +40,11 @@ function ParcelLayer({
   onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon>) => void;
 }) {
   const layer = useRef<L.GeoJSON>(null);
+  const onParcelSelectRef = useRef(onParcelSelect);
+
+  useEffect(() => {
+    onParcelSelectRef.current = onParcelSelect;
+  }, [onParcelSelect]);
 
   const styleFunction = useCallback(
     (feature: any) => resolveParcelFeatureStyle(feature, selectedParcelId),
@@ -50,7 +55,7 @@ function ParcelLayer({
     featureLayer.on({
       click: (e) => {
         L.DomEvent.stopPropagation(e);
-        onParcelSelect?.(feature);
+        onParcelSelectRef.current?.(feature);
       },
     });
   };
@@ -65,8 +70,23 @@ function ParcelLayer({
   useEffect(() => {
     if (layer.current) {
       layer.current.setStyle(styleFunction as any);
+      layer.current.eachLayer((subLayer: any) => {
+        const el = subLayer.getElement?.();
+        if (el && subLayer.feature) {
+          const featId = subLayer.feature.id ?? subLayer.feature.properties?.id;
+          const isSelected =
+            selectedParcelId !== undefined &&
+            selectedParcelId !== null &&
+            String(featId) === String(selectedParcelId);
+          if (isSelected) {
+            L.DomUtil.addClass(el, 'ag-parcel-polygon-selected');
+          } else {
+            L.DomUtil.removeClass(el, 'ag-parcel-polygon-selected');
+          }
+        }
+      });
     }
-  }, [styleFunction]);
+  }, [styleFunction, selectedParcelId]);
 
   return (
     <GeoJSON

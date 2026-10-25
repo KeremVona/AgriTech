@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Marker, useMap } from 'react-leaflet';
 import type { ParcelFeatureCollection } from '../../types/farmMap.ts';
@@ -10,8 +10,8 @@ export interface ParcelCentroidLabelsLayerProps {
   onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon>) => void;
 }
 
-function escapeHtml(str: string): string {
-  return str
+function escapeHtml(str: unknown): string {
+  return String(str ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -35,6 +35,11 @@ export function ParcelCentroidLabelsLayer({
 }: ParcelCentroidLabelsLayerProps): React.JSX.Element | null {
   const map = useMap();
   const [zoom, setZoom] = useState(() => map.getZoom());
+  const onParcelSelectRef = useRef(onParcelSelect);
+
+  useEffect(() => {
+    onParcelSelectRef.current = onParcelSelect;
+  }, [onParcelSelect]);
 
   // Ensure dedicated z-index: 500 pane exists for centroid labels
   if (!map.getPane('parcelCentroidPane')) {
@@ -114,14 +119,8 @@ export function ParcelCentroidLabelsLayer({
               },
               click: (e) => {
                 L.DomEvent.stopPropagation(e);
-                if (onParcelSelect) {
-                  const feature = collection.features.find((f: any) => {
-                    const fid = f.id ?? f.properties?.id;
-                    return fid !== undefined && fid !== null && String(fid) === String(item.id);
-                  });
-                  if (feature) {
-                    onParcelSelect(feature as GeoJSON.Feature<GeoJSON.Polygon>);
-                  }
+                if (onParcelSelectRef.current && item.feature) {
+                  onParcelSelectRef.current(item.feature as GeoJSON.Feature<GeoJSON.Polygon>);
                 }
               },
             }}

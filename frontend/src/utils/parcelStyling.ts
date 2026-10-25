@@ -9,8 +9,8 @@ export interface ParcelFeatureStyle {
   fillOpacity: number;
   opacity: number;
   className: string;
-  stroke?: boolean;
-  fill?: boolean;
+  stroke?: boolean | string;
+  fill?: boolean | string;
 }
 
 export interface ParcelCentroidData {
@@ -24,6 +24,7 @@ export interface ParcelCentroidData {
   soil: string;
   soilName: string;
   palette: CropPalette;
+  feature: any;
 }
 
 /**
@@ -145,6 +146,7 @@ export function extractParcelCentroidData(
       soil,
       soilName,
       palette,
+      feature,
     };
   });
 }

@@ -197,6 +197,7 @@ test('extractParcelCentroidData accurately pairs each feature in FeatureCollecti
   assert.equal(potato.crop, 'Potato');
   assert.equal(potato.areaHa, 3.85);
   assert.equal(potato.soil, 'Clay');
+  assert.equal(potato.feature, potatoFeature);
   assert.equal(typeof potato.lat, 'number');
   assert.equal(typeof potato.lng, 'number');
 
@@ -205,12 +206,14 @@ test('extractParcelCentroidData accurately pairs each feature in FeatureCollecti
   assert.equal(tomato.crop, 'Tomato');
   assert.equal(tomato.areaHa, 1.25);
   assert.equal(tomato.soil, 'Sandy Loam');
+  assert.equal(tomato.feature, tomatoFeature);
 
   const unassigned = items[2];
   assert.equal(unassigned.name, 'Plot 3 East');
   assert.equal(unassigned.crop, 'Unassigned');
   assert.equal(unassigned.areaHa, 0.95);
   assert.equal(unassigned.soil, 'Unspecified');
+  assert.equal(unassigned.feature, unassignedFeature);
 });
 
 test('extractParcelCentroidData matches calculatePolygonCentroid calculation', () => {
