@@ -137,5 +137,140 @@ for (const [name, coordinates] of [
   test(`rejects ${name}`, () => assert.throws(() => parseParcelCollection(collection(feature({ type: 'MultiPolygon', coordinates }))), /parcel|coordinate|ring/i));
 }
 
+async function testAsync(name, run) {
+  tests++;
+  try {
+    await run();
+    console.log(`PASS ${name}`);
+  } catch (error) {
+    failures++;
+    console.error(`FAIL ${name}: ${error.message}`);
+  }
+}
+
+const { loadParcelMapData } = await import('../src/services/farmMapService.ts');
+const options = { apiBaseUrl: 'http://localhost:5051/', parcelsPath: '/api/v1/spatial/geojson/parcels', mode: 'auto' };
+const response = (body = collection(feature()), status = 200) => new Response(JSON.stringify(body), { status });
+const load = (fetchImpl, extra = {}) => loadParcelMapData({ ...options, fetchImpl, ...extra });
+
+await testAsync('loads live parcels and canonical metadata from the configured endpoint', async () => {
+  const data = await load(async (url, init) => {
+    assert.equal(url, 'http://localhost:5051/api/v1/spatial/geojson/parcels');
+    assert.ok(init.signal instanceof AbortSignal);
+    assert.equal(init.headers.Accept, 'application/geo+json, application/json');
+    return response();
+  });
+  assert.equal(data.source, 'api');
+  assert.equal(data.fallbackReason, null);
+  assert.equal(data.collection.features[0].properties.id, 'parcel-1');
+  assert.equal(data.collection.features[0].properties.crop_name, null);
+});
+await testAsync('keeps successful empty data live in auto mode', async () => {
+  assert.deepEqual(await load(async () => response(collection())), {
+    source: 'api', fallbackReason: null, collection: collection(),
+  });
+});
+await testAsync('sample mode makes no request and returns two adjacent fictional parcels', async () => {
+  const data = await load(() => assert.fail('sample mode must not fetch'), { mode: 'sample' });
+  assert.equal(data.source, 'sample');
+  assert.equal(data.fallbackReason, null);
+  assert.equal(data.collection.features.length, 2);
+  const [west, east] = data.collection.features;
+  assert.match(west.properties.id, /^[0-9a-f-]{36}$/);
+  assert.notEqual(west.properties.id, east.properties.id);
+  assert.equal(west.properties.field_name, 'Fictional Konya Demo Farm');
+  assert.equal(west.properties.field_id, east.properties.field_id);
+  assert.equal(west.geometry.coordinates[0][1][0], east.geometry.coordinates[0][0][0]);
+  assert.deepEqual(parseParcelCollection(data.collection), data.collection);
+  const live = await load(async () => response(data.collection));
+  assert.deepEqual(live.collection, data.collection);
+  assert.equal(live.source, 'api');
+});
+for (const status of [404, 500, 501, 503, 599]) {
+  await testAsync(`auto falls back for availability HTTP ${status}`, async () => {
+    const data = await load(async () => response(null, status));
+    assert.equal(data.source, 'sample');
+    assert.match(data.fallbackReason, new RegExp(String(status)));
+    assert.equal(data.collection.features.length, 2);
+  });
+  await testAsync(`api mode rejects HTTP ${status} without sample fallback`, async () => {
+    await assert.rejects(load(async () => response(null, status), { mode: 'api' }), new RegExp(String(status)));
+  });
+}
+for (const status of [400, 401, 403, 408, 409, 422, 429]) {
+  await testAsync(`auto rejects hard HTTP ${status}`, async () => {
+    await assert.rejects(load(async () => response(null, status)), new RegExp(String(status)));
+  });
+}
+await testAsync('network failure falls back only in auto mode with an explicit reason', async () => {
+  const offline = async () => { throw new TypeError('Failed to fetch'); };
+  const data = await load(offline);
+  assert.equal(data.source, 'sample');
+  assert.match(data.fallbackReason, /network|unreachable/i);
+  await assert.rejects(load(offline, { mode: 'api' }), /network|unreachable/i);
+});
+await testAsync('invalid JSON and malformed contracts stay errors', async () => {
+  await assert.rejects(load(async () => new Response('{broken')), /JSON|Unexpected|Expected/i);
+  await assert.rejects(load(async () => response({ type: 'FeatureCollection', features: [feature(), feature(null)] })), /geometry/i);
+  await assert.rejects(load(async () => ({ ok: true, json: async () => { throw new TypeError('body failed'); } })), /body failed/);
+});
+await testAsync('retry replaces sample parcels atomically with recovered live data', async () => {
+  const sample = await load(async () => response(null, 503));
+  const live = await load(async () => response());
+  assert.equal(sample.source, 'sample');
+  assert.equal(live.source, 'api');
+  assert.deepEqual(live.collection.features.map((item) => item.properties.id), ['parcel-1']);
+  assert.equal(live.fallbackReason, null);
+});
+await testAsync('timeout ends even an uncooperative fetch at 5000ms and cleans resources', async () => {
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const timers = new Map();
+  globalThis.setTimeout = (callback, ms) => { assert.equal(ms, 5000); timers.set(1, callback); return 1; };
+  globalThis.clearTimeout = (id) => timers.delete(id);
+  try {
+    for (const mode of ['auto', 'api']) {
+      const pending = load(() => new Promise(() => {}), { mode });
+      timers.get(1)();
+      if (mode === 'auto') {
+        const data = await pending;
+        assert.equal(data.source, 'sample');
+        assert.match(data.fallbackReason, /5000|5,000/);
+      } else {
+        await assert.rejects(pending, /5000|5,000/);
+      }
+      assert.equal(timers.size, 0);
+    }
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+});
+await testAsync('caller cancellation never produces samples and removes its listener', async () => {
+  const controller = new AbortController();
+  let listeners = 0;
+  const add = controller.signal.addEventListener.bind(controller.signal);
+  const remove = controller.signal.removeEventListener.bind(controller.signal);
+  controller.signal.addEventListener = (...args) => { listeners++; return add(...args); };
+  controller.signal.removeEventListener = (...args) => { listeners--; return remove(...args); };
+  const pending = load(() => new Promise(() => {}), { signal: controller.signal });
+  controller.abort('navigation');
+  await assert.rejects(pending, { name: 'AbortError' });
+  assert.equal(listeners, 0);
+  await assert.rejects(load(() => assert.fail('pre-aborted request must not fetch'), { signal: controller.signal }), { name: 'AbortError' });
+});
+await testAsync('successful and rejected requests remove caller listeners', async () => {
+  for (const fetchImpl of [async () => response(), async () => response(null, 401), async () => response(null, 503)]) {
+    const controller = new AbortController();
+    let listeners = 0;
+    const add = controller.signal.addEventListener.bind(controller.signal);
+    const remove = controller.signal.removeEventListener.bind(controller.signal);
+    controller.signal.addEventListener = (...args) => { listeners++; return add(...args); };
+    controller.signal.removeEventListener = (...args) => { listeners--; return remove(...args); };
+    await load(fetchImpl, { signal: controller.signal }).catch(() => {});
+    assert.equal(listeners, 0);
+  }
+});
+
 assert.equal(failures, 0, `${failures} of ${tests} farm map data tests failed`);
 console.log(`All ${tests} farm map data tests passed.`);
