@@ -214,6 +214,19 @@ await testAsync('invalid JSON and malformed contracts stay errors', async () => 
   await assert.rejects(load(async () => response({ type: 'FeatureCollection', features: [feature(), feature(null)] })), /geometry/i);
   await assert.rejects(load(async () => ({ ok: true, json: async () => { throw new TypeError('body failed'); } })), /body failed/);
 });
+await testAsync('unexpected non-5xx HTTP statuses do not enable fallback', async () => {
+  for (const status of [302, 600]) {
+    await assert.rejects(load(async () => ({ ok: false, status })), new RegExp(String(status)));
+  }
+});
+await testAsync('sample results cannot mutate subsequent loads', async () => {
+  const first = await load(() => assert.fail('must not fetch'), { mode: 'sample' });
+  first.collection.features[0].properties.name = 'Changed by consumer';
+  first.collection.features[0].geometry.coordinates[0][0][0] = 0;
+  const next = await load(() => assert.fail('must not fetch'), { mode: 'sample' });
+  assert.equal(next.collection.features[0].properties.name, 'Demo west parcel');
+  assert.deepEqual(next.collection.features[0].geometry.coordinates[0][0], [32.6, 38]);
+});
 await testAsync('retry replaces sample parcels atomically with recovered live data', async () => {
   const sample = await load(async () => response(null, 503));
   const live = await load(async () => response());
@@ -269,6 +282,34 @@ await testAsync('successful and rejected requests remove caller listeners', asyn
     controller.signal.removeEventListener = (...args) => { listeners--; return remove(...args); };
     await load(fetchImpl, { signal: controller.signal }).catch(() => {});
     assert.equal(listeners, 0);
+  }
+});
+await testAsync('timeouts cover stalled response bodies and caller abort still cancels silently', async () => {
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const timers = new Map();
+  globalThis.setTimeout = (callback) => { timers.set(1, callback); return 1; };
+  globalThis.clearTimeout = (id) => timers.delete(id);
+  const stalledBody = async () => ({ ok: true, json: () => new Promise(() => {}) });
+  try {
+    const timeoutRequest = load(stalledBody);
+    await Promise.resolve();
+    timers.get(1)();
+    assert.equal((await timeoutRequest).source, 'sample');
+    assert.equal(timers.size, 0);
+    const controller = new AbortController();
+    const abortRequest = load(stalledBody, { signal: controller.signal });
+    await Promise.resolve();
+    controller.abort();
+    await assert.rejects(abortRequest, { name: 'AbortError' });
+    assert.equal(timers.size, 0);
+    for (const fetchImpl of [async () => response(), async () => response(null, 403), async () => response(null, 503), async () => new Response('{')]) {
+      await load(fetchImpl).catch(() => {});
+      assert.equal(timers.size, 0, 'every completion path must clear its timer');
+    }
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
   }
 });
 

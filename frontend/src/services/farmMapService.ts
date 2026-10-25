@@ -50,7 +50,7 @@ export async function loadParcelMapData(options: {
       }
       if (!response.ok) {
         const message = `Live parcel request failed (HTTP ${response.status}).`;
-        if (response.status === 404 || response.status >= 500) throw new AvailabilityError(message);
+        if (response.status === 404 || (response.status >= 500 && response.status < 600)) throw new AvailabilityError(message);
         throw new Error(message);
       }
       // JSON and contract failures are hard errors, even if they throw TypeError.
