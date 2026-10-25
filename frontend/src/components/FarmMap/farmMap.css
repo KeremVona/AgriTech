@@ -286,3 +286,121 @@
   .ag-map-navigation button:active:not(:disabled), .ag-drawing-tool-btn:active:not(:disabled) { transform: none; }
   .ag-kink-marker-pulse { animation: none; opacity: 0.4; }
 }
+/* --- Parcel Centroid Badges & Micro-Tooltips (TODO-209) --- */
+
+.leaflet-pane.leaflet-parcelCentroid-pane,
+.ag-parcel-tooltip-pane {
+  z-index: 500 !important;
+}
+
+.ag-parcel-div-icon {
+  background: transparent !important;
+  border: none !important;
+  overflow: visible !important;
+}
+
+.ag-parcel-tooltip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 500;
+  pointer-events: auto;
+  user-select: none;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 120ms ease-out, box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.ag-parcel-tooltip:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14);
+  border-color: rgba(148, 163, 184, 0.9);
+}
+
+.ag-parcel-tooltip-selected {
+  border-color: #0F766E;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.25), 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.ag-parcel-tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.2;
+}
+
+.ag-parcel-crop-dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.ag-parcel-tooltip-title {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  color: #1E293B;
+  letter-spacing: -0.01em;
+}
+
+.ag-parcel-tooltip-subtitle {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 10px;
+  font-weight: 400;
+  color: #64748B;
+  margin-top: 2px;
+  padding-left: 14px;
+  line-height: 1.2;
+}
+
+.ag-parcel-dot-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  min-height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 120ms ease-out, box-shadow 150ms ease;
+}
+
+.ag-parcel-dot-badge:hover {
+  transform: translate(-50%, -50%) scale(1.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.ag-parcel-dot-badge-selected {
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Selected polygon outline halo & transition */
+.ag-parcel-polygon {
+  cursor: pointer;
+  transition: stroke-width 150ms ease, stroke 150ms ease, filter 150ms ease;
+}
+
+.ag-parcel-polygon:hover {
+  stroke-width: 2.5px;
+}
+
+.ag-parcel-polygon-selected {
+  stroke-width: 3px !important;
+  filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 2px rgba(15, 23, 42, 0.25));
+}

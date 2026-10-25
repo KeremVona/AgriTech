@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type L from 'leaflet';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import L from 'leaflet';
+import { resolveParcelFeatureStyle } from '../../utils/parcelStyling.ts';
+import { ParcelCentroidLabelsLayer } from './ParcelCentroidLabelsLayer.tsx';
 import { GeoJSON, MapContainer, TileLayer } from 'react-leaflet';
 import type { ParcelFeatureCollection } from '../../types/farmMap.ts';
 import type { DrawingMode, DrawingState, ParcelMetrics } from '../../types/farmMapDrawing.ts';
@@ -28,20 +30,61 @@ const layers = {
     maxNativeZoom: 19,
   },
 };
-const parcelStyle = { color: '#0F766E', weight: 2, fillColor: '#0F766E', fillOpacity: 0.18 };
-
-function ParcelLayer({ collection }: { collection: ParcelFeatureCollection }) {
+function ParcelLayer({
+  collection,
+  selectedParcelId,
+  onParcelSelect,
+}: {
+  collection: ParcelFeatureCollection;
+  selectedParcelId?: string | number | null;
+  onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon>) => void;
+}) {
   const layer = useRef<L.GeoJSON>(null);
+
+  const styleFunction = useCallback(
+    (feature: any) => resolveParcelFeatureStyle(feature, selectedParcelId),
+    [selectedParcelId],
+  );
+
+  const onEachFeature = (feature: any, featureLayer: L.Layer) => {
+    featureLayer.on({
+      click: (e) => {
+        L.DomEvent.stopPropagation(e);
+        onParcelSelect?.(feature);
+      },
+    });
+  };
+
   useEffect(() => {
-    layer.current?.clearLayers();
-    layer.current?.addData(collection);
+    if (layer.current) {
+      layer.current.clearLayers();
+      layer.current.addData(collection);
+    }
   }, [collection]);
-  return <GeoJSON ref={layer} data={collection} style={parcelStyle} interactive={false} />;
+
+  useEffect(() => {
+    if (layer.current) {
+      layer.current.setStyle(styleFunction as any);
+    }
+  }, [styleFunction]);
+
+  return (
+    <GeoJSON
+      key={collection.features.length}
+      ref={layer}
+      data={collection}
+      style={styleFunction as any}
+      onEachFeature={onEachFeature}
+      interactive={true}
+    />
+  );
 }
 
 export interface FarmMapContainerProps {
   collection: ParcelFeatureCollection;
   editable?: boolean;
+  selectedParcelId?: string | number | null;
+  onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon>) => void;
   onPolygonComplete?: (feature: GeoJSON.Feature<GeoJSON.Polygon>, metrics: ParcelMetrics) => void;
   onPolygonDelete?: (parcelId: string | number) => void;
 }
@@ -49,6 +92,8 @@ export interface FarmMapContainerProps {
 export function FarmMapContainer({
   collection,
   editable = true,
+  selectedParcelId,
+  onParcelSelect,
   onPolygonComplete,
   onPolygonDelete,
 }: FarmMapContainerProps): React.JSX.Element {
@@ -143,7 +188,16 @@ export function FarmMapContainer({
             tileerror: () => setTileStatus('error'),
           }}
         />
-        <ParcelLayer collection={collection} />
+        <ParcelLayer
+          collection={collection}
+          selectedParcelId={selectedParcelId}
+          onParcelSelect={onParcelSelect}
+        />
+        <ParcelCentroidLabelsLayer
+          collection={collection}
+          selectedParcelId={selectedParcelId}
+          onParcelSelect={onParcelSelect}
+        />
         <FarmMapViewport bounds={bounds} fitRequest={fitRequest} />
         <FarmMapControls
           baseLayer={baseLayer}

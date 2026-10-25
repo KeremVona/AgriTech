@@ -75,3 +75,14 @@ export {
 export {
   calculatePolygonCentroid,
 } from '../utils/parcelCentroid.ts';
+
+export type {
+  ParcelFeatureStyle,
+  ParcelCentroidData,
+} from '../utils/parcelStyling.ts';
+
+export {
+  resolveParcelFeatureStyle,
+  extractParcelCentroidData,
+} from '../utils/parcelStyling.ts';
+
