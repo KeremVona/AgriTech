@@ -15,7 +15,7 @@ The client application powers farm managers and field workers with interactive s
 
 ## GIS Field Map (`/map`)
 
-Delivered in **TODO-207** and **TODO-208**, the Field GIS Map provides responsive boundary visualization and interactive vector polygon drawing for farm parcels:
+Delivered in **TODO-207**, **TODO-208**, and **TODO-209**, the Field GIS Map provides responsive boundary visualization, interactive vector polygon drawing, and sliding metadata registration for farm parcels:
 
 ### Routes
 - `/map` — Main interactive farm map canvas displaying all loaded field parcels.
@@ -70,10 +70,48 @@ Delivered in **TODO-207** and **TODO-208**, the Field GIS Map provides responsiv
     - Hard submission lockout: Self-intersecting polygons cannot be completed or saved until uncrossed.
 - **Keyboard Accessibility**:
   - Global `[ESC]` key shortcut immediately aborts in-progress drawing, editing, dragging, or deletion and returns map state to idle.
-- **Workspace State Management & TODO-209 Readiness**:
+- **Workspace State Management & TODO-209 Integration**:
   - Optimistic in-memory parcel merging into active GeoJSON collection with field-scoping preservation.
   - Temporary parcel IDs and canonical `ParcelMapProperties` stamping (`area_hectares`, `area_ha`, `field_id`).
-  - Clean handoff boundary for TODO-209 metadata registration (sliding drawer, crop taxonomy, and backend persistence).
+  - Seamless handoff between vector drawing completion and metadata drawer presentation.
+
+### Parcel Metadata Drawer & Agronomic Attributes (TODO-209)
+- **Sliding Parcel Metadata Drawer (`<ParcelMetadataDrawer />`)**:
+  - **Motion Engineering**: Apple fluid spring kinematics (`cubic-bezier(0.16, 1, 0.3, 1)` over 320ms duration).
+  - **Responsive Shell**:
+    - **Desktop (≥768px)**: Fixed right-docked sliding panel (`w-[440px]`, `z-[1201]`, `h-full`) with accessible header, close/back button, and scrollable content body.
+    - **Mobile (<768px)**: Modal bottom sheet (`max-h-[88vh]`, `z-[1201]`, rounded top corners) with tactile grab handle (`w-36px h-4px`) and safe-area padding (`env(safe-area-inset-bottom)`).
+  - **Backdrop Overlay**: Frosted dark backdrop (`z-[1200]`, `rgba(15, 23, 42, 0.45)`, `backdrop-blur(2px)`) with click-to-dismiss behavior.
+  - **Accessibility & Focus**: Focus trapping within drawer dialog, auto-focus on parcel name field upon opening, and global `[ESC]` dismissal. Input fields enforce 16px minimum font size on mobile to prevent iOS Safari auto-zooming.
+  - **Geometry Metrics Summary**: Live banner displaying computed area in hectares, acres, perimeter in meters, and vertex count.
+  - **Form Controls & Domain Fields**:
+    - **Parcel Name**: Required text input with real-time whitespace and length validation.
+    - **Crop Selector (`<CropSelector />`)**: Visual radio card grid featuring 4 canonical crops (`Tomato`, `Corn`, `Potato`, `Apple`) with distinct emoji, botanical family badges (`Solanaceae`, `Poaceae`), and active palette borders.
+    - **Soil Texture Profile (`<SoilSelector />`)**: 4 canonical soil textures (`Clay`, `Loam`, `Sandy Loam`, `Silt Loam`) displaying volumetric field capacity (θ_FC) and agronomic descriptions.
+    - **Planting Date & DAP Badge**: Date picker with live calculation of Days After Planting (DAP) and phenological growth stage badge (`Vegetative`, `Reproductive`, `Mature`, or `Future`).
+- **Dynamic Crop Color Categorization (`CROP_PALETTES`)**:
+  - Distinct agronomic color palettes mapped dynamically across vector polygon boundaries:
+    - **Tomato**: `#10B981` (Emerald) — Stroke `#10B981`, Fill `rgba(16, 185, 129, 0.18)`
+    - **Corn** (*Zea mays*): `#F59E0B` (Amber) — Stroke `#F59E0B`, Fill `rgba(245, 158, 11, 0.18)`
+    - **Potato**: `#8B5CF6` (Purple) — Stroke `#8B5CF6`, Fill `rgba(139, 92, 246, 0.18)`
+    - **Apple**: `#EC4899` (Rose/Pink) — Stroke `#EC4899`, Fill `rgba(236, 72, 153, 0.18)`
+    - **Unassigned / Fallback**: `#0F766E` (Bio-Teal) — Stroke `#0F766E`, Fill `rgba(15, 118, 110, 0.18)`
+  - **Selected Polygon State**: High-contrast 3px stroke with dedicated white/accent outline (`farm-map-parcel-selected`) to clearly distinguish the active parcel during inspection or editing.
+- **Persistent Centroid Tooltip Micro-Badges (`<ParcelCentroidLabelsLayer />`)**:
+  - **Polygon Centroid Mathematics**: Implements signed area center-of-mass formula (`calculatePolygonCentroid`) to accurately place labels at the true geometric center of arbitrary convex and concave polygon boundaries.
+  - **Zoom Density Threshold**: Micro-badges automatically toggle density based on map zoom:
+    - **Zoom ≥ 14**: Detailed micro-badges rendered at parcel centroids displaying crop emoji, crop name, parcel title, and computed area (e.g. `🍅 Tomato • North Field (1.45 ha)`).
+    - **Zoom < 14**: Badges declutter or hide to avoid visual collisions when viewing regional or farm-wide extents.
+  - **Synchronized Interaction**: Clicking a centroid badge selects the parcel and opens the `<ParcelMetadataDrawer />` in edit mode.
+- **Spatial CRUD API & Offline Resilience (`spatialCrudService.ts`)**:
+  - **Endpoints & Operations**:
+    - `saveParcel` — Creates new parcel boundary with metadata (`POST /api/v1/spatial/parcels`).
+    - `updateParcelMetadata` — Updates attributes of an existing parcel (`PUT /api/v1/spatial/parcels/:id`).
+    - `deleteParcelBoundary` — Deletes parcel boundary and metadata (`DELETE /api/v1/spatial/parcels/:id`).
+  - **Resilient Policy Matrix**:
+    - `auto` (Default): Attempts live backend API calls. On HTTP 5xx, HTTP 404, or network timeout, automatically generates an optimistic RFC 7946 GeoJSON Feature, stores it locally, and alerts the user with an informational toast. Rejects 4xx client errors without fallback.
+    - `api`: Strict production mode with zero fallback; bubbles errors to user toast.
+    - `sample`: Immediate zero-latency local state mutation without network requests.
 
 ---
 
@@ -140,7 +178,7 @@ Build output will be placed in `dist/`.
 The frontend employs unit test suites, static analysis, and type checking:
 
 ```powershell
-# Run GIS Field Map test suite (126 tests: geometry, bounds, service policies, routing, drawing topology, HUD policies)
+# Run GIS Field Map test suite (217 tests: geometry, bounds, service policies, routing, drawing topology, HUD policies, metadata policies, styling tokens, drawer state, and spatial CRUD)
 npm run test:map
 
 # Run static linter (oxlint)
