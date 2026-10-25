@@ -85,12 +85,12 @@ export function Navbar() {
           >
             FAO-56 Irrigation
           </a>
-          <a
-            href="/#features"
+          <Link
+            to="/map"
             className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
           >
             Field GIS
-          </a>
+          </Link>
         </nav>
 
         {/* Right: Actions */}
@@ -162,13 +162,13 @@ export function Navbar() {
           >
             FAO-56 Irrigation
           </a>
-          <a
-            href="/#features"
+          <Link
+            to="/map"
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800/70"
           >
             Field GIS
-          </a>
+          </Link>
         </div>
       )}
     </header>
