@@ -32,3 +32,9 @@ export {
   getDrawingState,
   extractCoordinates,
 } from '../utils/drawingState.ts';
+
+export {
+  formatDrawingHudMetrics,
+  getDrawingHudMicrocopy,
+  canSubmitPolygon,
+} from '../utils/drawingHudPolicy.ts';
