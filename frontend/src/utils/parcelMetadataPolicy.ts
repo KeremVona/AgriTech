@@ -136,10 +136,10 @@ export const SOILS: SoilDefinition[] = [
  *
  * Growth Stages:
  * - days < 0: Pre-Planting (Upcoming)
- * - 0 <= days <= 25: Early / Germination
- * - 26 <= days <= 60: Development Stage
- * - 61 <= days <= 100: Mid-Season / Flowering
- * - days > 100: Late / Maturity
+ * - 0 <= days <= 20: Early / Germination
+ * - 21 <= days <= 60: Development Stage
+ * - 61 <= days <= 90: Mid-Season / Flowering
+ * - days > 90: Late / Maturity
  *
  * @param plantingDate Planting date string in 'YYYY-MM-DD' format.
  * @param referenceDate Optional reference date (defaults to current date).
@@ -183,7 +183,7 @@ export function calculateDap(
     };
   }
 
-  if (days <= 25) {
+  if (days <= 20) {
     return {
       days,
       stage: 'Early / Germination',
@@ -199,7 +199,7 @@ export function calculateDap(
     };
   }
 
-  if (days <= 100) {
+  if (days <= 90) {
     return {
       days,
       stage: 'Mid-Season / Flowering',
@@ -332,33 +332,44 @@ export function validateParcelForm(
 
 /**
  * Constructs an RFC 7946 GeoJSON compliant parcel creation DTO payload.
+ * Supports both canonical names (cropId, cropName, soilProfileId, soilProfileName)
+ * and shorthand fields (crop, soil).
  */
 export function buildParcelCreatePayload(
   data: ParcelFormData,
   geometry: any,
   areaHa: number,
 ): Record<string, any> {
+  const cropValue = (data.cropId || data.cropName || data.crop || '').trim().toLowerCase();
   const matchedCrop = CROPS.find(
     (c) =>
-      c.id.toLowerCase() === (data.cropId || '').trim().toLowerCase() ||
-      c.name.toLowerCase() === (data.cropName || '').trim().toLowerCase() ||
-      c.category.toLowerCase() === (data.cropName || '').trim().toLowerCase(),
+      c.id.toLowerCase() === cropValue ||
+      c.name.toLowerCase() === cropValue ||
+      c.commonName.toLowerCase() === cropValue ||
+      c.category.toLowerCase() === cropValue ||
+      c.scientificName.toLowerCase() === cropValue,
   );
 
+  const soilValue = (data.soilProfileId || data.soilProfileName || data.soil || '').trim().toLowerCase();
   const matchedSoil = SOILS.find(
     (s) =>
-      s.id.toLowerCase() === (data.soilProfileId || '').trim().toLowerCase() ||
-      s.name.toLowerCase() === (data.soilProfileName || '').trim().toLowerCase() ||
-      s.type.toLowerCase() === (data.soilProfileName || '').trim().toLowerCase(),
+      s.id.toLowerCase() === soilValue ||
+      s.name.toLowerCase() === soilValue ||
+      s.type.toLowerCase() === soilValue,
   );
+
+  const cropId = data.cropId || matchedCrop?.id || data.crop || '';
+  const cropName = data.cropName || matchedCrop?.name || matchedCrop?.commonName || data.crop || '';
+  const soilProfileId = data.soilProfileId || matchedSoil?.id || data.soil || '';
+  const soilProfileName = data.soilProfileName || matchedSoil?.name || matchedSoil?.type || data.soil || '';
 
   return {
     field_id: data.fieldId ?? null,
     name: data.name,
-    crop_id: data.cropId || matchedCrop?.id || '',
-    crop_name: data.cropName || matchedCrop?.name || '',
-    soil_profile_id: data.soilProfileId || matchedSoil?.id || '',
-    soil_profile_name: data.soilProfileName || matchedSoil?.name || '',
+    crop_id: cropId,
+    crop_name: cropName,
+    soil_profile_id: soilProfileId,
+    soil_profile_name: soilProfileName,
     planting_date: data.plantingDate,
     area_hectares: areaHa,
     irrigation_method: 'DRIP',
