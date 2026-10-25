@@ -74,6 +74,8 @@ export function FarmMapDrawingManager({
     }
   }, [map]);
 
+  const isInternalSyncRef = useRef(false);
+
   // Reactive Geoman mode synchronization
   useEffect(() => {
     if (!map || !(map as any).pm) return;
@@ -82,11 +84,16 @@ export function FarmMapDrawingManager({
     const container = map.getContainer();
 
     const disableAllGeomanModes = () => {
-      if (typeof pm.disableDraw === 'function') pm.disableDraw();
-      if (typeof pm.disableGlobalEditMode === 'function') pm.disableGlobalEditMode();
-      if (typeof pm.disableGlobalDragMode === 'function') pm.disableGlobalDragMode();
-      if (typeof pm.disableGlobalRemovalMode === 'function') pm.disableGlobalRemovalMode();
-      container.classList.remove('ag-map-drawing-active');
+      isInternalSyncRef.current = true;
+      try {
+        if (typeof pm.disableDraw === 'function') pm.disableDraw();
+        if (typeof pm.disableGlobalEditMode === 'function') pm.disableGlobalEditMode();
+        if (typeof pm.disableGlobalDragMode === 'function') pm.disableGlobalDragMode();
+        if (typeof pm.disableGlobalRemovalMode === 'function') pm.disableGlobalRemovalMode();
+        container.classList.remove('ag-map-drawing-active');
+      } finally {
+        isInternalSyncRef.current = false;
+      }
     };
 
     if (!enabled) {
@@ -97,9 +104,14 @@ export function FarmMapDrawingManager({
     switch (activeMode) {
       case 'draw':
         // Disable other modes first
-        if (typeof pm.disableGlobalEditMode === 'function') pm.disableGlobalEditMode();
-        if (typeof pm.disableGlobalDragMode === 'function') pm.disableGlobalDragMode();
-        if (typeof pm.disableGlobalRemovalMode === 'function') pm.disableGlobalRemovalMode();
+        isInternalSyncRef.current = true;
+        try {
+          if (typeof pm.disableGlobalEditMode === 'function') pm.disableGlobalEditMode();
+          if (typeof pm.disableGlobalDragMode === 'function') pm.disableGlobalDragMode();
+          if (typeof pm.disableGlobalRemovalMode === 'function') pm.disableGlobalRemovalMode();
+        } finally {
+          isInternalSyncRef.current = false;
+        }
 
         container.classList.add('ag-map-drawing-active');
         if (typeof pm.enableDraw === 'function') {
@@ -113,9 +125,14 @@ export function FarmMapDrawingManager({
         break;
 
       case 'edit':
-        if (typeof pm.disableDraw === 'function') pm.disableDraw();
-        if (typeof pm.disableGlobalDragMode === 'function') pm.disableGlobalDragMode();
-        if (typeof pm.disableGlobalRemovalMode === 'function') pm.disableGlobalRemovalMode();
+        isInternalSyncRef.current = true;
+        try {
+          if (typeof pm.disableDraw === 'function') pm.disableDraw();
+          if (typeof pm.disableGlobalDragMode === 'function') pm.disableGlobalDragMode();
+          if (typeof pm.disableGlobalRemovalMode === 'function') pm.disableGlobalRemovalMode();
+        } finally {
+          isInternalSyncRef.current = false;
+        }
 
         container.classList.remove('ag-map-drawing-active');
         if (typeof pm.enableGlobalEditMode === 'function') {
@@ -128,9 +145,14 @@ export function FarmMapDrawingManager({
         break;
 
       case 'drag':
-        if (typeof pm.disableDraw === 'function') pm.disableDraw();
-        if (typeof pm.disableGlobalEditMode === 'function') pm.disableGlobalEditMode();
-        if (typeof pm.disableGlobalRemovalMode === 'function') pm.disableGlobalRemovalMode();
+        isInternalSyncRef.current = true;
+        try {
+          if (typeof pm.disableDraw === 'function') pm.disableDraw();
+          if (typeof pm.disableGlobalEditMode === 'function') pm.disableGlobalEditMode();
+          if (typeof pm.disableGlobalRemovalMode === 'function') pm.disableGlobalRemovalMode();
+        } finally {
+          isInternalSyncRef.current = false;
+        }
 
         container.classList.remove('ag-map-drawing-active');
         if (typeof pm.enableGlobalDragMode === 'function') {
@@ -139,9 +161,14 @@ export function FarmMapDrawingManager({
         break;
 
       case 'delete':
-        if (typeof pm.disableDraw === 'function') pm.disableDraw();
-        if (typeof pm.disableGlobalEditMode === 'function') pm.disableGlobalEditMode();
-        if (typeof pm.disableGlobalDragMode === 'function') pm.disableGlobalDragMode();
+        isInternalSyncRef.current = true;
+        try {
+          if (typeof pm.disableDraw === 'function') pm.disableDraw();
+          if (typeof pm.disableGlobalEditMode === 'function') pm.disableGlobalEditMode();
+          if (typeof pm.disableGlobalDragMode === 'function') pm.disableGlobalDragMode();
+        } finally {
+          isInternalSyncRef.current = false;
+        }
 
         container.classList.remove('ag-map-drawing-active');
         if (typeof pm.enableGlobalRemovalMode === 'function') {
@@ -173,8 +200,10 @@ export function FarmMapDrawingManager({
 
     const handleDrawEnd = () => {
       container.classList.remove('ag-map-drawing-active');
-      // If draw was cancelled or ended by Geoman, sync React state back to 'idle'
-      callbacksRef.current.onModeChange('idle');
+      // If draw was cancelled or ended by Geoman (not internal React sync), sync React state back to 'idle'
+      if (!isInternalSyncRef.current) {
+        callbacksRef.current.onModeChange('idle');
+      }
     };
 
     const handleCreate = (e: any) => {
@@ -238,6 +267,15 @@ export function FarmMapDrawingManager({
 
         const validation = validateParcelTopology(coords);
         callbacksRef.current.onKinksChange?.(validation.kinks);
+      } else {
+        callbacksRef.current.onMetricsUpdate?.({
+          areaM2: 0,
+          areaHa: 0,
+          acres: 0,
+          perimeterM: 0,
+          vertexCount: 0,
+        });
+        callbacksRef.current.onKinksChange?.([]);
       }
     };
 

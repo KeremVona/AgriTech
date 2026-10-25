@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import L from 'leaflet';
 import type { DrawingMode } from '../../types/farmMapDrawing.ts';
 import { toggleDrawingMode, cancelDrawingMode } from '../../utils/drawingState.ts';
 
@@ -15,25 +16,13 @@ export function DrawingToolbar({
 }: DrawingToolbarProps): React.JSX.Element {
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Stop Leaflet event propagation so clicking toolbar controls never triggers map panning or layer clicks
+  // Stop Leaflet event and scroll propagation so clicking/scrolling over toolbar controls never triggers map zooming, panning, or layer clicks
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;
 
-    const stopPropagation = (e: Event) => e.stopPropagation();
-    el.addEventListener('mousedown', stopPropagation);
-    el.addEventListener('pointerdown', stopPropagation);
-    el.addEventListener('touchstart', stopPropagation);
-    el.addEventListener('dblclick', stopPropagation);
-    el.addEventListener('click', stopPropagation);
-
-    return () => {
-      el.removeEventListener('mousedown', stopPropagation);
-      el.removeEventListener('pointerdown', stopPropagation);
-      el.removeEventListener('touchstart', stopPropagation);
-      el.removeEventListener('dblclick', stopPropagation);
-      el.removeEventListener('click', stopPropagation);
-    };
+    L.DomEvent.disableClickPropagation(el);
+    L.DomEvent.disableScrollPropagation(el);
   }, []);
 
   // Keyboard accessibility: Escape key cancels active drawing/editing
