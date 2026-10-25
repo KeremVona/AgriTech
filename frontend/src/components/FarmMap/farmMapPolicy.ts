@@ -10,7 +10,7 @@ export function getFitOptions(width: number, height: number, safeBottom: number,
   const mobile = width < 1024;
   return {
     paddingTopLeft: (mobile ? [36, Math.min(76, height / 4)] : [48, 48]) as [number, number],
-    paddingBottomRight: (mobile ? [84, Math.min(252 + safeBottom, height / 2)] : [48, 48]) as [number, number],
+    paddingBottomRight: (mobile ? [84, Math.min(280 + safeBottom, height / 2)] : [48, 48]) as [number, number],
     maxZoom: 18, animate: !reducedMotion, duration: 0.8,
   };
 }

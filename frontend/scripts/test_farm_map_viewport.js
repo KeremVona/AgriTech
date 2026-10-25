@@ -14,7 +14,7 @@ assert.deepEqual(getFitOptions(1200, 700, 0, false), {
   paddingTopLeft: [48, 48], paddingBottomRight: [48, 48], maxZoom: 18, animate: true, duration: 0.8,
 });
 const mobile = getFitOptions(390, 700, 34, false);
-assert.ok(mobile.paddingBottomRight[1] >= 72 + 34 + 144);
+assert.ok(mobile.paddingBottomRight[1] >= 112 + 34 + 144, 'frame clears attribution, safe area and navigation dock');
 assert.ok(mobile.paddingBottomRight[0] >= 48);
 assert.equal(getFitOptions(390, 700, 0, true).animate, false);
 const landscape = getFitOptions(700, 250, 0, false);
