@@ -18,6 +18,7 @@
     "test:canvas": "node --experimental-strip-types scripts/test_canvas_stage.js",
     "test:assembly": "node --experimental-strip-types scripts/test_production_assembly.js",
     "test:diagnostics": "node --experimental-strip-types scripts/test_diagnostics_validation.js",
+    "test:map": "node --experimental-strip-types scripts/test_farm_map_data.js",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -28,6 +29,7 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
