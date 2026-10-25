@@ -6,7 +6,7 @@
 **Phase:** Phase 2 — Spatial Foundation, GIS & Relational Data Layer  
 **Branch:** `feat/frontend-todo207-farm-map-core`  
 **Base Commit:** `b6be602`  
-**Commit Range:** `28b1712..6235b63`  
+**Commit Range:** `28b1712..f2e35c1`  
 **Spec References:** `design/SPATIAL_PARCEL_BOUNDARY_SPEC.md` (`SPEC-UI-008`), `PROJECT_DETAILS/Phase Plans/Phase 2.md` (TODO-207)  
 **Foundations:** `design/FOUNDATIONS.md`, `design/MOTION_AND_INTERACTION.md`, `design/MOBILE_AND_OUTDOOR_SPEC.md`
 
