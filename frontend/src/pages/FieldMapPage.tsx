@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FarmMapContainer } from '../components/FarmMap/FarmMapContainer.tsx';
+import { ParcelMetadataDrawer } from '../components/FarmMap/ParcelMetadataDrawer.tsx';
 import { useFarmMapData } from '../hooks/useFarmMapData.ts';
+import {
+  deleteParcelBoundary,
+  saveParcel,
+  updateParcelMetadata,
+} from '../services/farmMapService.ts';
 import type { ParcelFeatureCollection, ParcelMapData } from '../types/farmMap.ts';
 import type { ParcelMetrics } from '../types/farmMapDrawing.ts';
+import type { ParcelFormData } from '../types/parcelMetadata.ts';
 import {
   createDrawnParcelFeature,
   filterParcelsByField,
@@ -12,8 +19,10 @@ import {
   mergeDrawnParcels,
   removeDrawnParcel,
   resolveFarmMapConfig,
+  updateParcelInCollection,
 } from '../utils/farmMapPage.ts';
 import type { FarmMapConfig } from '../utils/farmMapPage.ts';
+import { calculateParcelMetrics } from '../utils/parcelTopology.ts';
 import './fieldMapPage.css';
 
 const configuration = resolveFarmMapConfig({
@@ -29,19 +38,34 @@ type MapViewProps = {
   loading: boolean;
   error: string | null;
   reload: () => void;
+  config?: FarmMapConfig;
   explicitSample?: boolean;
   configurationError?: boolean;
 };
 
-function FieldMapView({ data, loading, error, reload, explicitSample = false, configurationError = false }: MapViewProps) {
+function FieldMapView({
+  data,
+  loading,
+  error,
+  reload,
+  config,
+  explicitSample = false,
+  configurationError = false,
+}: MapViewProps) {
   const { fieldId } = useParams<{ fieldId: string }>();
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDetailsElement>(null);
 
-  // Vector drawing state for TODO-208
+  // Vector drawing & spatial CRUD state machine for TODO-208 and TODO-209
   const [drawnParcels, setDrawnParcels] = useState<GeoJSON.Feature<GeoJSON.Polygon>[]>([]);
+  const [parcelOverrides, setParcelOverrides] = useState<Record<string, Partial<ParcelFormData>>>({});
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [feedbackNotice, setFeedbackNotice] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
+  const [selectedParcel, setSelectedParcel] = useState<GeoJSON.Feature<GeoJSON.Polygon> | null>(null);
   const [pendingParcel, setPendingParcel] = useState<{ feature: GeoJSON.Feature<GeoJSON.Polygon>; metrics: ParcelMetrics } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -53,7 +77,28 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, []);
 
-  const collection = data?.collection ?? emptyCollection;
+  const collection = useMemo(() => {
+    const base = data?.collection ?? emptyCollection;
+    if (Object.keys(parcelOverrides).length === 0 && deletedIds.size === 0) {
+      return base;
+    }
+    let current = base;
+    if (deletedIds.size > 0) {
+      current = {
+        ...current,
+        features: current.features.filter((f) => {
+          const fId = f.id !== undefined && f.id !== null ? String(f.id) : null;
+          const pId = f.properties?.id !== undefined && f.properties?.id !== null ? String(f.properties.id) : null;
+          return (!fId || !deletedIds.has(fId)) && (!pId || !deletedIds.has(pId));
+        }),
+      };
+    }
+    for (const [id, overrides] of Object.entries(parcelOverrides)) {
+      current = updateParcelInCollection(current, id, overrides);
+    }
+    return current;
+  }, [data?.collection, parcelOverrides, deletedIds]);
+
   const fields = useMemo(() => getLoadedFields(collection), [collection]);
   const scopedCollection = useMemo(() => filterParcelsByField(collection, fieldId), [collection, fieldId]);
 
@@ -61,11 +106,70 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
     return mergeDrawnParcels(scopedCollection, drawnParcels, fieldId);
   }, [scopedCollection, drawnParcels, fieldId]);
 
+  const selectedParcelId = useMemo(() => {
+    if (!selectedParcel) return null;
+    return selectedParcel.properties?.id ?? selectedParcel.id ?? null;
+  }, [selectedParcel]);
+
+  const drawerMetrics = useMemo(() => {
+    if (drawerMode === 'create') {
+      return pendingParcel?.metrics ?? null;
+    }
+    if (drawerMode === 'edit' && selectedParcel?.geometry?.type === 'Polygon') {
+      const coords = selectedParcel.geometry.coordinates?.[0];
+      if (Array.isArray(coords) && coords.length >= 3) {
+        return calculateParcelMetrics(coords as [number, number][]);
+      }
+    }
+    return null;
+  }, [drawerMode, pendingParcel, selectedParcel]);
+
+  const drawerInitialData = useMemo(() => {
+    if (drawerMode === 'create') {
+      if (!pendingParcel) return null;
+      return {
+        name: pendingParcel.feature.properties?.name || '',
+        fieldId: pendingParcel.feature.properties?.field_id ?? fieldId ?? null,
+      };
+    }
+    if (drawerMode === 'edit' && selectedParcel) {
+      const p = selectedParcel.properties;
+      return {
+        name: p?.name || '',
+        cropId: p?.crop_id || '',
+        cropName: p?.crop_name || '',
+        crop: p?.crop_name || '',
+        soilProfileId: p?.soil_profile_id || '',
+        soilProfileName: p?.soil_profile_name || '',
+        soil: p?.soil_profile_name || '',
+        plantingDate: p?.planting_date || '',
+        fieldId: p?.field_id ?? null,
+      };
+    }
+    return null;
+  }, [drawerMode, pendingParcel, selectedParcel, fieldId]);
+
   const handlePolygonComplete = (feature: GeoJSON.Feature<GeoJSON.Polygon>, metrics: ParcelMetrics) => {
     const preparedFeature = createDrawnParcelFeature(feature, metrics, fieldId);
     setDrawnParcels((prev) => [...prev, preparedFeature]);
     setPendingParcel({ feature: preparedFeature, metrics });
+    setSelectedParcel(preparedFeature);
+    setDrawerMode('create');
+    setIsDrawerOpen(true);
     setFeedbackNotice(formatParcelFeedback('complete', metrics));
+  };
+
+  const handleParcelSelect = (feature: GeoJSON.Feature<GeoJSON.Polygon>) => {
+    if (drawerMode === 'create' && pendingParcel) {
+      const pendingId = pendingParcel.feature.id ?? pendingParcel.feature.properties?.id;
+      if (pendingId !== undefined && pendingId !== null) {
+        setDrawnParcels((prev) => removeDrawnParcel(prev, pendingId));
+      }
+      setPendingParcel(null);
+    }
+    setSelectedParcel(feature);
+    setDrawerMode('edit');
+    setIsDrawerOpen(true);
   };
 
   const handlePolygonDelete = (parcelId: string | number) => {
@@ -89,8 +193,140 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
       }
       return curr;
     });
+    if (selectedParcel) {
+      const targetStr = String(parcelId);
+      const selIdStr = selectedParcel.id !== undefined && selectedParcel.id !== null ? String(selectedParcel.id) : null;
+      const selPropIdStr = selectedParcel.properties?.id !== undefined && selectedParcel.properties?.id !== null ? String(selectedParcel.properties.id) : null;
+      if (selIdStr === targetStr || selPropIdStr === targetStr) {
+        setSelectedParcel(null);
+        setIsDrawerOpen(false);
+      }
+    }
     if (wasDeleted) {
       setFeedbackNotice(formatParcelFeedback('delete'));
+    }
+  };
+
+  const handleDrawerDiscard = () => {
+    if (drawerMode === 'create' && pendingParcel) {
+      const pendingId = pendingParcel.feature.id ?? pendingParcel.feature.properties?.id;
+      if (pendingId !== undefined && pendingId !== null) {
+        setDrawnParcels((prev) => removeDrawnParcel(prev, pendingId));
+      }
+      setPendingParcel(null);
+    }
+    setSelectedParcel(null);
+    setIsDrawerOpen(false);
+  };
+
+  const handleDrawerSave = async (formData: ParcelFormData) => {
+    setIsSaving(true);
+    try {
+      const effectiveConfig = config ?? configuration.config ?? {
+        apiBaseUrl: 'http://localhost:5051',
+        parcelsPath: '/api/v1/spatial/geojson/parcels',
+        mode: 'auto',
+      };
+
+      if (drawerMode === 'create' && pendingParcel) {
+        const saved = await saveParcel({
+          apiBaseUrl: effectiveConfig.apiBaseUrl,
+          parcelsPath: effectiveConfig.parcelsPath,
+          mode: effectiveConfig.mode,
+          parcel: formData,
+          geometry: pendingParcel.feature.geometry,
+          areaHa: pendingParcel.metrics.areaHa,
+          fieldId: formData.fieldId ?? fieldId ?? null,
+        });
+
+        const pendingId = pendingParcel.feature.id ?? pendingParcel.feature.properties?.id;
+        setDrawnParcels((prev) => {
+          const filtered = pendingId !== undefined && pendingId !== null
+            ? removeDrawnParcel(prev, pendingId)
+            : prev;
+          return [...filtered, saved];
+        });
+
+        setPendingParcel(null);
+        setSelectedParcel(null);
+        setIsDrawerOpen(false);
+        setFeedbackNotice(formatParcelFeedback('register'));
+      } else if (drawerMode === 'edit' && selectedParcel) {
+        const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
+        const areaHa = selectedParcel.properties?.area_hectares ?? 0;
+
+        await updateParcelMetadata({
+          apiBaseUrl: effectiveConfig.apiBaseUrl,
+          parcelsPath: effectiveConfig.parcelsPath,
+          mode: effectiveConfig.mode,
+          parcelId: targetId,
+          data: formData,
+          geometry: selectedParcel.geometry,
+          areaHa,
+        });
+
+        setDrawnParcels((prev) =>
+          updateParcelInCollection(
+            { type: 'FeatureCollection', features: prev } as ParcelFeatureCollection,
+            targetId,
+            formData
+          ).features as GeoJSON.Feature<GeoJSON.Polygon>[]
+        );
+
+        setParcelOverrides((prev) => ({
+          ...prev,
+          [targetId]: formData,
+        }));
+
+        setSelectedParcel(null);
+        setIsDrawerOpen(false);
+        setFeedbackNotice(formatParcelFeedback('update'));
+      }
+    } catch (err: any) {
+      setFeedbackNotice({
+        type: 'info',
+        message: `Failed to save parcel: ${err?.message ?? 'Unknown error'}`,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDrawerDelete = async () => {
+    if (!selectedParcel) return;
+    const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
+    setIsSaving(true);
+    try {
+      const effectiveConfig = config ?? configuration.config ?? {
+        apiBaseUrl: 'http://localhost:5051',
+        parcelsPath: '/api/v1/spatial/geojson/parcels',
+        mode: 'auto',
+      };
+
+      await deleteParcelBoundary({
+        apiBaseUrl: effectiveConfig.apiBaseUrl,
+        parcelsPath: effectiveConfig.parcelsPath,
+        mode: effectiveConfig.mode,
+        parcelId: targetId,
+      });
+
+      setDrawnParcels((prev) => removeDrawnParcel(prev, targetId));
+      setDeletedIds((prev) => {
+        const next = new Set(prev);
+        next.add(targetId);
+        return next;
+      });
+
+      setSelectedParcel(null);
+      setIsDrawerOpen(false);
+      setFeedbackNotice(formatParcelFeedback('delete'));
+    } catch (err: any) {
+      setFeedbackNotice({
+        type: 'info',
+        message: `Failed to delete parcel: ${err?.message ?? 'Unknown error'}`,
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -107,11 +343,23 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
     {!explicitSample && <button type="button" className="ag-field-map-button" onClick={reload} disabled={loading}>{retryLabel}</button>}
   </>;
 
+  const noticeTitle =
+    feedbackNotice?.type === 'info'
+      ? 'Parcel Removed'
+      : feedbackNotice?.message.includes('registered')
+      ? 'Parcel Registered'
+      : feedbackNotice?.message.includes('updated')
+      ? 'Parcel Updated'
+      : 'Parcel Boundary Recorded';
+
   return (
     <div
       className="ag-field-map-page"
       data-fallback={data?.fallbackReason ? true : undefined}
       data-pending-parcel={pendingParcel ? String(pendingParcel.feature.id) : undefined}
+      data-selected-parcel={selectedParcel ? String(selectedParcel.properties?.id ?? selectedParcel.id) : undefined}
+      data-drawer-open={isDrawerOpen ? true : undefined}
+      data-drawer-mode={isDrawerOpen ? drawerMode : undefined}
     >
       <header className="ag-field-map-header">
         <Link to="/" className={`ag-field-map-button ag-field-map-home${explicitSample ? '' : ' ag-field-map-desktop-home'}`} aria-label="AgriTech home" title="Home">←</Link>
@@ -157,8 +405,20 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
         <FarmMapContainer
           collection={activeCollection}
           editable
+          selectedParcelId={selectedParcelId}
+          onParcelSelect={handleParcelSelect}
           onPolygonComplete={handlePolygonComplete}
           onPolygonDelete={handlePolygonDelete}
+        />
+        <ParcelMetadataDrawer
+          isOpen={isDrawerOpen}
+          mode={drawerMode}
+          initialData={drawerInitialData}
+          metrics={drawerMetrics}
+          onSave={handleDrawerSave}
+          onDiscard={handleDrawerDiscard}
+          onDelete={drawerMode === 'edit' ? handleDrawerDelete : undefined}
+          isSaving={isSaving}
         />
         <div className="ag-field-map-notices">
           {feedbackNotice && (
@@ -169,7 +429,7 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
             >
               <div className="ag-field-map-notice-content">
                 <div>
-                  <h2>{feedbackNotice.type === 'success' ? 'Parcel Boundary Recorded' : 'Parcel Removed'}</h2>
+                  <h2>{noticeTitle}</h2>
                   <p>{feedbackNotice.message}</p>
                 </div>
                 <button
@@ -203,7 +463,7 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
 
 function LoadedFieldMap({ config }: { config: FarmMapConfig }) {
   const state = useFarmMapData(config);
-  return <FieldMapView {...state} explicitSample={config.mode === 'sample'} />;
+  return <FieldMapView {...state} config={config} explicitSample={config.mode === 'sample'} />;
 }
 
 export function FieldMapPage(): React.JSX.Element {
