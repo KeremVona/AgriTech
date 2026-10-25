@@ -26,7 +26,7 @@ export function calculatePolygonCentroid(
       ? (coordinates[0] as [number, number][])
       : (coordinates as [number, number][]);
 
-  if (!ring || ring.length === 0) {
+  if (!ring || !ring[0] || ring[0].length < 2) {
     return { lng: 0, lat: 0 };
   }
 

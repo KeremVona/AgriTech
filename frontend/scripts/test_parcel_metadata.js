@@ -81,6 +81,37 @@ test('calculateDap handles 120 days ago as Late / Maturity', () => {
   });
 });
 
+test('calculateDap validates exact growth stage threshold boundaries', () => {
+  const refDate = new Date('2026-05-27T00:00:00Z');
+
+  // Day 20 (Early / Germination) vs Day 21 (Development Stage)
+  const day20 = calculateDap('2026-05-07', refDate);
+  assert.equal(day20.days, 20);
+  assert.equal(day20.stage, 'Early / Germination');
+
+  const day21 = calculateDap('2026-05-06', refDate);
+  assert.equal(day21.days, 21);
+  assert.equal(day21.stage, 'Development Stage');
+
+  // Day 60 (Development Stage) vs Day 61 (Mid-Season / Flowering)
+  const day60 = calculateDap('2026-03-28', refDate);
+  assert.equal(day60.days, 60);
+  assert.equal(day60.stage, 'Development Stage');
+
+  const day61 = calculateDap('2026-03-27', refDate);
+  assert.equal(day61.days, 61);
+  assert.equal(day61.stage, 'Mid-Season / Flowering');
+
+  // Day 90 (Mid-Season / Flowering) vs Day 91 (Late / Maturity)
+  const day90 = calculateDap('2026-02-26', refDate);
+  assert.equal(day90.days, 90);
+  assert.equal(day90.stage, 'Mid-Season / Flowering');
+
+  const day91 = calculateDap('2026-02-25', refDate);
+  assert.equal(day91.days, 91);
+  assert.equal(day91.stage, 'Late / Maturity');
+});
+
 test('calculateDap returns Date required for invalid, malformed or empty date strings', () => {
   const refDate = new Date('2026-05-27T00:00:00Z');
   assert.deepEqual(calculateDap('', refDate), {
@@ -309,6 +340,10 @@ test('calculatePolygonCentroid safely falls back to coordinate mean for collinea
 
   // Empty coordinates
   assert.deepEqual(calculatePolygonCentroid([]), { lng: 0, lat: 0 });
+
+  // Malformed nested empty arrays
+  assert.deepEqual(calculatePolygonCentroid([[]]), { lng: 0, lat: 0 });
+  assert.deepEqual(calculatePolygonCentroid([[[]]]), { lng: 0, lat: 0 });
 });
 
 // -----------------------------------------------------------------------------
@@ -349,6 +384,34 @@ test('buildParcelCreatePayload produces RFC 7946 compliant parcel creation DTO',
   assert.equal(payload.planting_date, '2026-04-15');
   assert.equal(payload.area_hectares, 2.45);
   assert.deepEqual(payload.geometry, geometry);
+});
+
+test('buildParcelCreatePayload resolves shorthand crop and soil fields', () => {
+  const shorthandData = {
+    name: 'Shorthand Parcel',
+    crop: 'Tomato',
+    soil: 'Sandy Loam',
+    plantingDate: '2026-05-01',
+  };
+  const geometry = {
+    type: 'Polygon',
+    coordinates: [
+      [
+        [27.14, 38.42],
+        [27.16, 38.42],
+        [27.16, 38.44],
+        [27.14, 38.44],
+        [27.14, 38.42],
+      ],
+    ],
+  };
+  const payload = buildParcelCreatePayload(shorthandData, geometry, 1.5);
+  assert.equal(payload.name, 'Shorthand Parcel');
+  assert.equal(payload.crop_id, 'crop-tomato');
+  assert.equal(payload.crop_name, 'Tomato');
+  assert.equal(payload.soil_profile_id, 'sandy_loam');
+  assert.equal(payload.soil_profile_name, 'Sandy Loam');
+  assert.equal(payload.area_hectares, 1.5);
 });
 
 // -----------------------------------------------------------------------------
