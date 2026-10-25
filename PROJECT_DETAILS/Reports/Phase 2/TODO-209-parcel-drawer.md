@@ -6,7 +6,7 @@
 **Phase:** Phase 2 — Spatial Foundation, GIS & Relational Data Layer  
 **Branch:** `feat/front/todo209`  
 **Base Commit:** `a411193`  
-**Commit Range:** `7cee182..e3cf822`  
+**Commit Range:** `a411193..d40dfdb`  
 **Spec References:** `design/SPATIAL_PARCEL_BOUNDARY_SPEC.md` (`SPEC-UI-008`), Sections 4 and 5; `PROJECT_DETAILS/Phase Plans/Phase 2.md` (TODO-209)  
 **Foundations:** `design/FOUNDATIONS.md`, `design/MOTION_AND_INTERACTION.md`, `design/MOBILE_AND_OUTDOOR_SPEC.md`
 
@@ -22,19 +22,19 @@ Within the drawer, operators record essential agricultural metadata:
 - **Parcel Identification:** Standardized parcel naming with real-time validation.
 - **Crop Taxonomy Selector (`<CropSelector />`):** Visual card grid featuring 4 canonical crop species (`Tomato`, `Corn`, `Potato`, `Apple`) accompanied by high-contrast emoji badges, botanical families (`Solanaceae`, `Poaceae`), and active palette accents.
 - **Soil Texture Profile (`<SoilSelector />`):** Volumetric field capacity ($\theta_{\text{FC}}$) and soil texture classification (`Clay`, `Loam`, `Sandy Loam`, `Silt Loam`) directly informing downstream evapotranspiration and irrigation models.
-- **Phenological Staging & Planting Date:** Interactive date picker with automatic calculation of Days After Planting (DAP) and phenological growth stage categorization (`Vegetative`, `Reproductive`, `Mature`, or `Future`).
+- **Phenological Staging & Planting Date:** Interactive date picker with automatic calculation of Days After Planting (DAP) and phenological growth stage categorization (`Pre-Planting`, `Early / Germination`, `Development Stage`, `Mid-Season / Flowering`, or `Late / Maturity`).
 - **Live Geodesic Metrics:** Real-time calculation and display of surface area in hectares and acres, perimeter in meters, and vertex count.
 
 On the map canvas, parcels are dynamically rendered using dedicated **Crop Categorization Palettes** (`CROP_PALETTES`), transitioning from generic Bio-Teal boundaries into vibrant, semantically meaningful agricultural polygons (Emerald for Tomato, Amber for Corn, Purple for Potato, and Rose for Apple), with high-contrast outlines for selected parcels. At parcel geometric centers, **Persistent Centroid Micro-Badges** (`<ParcelCentroidLabelsLayer />`) display crop icons, names, and area metrics at high zoom levels ($\ge 14$) with click-to-inspect synchronization, while cleanly decluttering at farm overview scales ($< 14$).
 
-All spatial mutations—creation, attribute updates, and boundary deletions—are governed by the decoupled `spatialCrudService.ts`. Adhering to the platform's multi-mode runtime strategy (`auto`, `api`, `sample`), the service guarantees robust offline and network resilience by providing immediate optimistic UI updates during network or server outages while enforcing strict RFC 7946 GeoJSON schema validation.
+All spatial mutations—creation, attribute updates, and boundary deletions—are governed by the decoupled `farmMapService.ts`. Adhering to the platform's multi-mode runtime strategy (`auto`, `api`, `sample`), the service guarantees robust offline and network resilience by providing immediate optimistic UI updates during network or server outages while enforcing strict RFC 7946 GeoJSON schema validation.
 
 ### Key Capabilities Delivered:
 1. **Sliding Parcel Metadata Drawer (`<ParcelMetadataDrawer />`):** 440px desktop side dock and responsive mobile bottom sheet with Apple spring kinematics (320ms, `cubic-bezier(0.16, 1, 0.3, 1)`), backdrop blur overlay (`z-[1200]`), focus trapping, and ESC dismissal.
 2. **Accessible Agronomic Domain Form:** Parcel name validation, visual Crop Selector grid with botanical taxonomy, Soil Profile Selector with field capacity ($\theta_{\text{FC}}$) metrics, and planting date picker with live Days After Planting (DAP) badge.
 3. **Dynamic Crop Color Categorization (`CROP_PALETTES`):** Distinct agricultural theme tokens (Tomato `#10B981`, Corn `#F59E0B`, Potato `#8B5CF6`, Apple `#EC4899`, Fallback `#0F766E`), selected parcel highlight outlines, and GeoJSON style resolution.
 4. **Persistent Centroid Tooltip Micro-Badges (`<ParcelCentroidLabelsLayer />`):** Mathematical signed-area centroid calculation algorithm, zoom density thresholding (Zoom $\ge 14$ vs $< 14$), and two-way drawer selection synchronization.
-5. **Spatial CRUD Persistence Engine (`spatialCrudService.ts`):** Full lifecycle management (`saveParcel`, `updateParcelMetadata`, `deleteParcelBoundary`) supporting `auto`, `api`, and `sample` runtime policies with resilient offline fallback.
+5. **Spatial CRUD Persistence Engine (`farmMapService.ts`):** Full lifecycle management (`saveParcel`, `updateParcelMetadata`, `deleteParcelBoundary`) supporting `auto`, `api`, and `sample` runtime policies with resilient offline fallback.
 6. **Strict Z-Index Layer Stack Compliance:** Comprehensive z-index coordination preventing UI occlusion across Map Tiles (0), GeoJSON Boundaries (400), Drawing Vector Layer (450), Centroid Labels (500), Drawing HUD & Toolbar (1000), Drawer Backdrop (1200), Drawer Panel (1201), and Notifications (1300).
 7. **Pure Functional Test Architecture:** All mathematical policies, formatting logic, state transitions, and CRUD fallbacks isolated into pure functional modules, enabling all 217 map test cases to execute in Node in under 150ms without JSDOM.
 
@@ -45,10 +45,10 @@ All spatial mutations—creation, attribute updates, and boundary deletions—ar
 | Acceptance Criterion | Requirement | Implementation & Verification | Status |
 | :--- | :--- | :--- | :--- |
 | **AC 1: Sliding Parcel Metadata Drawer (`<ParcelMetadataDrawer />`)** | Implement responsive sliding drawer (440px desktop right dock, mobile bottom sheet with grab bar). Animate with Apple spring kinematics (320ms). Include focus trap, auto-focus, and `[ESC]` dismissal. | Implemented in `ParcelMetadataDrawer.tsx` and `farmMapDrawer.css`. Uses `agDrawerSlideInDesktop` and `agDrawerSlideInMobile` with `cubic-bezier(0.16, 1, 0.3, 1)`. Includes Tab focus cycling, mobile safe-area padding (`env(safe-area-inset-bottom)`), and ESC key listener. Verified in `test_parcel_drawer.js`. | **PASSED** |
-| **AC 2: Form Controls & Agronomic Domain Fields** | Provide input fields for parcel name (required, trimmed), crop selector with 4 canonical crops + emoji + botanical families, soil selector with $\theta_{\text{FC}}$, planting date with DAP & stage badge, and live area metrics. | Implemented in `ParcelMetadataDrawer.tsx`, `CropSelector.tsx`, `SoilSelector.tsx`, and `parcelMetadataPolicy.ts`. Validates required fields, calculates DAP with `Math.floor`, maps growth stages (`Vegetative`, `Reproductive`, `Mature`, `Future`), and displays area metrics banner. Verified in `test_parcel_metadata.js` and `test_parcel_drawer.js`. | **PASSED** |
+| **AC 2: Form Controls & Agronomic Domain Fields** | Provide input fields for parcel name (required, trimmed), crop selector with 4 canonical crops + emoji + botanical families, soil selector with $\theta_{\text{FC}}$, planting date with DAP & stage badge, and live area metrics. | Implemented in `ParcelMetadataDrawer.tsx`, `CropSelector.tsx`, `SoilSelector.tsx`, and `parcelMetadataPolicy.ts`. Validates required fields, calculates DAP with `Math.floor`, maps growth stages (`Pre-Planting`, `Early / Germination`, `Development Stage`, `Mid-Season / Flowering`, `Late / Maturity`), and displays area metrics banner. Verified in `test_parcel_metadata.js` and `test_parcel_drawer.js`. | **PASSED** |
 | **AC 3: Dynamic Crop Color Categorization (`CROP_PALETTES`)** | Map boundary stroke and fill to canonical crop palettes: Tomato (`#10B981`), Corn (`#F59E0B`), Potato (`#8B5CF6`), Apple (`#EC4899`), Fallback (`#0F766E`). Selected parcel renders 3px stroke with accent outline. | Implemented in `parcelStyling.ts` and `parcelMetadataPolicy.ts`. GeoJSON `style` callback dynamically resolves crop palette from `feature.properties.crop_name` or `crop_id`. High-contrast outline applied via `.farm-map-parcel-selected`. Verified in `test_parcel_styling.js`. | **PASSED** |
 | **AC 4: Persistent Centroid Tooltip Micro-Badges (`<ParcelCentroidLabelsLayer />`)** | Place persistent centroid micro-badges at polygon geometric centers using signed-area centroid algorithm. Toggle display density at Zoom $\ge 14$. Synchronize badge clicks with drawer edit mode. | Implemented in `ParcelCentroidLabelsLayer.tsx` and `parcelMetadataPolicy.ts` (`calculatePolygonCentroid`, `extractParcelCentroidData`). Uses Leaflet `divIcon` with `pointer-events-auto` badge chips. Zoom listener dynamically hides badges below zoom 14. Clicking badge triggers `onSelectParcel`. Verified in `test_parcel_metadata.js` and `test_parcel_styling.js`. | **PASSED** |
-| **AC 5: Workspace State Machine & Spatial CRUD Persistence** | Auto-open drawer on polygon completion. Click parcel to inspect/edit. Provide `saveParcel`, `updateParcelMetadata`, and `deleteParcelBoundary`. Resilient offline/sample fallback in `auto` mode. Toast feedback. | Implemented in `FieldMapPage.tsx`, `spatialCrudService.ts`, and `farmMapPage.ts`. State machine transitions between idle, drawing, drawer-open-create, and drawer-open-edit. Full CRUD operations with zero-latency optimistic updates and fallback resilience. Verified in `test_farm_map_crud.js`. | **PASSED** |
+| **AC 5: Workspace State Machine & Spatial CRUD Persistence** | Auto-open drawer on polygon completion. Click parcel to inspect/edit. Provide `saveParcel`, `updateParcelMetadata`, and `deleteParcelBoundary`. Resilient offline/sample fallback in `auto` mode. Toast feedback. | Implemented in `FieldMapPage.tsx`, `farmMapService.ts`, and `farmMapPage.ts`. State machine transitions between idle, drawing, drawer-open-create, and drawer-open-edit. Full CRUD operations with zero-latency optimistic updates and fallback resilience. Verified in `test_farm_map_crud.js`. | **PASSED** |
 | **AC 6: Z-Index Hierarchy & Layout Integrity** | Enforce strict z-index stacking order across map controls, drawing layers, centroid badges, drawer, and notifications. Protect mobile gesture bars with safe area insets. | Implemented across `farmMapDrawer.css`, `farmMap.css`, and `fieldMapPage.css`. Stacking order: Basemap (0) < Polygons (400) < Drawing (450) < Centroids (500) < Controls (1000) < Backdrop (1200) < Panel (1201) < Toast (1300). Bottom sheet incorporates `env(safe-area-inset-bottom)`. Input font size 16px prevents iOS zoom. Verified via CSS inspection and production build. | **PASSED** |
 
 ---
@@ -65,7 +65,7 @@ All spatial mutations—creation, attribute updates, and boundary deletions—ar
 - `frontend/src/components/FarmMap/SoilSelector.tsx` — Accessible visual radio card grid component for soil profile selection, rendering volumetric field capacity ($\theta_{\text{FC}}$) and agronomic texture notes.
 - `frontend/src/components/FarmMap/ParcelCentroidLabelsLayer.tsx` — Leaflet MapContainer child component that calculates and renders persistent micro-badges at parcel geometric centers, enforcing a zoom density threshold ($\ge 14$) and click-to-edit synchronization.
 - `frontend/src/components/FarmMap/farmMapDrawer.css` — CSS styling rules for drawer backdrop (`z-[1200]`), sliding panel (`z-[1201]`), desktop dock (`w-[440px]`), mobile bottom sheet, grab bar, Apple spring keyframe animations, and 16px mobile input safeguards.
-- `frontend/src/services/spatialCrudService.ts` — Robust spatial CRUD service for backend parcel persistence (`saveParcel`, `updateParcelMetadata`, `deleteParcelBoundary`), implementing resilient offline fallback for `auto` and `sample` modes.
+- `frontend/src/utils/parcelCentroid.ts` — Pure functional geodesic utility calculating polygon geometric centroids via Green's theorem signed-area integration, pairing parcel feature collections with centroid coordinates and metadata for map label rendering.
 - `frontend/scripts/test_parcel_metadata.js` — Comprehensive unit test suite (27 tests) verifying palette resolution, form validation, DAP calculation, growth stage categorization, polygon centroid geometry, and DTO payload formatting.
 - `frontend/scripts/test_parcel_styling.js` — Unit test suite (9 tests) verifying feature styling resolution, selection state styling, fallback tokens, and centroid data extraction.
 - `frontend/scripts/test_parcel_drawer.js` — Unit test suite (13 tests) verifying drawer form initialization, metrics string formatting, form validation gates, and catalog integrity.
@@ -80,6 +80,7 @@ All spatial mutations—creation, attribute updates, and boundary deletions—ar
 - `frontend/src/components/FarmMap/farmMap.css` — Added styling tokens for selected parcel SVG paths (`.farm-map-parcel-selected`), centroid label marker containers (`.farm-map-centroid-marker`), and interactive micro-badge chips (`.farm-map-centroid-badge`).
 - `frontend/src/pages/FieldMapPage.tsx` — Wired UI state machine transitions: polygon creation auto-opens drawer in create mode; parcel click opens drawer in edit mode; wired `saveParcel`, `updateParcelMetadata`, and `deleteParcelBoundary` handlers with optimistic state updates; integrated `<ParcelMetadataDrawer />`.
 - `frontend/src/pages/fieldMapPage.css` — Added styling and transitions for floating feedback notice banners.
+- `frontend/src/services/farmMapService.ts` — Extended spatial service with full-lifecycle parcel CRUD endpoints (`saveParcel`, `updateParcelMetadata`, `deleteParcelBoundary`), integrating multi-mode runtime policies (`auto`, `api`, `sample`) and resilient offline fallback.
 - `frontend/src/utils/farmMapPage.ts` — Added immutable collection mutation helpers: `updateParcelInCollection` and enhanced `formatParcelFeedback`.
 - `frontend/README.md` — Documented sliding parcel metadata drawer architecture, crop categorization palettes, centroid micro-badges, spatial CRUD APIs, and updated test suite instructions.
 
@@ -96,7 +97,7 @@ Following the platform's architectural standards:
   - `parcelStyling.ts`
   - `parcelDrawerState.ts`
   - `farmMapPage.ts`
-  - `spatialCrudService.ts`
+  - `farmMapService.ts`
 - These functions operate on plain JavaScript objects, GeoJSON RFC 7946 features, and primitive coordinate arrays.
 - Consequently, all **217 automated GIS tests** execute directly in Node.js using `--experimental-strip-types` in **under 150 milliseconds**, requiring zero heavy JSDOM dependencies or browser shims.
 
@@ -145,7 +146,7 @@ Managing drawing, selection, editing, and drawer visibility involves multiple co
 3. **Ref-Guarded Form Synchronization:** `<ParcelMetadataDrawer />` uses a synchronized state pattern that refreshes internal form state only when transitioning from closed to open, or when the active parcel identifier changes. User typing is never overwritten by parent re-renders.
 
 ### 4.4. Resilient Spatial CRUD Service & Offline Fallback
-To provide field usability in outdoor environments with intermittent cellular reception, `spatialCrudService.ts` enforces platform-wide data mode policies:
+To provide field usability in outdoor environments with intermittent cellular reception, `farmMapService.ts` enforces platform-wide data mode policies:
 - **`auto` (Default):** Attempts live HTTP requests to the ASP.NET Core backend. If an availability error occurs (HTTP 5xx, HTTP 404, network failure, or timeout), the service automatically generates an optimistic RFC 7946 GeoJSON Feature stamped with a client-generated UUID and returns it. The UI displays an informational feedback notice with zero operational blockage. Hard client errors (HTTP 4xx like 400 or 401) are strictly thrown to alert operators of malformed requests.
 - **`api`:** Strict production mode. Disables all fallbacks and propagates errors directly to user toasts.
 - **`sample`:** Zero-latency offline demonstration mode. Skips network requests entirely, performing local state mutations immediately.
@@ -176,10 +177,11 @@ The Days After Planting policy calculates elapsed days between planting date and
 $$\text{DAP} = \left\lfloor \frac{T_{\text{now}} - T_{\text{planting}}}{86{,}400{,}000} \right\rfloor$$
 
 Phenological stages are mapped according to standard agricultural intervals:
-- $\text{DAP} < 0$: **Future Planting** (Scheduled)
-- $0 \le \text{DAP} \le 40$: **Vegetative Stage** (Green-600 badge)
-- $41 \le \text{DAP} \le 85$: **Reproductive Stage** (Amber-600 badge)
-- $\text{DAP} > 85$: **Mature Stage** (Purple-600 badge)
+- $\text{DAP} < 0$: **Pre-Planting** (Scheduled)
+- $0 \le \text{DAP} \le 20$: **Early / Germination** (Green-600 badge)
+- $21 \le \text{DAP} \le 60$: **Development Stage** (Emerald-600 badge)
+- $61 \le \text{DAP} \le 90$: **Mid-Season / Flowering** (Amber-600 badge)
+- $\text{DAP} > 90$: **Late / Maturity** (Purple-600 badge)
 
 ---
 
@@ -274,6 +276,6 @@ With TODO-209 complete, the platform possesses an end-to-end interactive spatial
    - Integrate backend PostGIS spatial relationship queries (e.g., `ST_Contains`, `ST_Intersects`) into the map view.
    - Display real-time telemetry sensor markers inside parcel boundaries.
 2. **PostGIS Backend Procedure Integration (TODO-203/205):**
-   - Connect frontend `spatialCrudService` to the completed ASP.NET Core spatial controllers once migrations and spatial procedures are fully deployed.
+   - Connect frontend `farmMapService` to the completed ASP.NET Core spatial controllers once migrations and spatial procedures are fully deployed.
 3. **Multi-Polygon Support & Hole Cutting:**
    - Extend drawing capabilities to support complex agricultural parcels containing exclusion zones (e.g., farm roads, irrigation ponds, rock outcroppings).
