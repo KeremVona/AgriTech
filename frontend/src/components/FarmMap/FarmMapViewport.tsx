@@ -26,7 +26,9 @@ export function FarmMapViewport({ bounds, fitRequest }: { bounds: MapBounds | nu
       const { bounds: nextBounds, fitRequest: request } = current.current;
       if (!nextBounds) lastFit.current = null;
       if (nextBounds && shouldFitParcels(nextBounds, lastFit.current, request)) {
-        const safeBottom = Number.parseFloat(getComputedStyle(container.parentElement!).paddingBottom) || 0;
+        const safeBottom = container.parentElement
+          ? (Number.parseFloat(getComputedStyle(container.parentElement).paddingBottom) || 0)
+          : 0;
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         map.stop();
         map.fitBounds(L.latLngBounds(nextBounds), getFitOptions(width, height, safeBottom, reduced));
