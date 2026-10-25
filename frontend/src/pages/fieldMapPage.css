@@ -29,6 +29,13 @@
 .ag-field-map-notice h2 { font-size: 13px; font-weight: 700; margin: 0 0 4px; }
 .ag-field-map-notice p { color: var(--ag-ink-secondary); margin: 0 0 8px; overflow-wrap: anywhere; }
 .ag-field-map-notice p:last-child { margin-bottom: 0; }
+.ag-field-map-notice-success { border-color: #0F766E; background: rgba(255, 255, 255, 0.96); box-shadow: 0 4px 12px rgba(15, 118, 110, 0.12); }
+.ag-field-map-notice-success h2 { color: #0F766E; }
+.ag-field-map-notice-info { border-color: var(--ag-border); background: rgba(255, 255, 255, 0.96); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+.ag-field-map-notice-info h2 { color: var(--ag-ink); }
+.ag-field-map-notice-content { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.ag-field-map-notice-dismiss { background: transparent; border: none; cursor: pointer; padding: 2px 6px; font-size: 14px; color: var(--ag-ink-secondary); line-height: 1; border-radius: 4px; }
+.ag-field-map-notice-dismiss:hover { color: var(--ag-ink); background: var(--ag-surface-muted); }
 @media (hover: hover) and (pointer: fine) {
   .ag-field-map-button:hover:not(:disabled), .ag-field-map-menu-panel a:hover { background: var(--ag-brand-subtle); }
 }
