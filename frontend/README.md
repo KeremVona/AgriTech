@@ -88,7 +88,7 @@ Delivered in **TODO-207**, **TODO-208**, and **TODO-209**, the Field GIS Map pro
     - **Parcel Name**: Required text input with real-time whitespace and length validation.
     - **Crop Selector (`<CropSelector />`)**: Visual radio card grid featuring 4 canonical crops (`Tomato`, `Corn`, `Potato`, `Apple`) with distinct emoji, botanical family badges (`Solanaceae`, `Poaceae`), and active palette borders.
     - **Soil Texture Profile (`<SoilSelector />`)**: 4 canonical soil textures (`Clay`, `Loam`, `Sandy Loam`, `Silt Loam`) displaying volumetric field capacity (θ_FC) and agronomic descriptions.
-    - **Planting Date & DAP Badge**: Date picker with live calculation of Days After Planting (DAP) and phenological growth stage badge (`Vegetative`, `Reproductive`, `Mature`, or `Future`).
+    - **Planting Date & DAP Badge**: Date picker with live calculation of Days After Planting (DAP) and phenological growth stage badge (`Pre-Planting`, `Early / Germination`, `Development Stage`, `Mid-Season / Flowering`, or `Late / Maturity`).
 - **Dynamic Crop Color Categorization (`CROP_PALETTES`)**:
   - Distinct agronomic color palettes mapped dynamically across vector polygon boundaries:
     - **Tomato**: `#10B981` (Emerald) — Stroke `#10B981`, Fill `rgba(16, 185, 129, 0.18)`
@@ -103,7 +103,7 @@ Delivered in **TODO-207**, **TODO-208**, and **TODO-209**, the Field GIS Map pro
     - **Zoom ≥ 14**: Detailed micro-badges rendered at parcel centroids displaying crop emoji, crop name, parcel title, and computed area (e.g. `🍅 Tomato • North Field (1.45 ha)`).
     - **Zoom < 14**: Badges declutter or hide to avoid visual collisions when viewing regional or farm-wide extents.
   - **Synchronized Interaction**: Clicking a centroid badge selects the parcel and opens the `<ParcelMetadataDrawer />` in edit mode.
-- **Spatial CRUD API & Offline Resilience (`spatialCrudService.ts`)**:
+- **Spatial CRUD API & Offline Resilience (`farmMapService.ts`)**:
   - **Endpoints & Operations**:
     - `saveParcel` — Creates new parcel boundary with metadata (`POST /api/v1/spatial/parcels`).
     - `updateParcelMetadata` — Updates attributes of an existing parcel (`PUT /api/v1/spatial/parcels/:id`).
