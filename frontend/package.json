@@ -18,7 +18,7 @@
     "test:canvas": "node --experimental-strip-types scripts/test_canvas_stage.js",
     "test:assembly": "node --experimental-strip-types scripts/test_production_assembly.js",
     "test:diagnostics": "node --experimental-strip-types scripts/test_diagnostics_validation.js",
-    "test:map": "node --experimental-strip-types scripts/test_farm_map_data.js && node --experimental-strip-types scripts/test_farm_map_viewport.js",
+    "test:map": "node --experimental-strip-types scripts/test_farm_map_data.js && node --experimental-strip-types scripts/test_farm_map_viewport.js && node --experimental-strip-types scripts/test_farm_map_page.js",
     "preview": "vite preview"
   },
   "dependencies": {
