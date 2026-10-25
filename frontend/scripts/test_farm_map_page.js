@@ -5,6 +5,7 @@ import {
   getLoadedFields,
   filterParcelsByField,
   mergeDrawnParcels,
+  removeDrawnParcel,
   createDrawnParcelFeature,
   formatParcelFeedback,
 } from '../src/utils/farmMapPage.ts';
@@ -209,4 +210,68 @@ test('formatParcelFeedback formats completion and deletion notices accurately', 
   const deleteNotice = formatParcelFeedback('delete');
   assert.equal(deleteNotice.type, 'info');
   assert.equal(deleteNotice.message, 'Parcel boundary removed.');
+});
+
+test('removeDrawnParcel removes parcels cleanly by string ID, numeric Leaflet ID, and property ID', () => {
+  const drawn = [
+    {
+      type: 'Feature',
+      id: 'drawn-parcel-100',
+      geometry: { type: 'Polygon', coordinates: [[[30, 40], [31, 40], [31, 41], [30, 41], [30, 40]]] },
+      properties: { id: 'drawn-parcel-100', name: 'Parcel A', area_ha: 1 },
+    },
+    {
+      type: 'Feature',
+      id: 62,
+      geometry: { type: 'Polygon', coordinates: [[[31, 40], [32, 40], [32, 41], [31, 41], [31, 40]]] },
+      properties: { id: 62, name: 'Parcel B', area_ha: 2 },
+    },
+    {
+      type: 'Feature',
+      id: 'drawn-parcel-200',
+      geometry: { type: 'Polygon', coordinates: [[[32, 40], [33, 40], [33, 41], [32, 41], [32, 40]]] },
+      properties: { id: 'prop-match-only', name: 'Parcel C', area_ha: 3 },
+    },
+  ];
+
+  // 1. Remove by exact string ID
+  const afterStringRemove = removeDrawnParcel(drawn, 'drawn-parcel-100');
+  assert.equal(afterStringRemove.length, 2);
+  assert.equal(afterStringRemove[0].id, 62);
+  assert.equal(afterStringRemove[1].id, 'drawn-parcel-200');
+
+  // 2. Remove by numeric Leaflet ID passed as number
+  const afterNumRemove = removeDrawnParcel(drawn, 62);
+  assert.equal(afterNumRemove.length, 2);
+  assert.equal(afterNumRemove[0].id, 'drawn-parcel-100');
+  assert.equal(afterNumRemove[1].id, 'drawn-parcel-200');
+
+  // 3. Remove by numeric Leaflet ID passed as string coercion ("62")
+  const afterNumCoercedRemove = removeDrawnParcel(drawn, '62');
+  assert.equal(afterNumCoercedRemove.length, 2);
+  assert.equal(afterNumCoercedRemove[0].id, 'drawn-parcel-100');
+
+  // 4. Remove by matching properties.id
+  const afterPropRemove = removeDrawnParcel(drawn, 'prop-match-only');
+  assert.equal(afterPropRemove.length, 2);
+  assert.equal(afterPropRemove[0].id, 'drawn-parcel-100');
+  assert.equal(afterPropRemove[1].id, 62);
+
+  // 5. Handles empty and unmatched gracefully
+  assert.deepEqual(removeDrawnParcel([], 'any-id'), []);
+  assert.equal(removeDrawnParcel(drawn, 'non-existent').length, 3);
+});
+
+test('createDrawnParcelFeature adheres to ParcelMapProperties schema with id and area_hectares', () => {
+  const metrics = { areaM2: 15000, areaHa: 1.5, acres: 3.71, perimeterM: 500, vertexCount: 4 };
+  const raw = {
+    geometry: { type: 'Polygon', coordinates: [[[30, 40], [31, 40], [31, 41], [30, 41], [30, 40]]] },
+  };
+
+  const feature = createDrawnParcelFeature(raw, metrics, 'f-1');
+  assert.ok(feature.id);
+  assert.equal(feature.properties.id, feature.id);
+  assert.equal(feature.properties.area_ha, 1.5);
+  assert.equal(feature.properties.area_hectares, 1.5);
+  assert.equal(feature.properties.field_id, 'f-1');
 });

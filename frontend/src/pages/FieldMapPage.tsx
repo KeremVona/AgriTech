@@ -10,6 +10,7 @@ import {
   formatParcelFeedback,
   getLoadedFields,
   mergeDrawnParcels,
+  removeDrawnParcel,
   resolveFarmMapConfig,
 } from '../utils/farmMapPage.ts';
 import type { FarmMapConfig } from '../utils/farmMapPage.ts';
@@ -68,10 +69,15 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
   };
 
   const handlePolygonDelete = (parcelId: string | number) => {
-    setDrawnParcels((prev) => prev.filter((p) => p.id !== parcelId && p.properties?.id !== parcelId));
+    setDrawnParcels((prev) => removeDrawnParcel(prev, parcelId));
     setPendingParcel((curr) => {
-      if (curr && (curr.feature.id === parcelId || curr.feature.properties?.id === parcelId)) {
-        return null;
+      if (curr) {
+        const targetStr = String(parcelId);
+        const currIdStr = curr.feature.id !== undefined && curr.feature.id !== null ? String(curr.feature.id) : null;
+        const currPropIdStr = curr.feature.properties?.id !== undefined && curr.feature.properties?.id !== null ? String(curr.feature.properties.id) : null;
+        if (currIdStr === targetStr || currPropIdStr === targetStr) {
+          return null;
+        }
       }
       return curr;
     });
@@ -151,7 +157,7 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
               role="status"
               aria-live="polite"
             >
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+              <div className="ag-field-map-notice-content">
                 <div>
                   <h2>{feedbackNotice.type === 'success' ? 'Parcel Boundary Recorded' : 'Parcel Removed'}</h2>
                   <p>{feedbackNotice.message}</p>
