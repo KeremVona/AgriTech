@@ -46,7 +46,12 @@ function FieldMapView({ data, loading, error, reload, explicitSample = false, co
   return (
     <div className="ag-field-map-page">
       <header className="ag-field-map-header">
-        <Link to="/" className="ag-field-map-button ag-field-map-home" aria-label="AgriTech home" title="Home">←</Link>
+        <Link to="/" className={`ag-field-map-button ag-field-map-home${explicitSample ? '' : ' ag-field-map-desktop-home'}`} aria-label="AgriTech home" title="Home">←</Link>
+        {!explicitSample && <button type="button" className="ag-field-map-button ag-field-map-mobile-refresh" onClick={reload} disabled={loading} aria-label={retryLabel} title={retryLabel}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M20 7v5h-5" /><path d="M20 12a8 8 0 1 0-2.3 5.7M20 7l-2.3-2.3" />
+          </svg>
+        </button>}
         <div className="ag-field-map-heading">
           <h1>Field GIS</h1>
           <span className="ag-field-map-mobile-source" role="status" aria-label={sourceDetail}>{loading && data ? 'Retrying…' : source}</span>

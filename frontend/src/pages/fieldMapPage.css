@@ -8,6 +8,7 @@
 .ag-field-map-button:disabled { opacity: .6; cursor: wait; }
 .ag-field-map-page :is(a, button, select, summary):focus-visible { outline: 3px solid var(--ag-brand); outline-offset: 2px; }
 .ag-field-map-home { width: 40px; flex: none; padding: 0; font-size: 20px; }
+.ag-field-map-mobile-refresh { display: none; }
 .ag-field-map-selector { display: flex; align-items: center; gap: 8px; flex: 0 1 260px; min-width: 0; }
 .ag-field-map-selector label { font-size: 12px; color: var(--ag-ink-secondary); }
 .ag-field-map-selector select { width: 100%; min-width: 0; min-height: 40px; padding: 6px 8px; border: 1px solid var(--ag-border-field); border-radius: 8px; background: var(--ag-surface); color: var(--ag-ink); font: inherit; font-size: 14px; text-overflow: ellipsis; }
@@ -40,6 +41,8 @@
   .ag-field-map-selector select { min-height: 48px; font-size: 16px; }
   .ag-field-map-button { min-height: 48px; }
   .ag-field-map-home, .ag-field-map-menu summary { width: 48px; }
+  .ag-field-map-desktop-home { display: none; }
+  .ag-field-map-mobile-refresh { display: inline-flex; width: 48px; flex: none; padding: 0; }
   .ag-field-map-menu { margin-left: 0; }
   .ag-field-map-menu-panel { right: 12px; }
   .ag-field-map-desktop-status { display: none; }
