@@ -12,6 +12,11 @@ import {
   getDrawingState,
   extractCoordinates,
 } from '../src/utils/drawingState.ts';
+import {
+  formatDrawingHudMetrics,
+  getDrawingHudMicrocopy,
+  canSubmitPolygon,
+} from '../src/utils/drawingHudPolicy.ts';
 
 let failures = 0;
 let tests = 0;
@@ -358,6 +363,132 @@ test('extractCoordinates handles null, empty, flat and nested latlng structures'
     [27.145, 38.430],
     [27.140, 38.420],
   ]);
+});
+
+// 9. formatDrawingHudMetrics tests
+test('formatDrawingHudMetrics formats parcel metrics into standardized HUD copy', () => {
+  const metrics = {
+    areaM2: 18400,
+    areaHa: 1.84,
+    acres: 4.55,
+    perimeterM: 542.4,
+    vertexCount: 5,
+  };
+  const result = formatDrawingHudMetrics(metrics);
+  assert.equal(result, '1.84 ha (4.55 acres) • 5 Vertices • Perimeter: 542m');
+});
+
+test('formatDrawingHudMetrics rounds perimeter and formats decimals cleanly', () => {
+  const metrics = {
+    areaM2: 125000,
+    areaHa: 12.5,
+    acres: 30.89,
+    perimeterM: 1450.7,
+    vertexCount: 8,
+  };
+  const result = formatDrawingHudMetrics(metrics);
+  assert.equal(result, '12.50 ha (30.89 acres) • 8 Vertices • Perimeter: 1451m');
+});
+
+test('formatDrawingHudMetrics handles zero metrics safely', () => {
+  const metrics = {
+    areaM2: 0,
+    areaHa: 0,
+    acres: 0,
+    perimeterM: 0,
+    vertexCount: 0,
+  };
+  const result = formatDrawingHudMetrics(metrics);
+  assert.equal(result, '0.00 ha (0.00 acres) • 0 Vertices • Perimeter: 0m');
+});
+
+// 10. getDrawingHudMicrocopy tests
+test('getDrawingHudMicrocopy prioritizes DRAWING_INVALID_KINK error prompt', () => {
+  const kinkState = getDrawingHudMicrocopy('DRAWING_INVALID_KINK');
+  assert.deepEqual(kinkState, {
+    prompt: 'Self-intersecting polygon. Uncross boundary lines to complete parcel.',
+    isError: true,
+  });
+
+  // Even if mode is edit/drag/draw, kink error takes precedence
+  const kinkWithMode = getDrawingHudMicrocopy('DRAWING_INVALID_KINK', 'edit');
+  assert.deepEqual(kinkWithMode, {
+    prompt: 'Self-intersecting polygon. Uncross boundary lines to complete parcel.',
+    isError: true,
+  });
+});
+
+test('getDrawingHudMicrocopy provides instructions for active modes', () => {
+  const drawMode = getDrawingHudMicrocopy('DRAWING_ACTIVE', 'draw');
+  assert.deepEqual(drawMode, {
+    prompt: 'Click initial vertex to complete polygon • Press ESC to cancel.',
+    isError: false,
+  });
+
+  const activeNoMode = getDrawingHudMicrocopy('DRAWING_ACTIVE');
+  assert.deepEqual(activeNoMode, {
+    prompt: 'Click initial vertex to complete polygon • Press ESC to cancel.',
+    isError: false,
+  });
+
+  const editMode = getDrawingHudMicrocopy('DRAWING_ACTIVE', 'edit');
+  assert.deepEqual(editMode, {
+    prompt: 'Drag vertices to reshape • Click midpoint to add vertex • Click Finish when done.',
+    isError: false,
+  });
+
+  const dragMode = getDrawingHudMicrocopy('DRAWING_ACTIVE', 'drag');
+  assert.deepEqual(dragMode, {
+    prompt: 'Click and drag parcel to reposition • Click Finish when done.',
+    isError: false,
+  });
+
+  const deleteMode = getDrawingHudMicrocopy('DRAWING_ACTIVE', 'delete');
+  assert.deepEqual(deleteMode, {
+    prompt: 'Click any parcel to delete • Click Finish when done.',
+    isError: false,
+  });
+});
+
+test('getDrawingHudMicrocopy handles completion and idle states', () => {
+  const completed = getDrawingHudMicrocopy('POLYGON_COMPLETED');
+  assert.deepEqual(completed, {
+    prompt: 'Parcel boundary recorded. Ready for metadata.',
+    isError: false,
+  });
+
+  const idle = getDrawingHudMicrocopy('IDLE_MAP', 'idle');
+  assert.deepEqual(idle, {
+    prompt: '',
+    isError: false,
+  });
+});
+
+// 11. canSubmitPolygon tests
+test('canSubmitPolygon allows submission only for valid non-intersecting polygons with >= 3 vertices and positive area', () => {
+  const validMetrics = {
+    areaM2: 10000,
+    areaHa: 1.0,
+    acres: 2.47,
+    perimeterM: 400,
+    vertexCount: 4,
+  };
+
+  // Valid parcel
+  assert.equal(canSubmitPolygon(validMetrics, false), true);
+
+  // Self-intersecting polygon blocked
+  assert.equal(canSubmitPolygon(validMetrics, true), false);
+
+  // Null metrics blocked
+  assert.equal(canSubmitPolygon(null, false), false);
+
+  // Degenerate vertex count (< 3) blocked
+  assert.equal(canSubmitPolygon({ ...validMetrics, vertexCount: 2 }, false), false);
+
+  // Zero or negative area blocked
+  assert.equal(canSubmitPolygon({ ...validMetrics, areaHa: 0 }, false), false);
+  assert.equal(canSubmitPolygon({ ...validMetrics, areaHa: -1 }, false), false);
 });
 
 assert.equal(failures, 0, `${failures} of ${tests} farm map drawing tests failed`);

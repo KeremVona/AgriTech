@@ -177,6 +177,72 @@
   outline: 3px solid #0F766E;
   outline-offset: 2px;
 }
+
+/* Drawing Live Area Badge & HUD */
+.ag-drawing-hud {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: auto;
+}
+
+/* Topological Kink Intersection Markers */
+.ag-kink-marker-container {
+  position: relative !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.ag-kink-marker-core {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #EF4444;
+  border: 1.5px solid #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ag-kink-marker-pulse {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.45);
+  animation: kink-pulse 1.5s infinite ease-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes kink-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    transform: scale(1.4);
+    opacity: 0.2;
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .ag-map-basemap button:not([aria-pressed="true"]):hover, .ag-map-navigation button:hover:not(:disabled) { background: var(--ag-surface-muted); color: var(--ag-ink); }
 }
@@ -208,6 +274,7 @@
   .ag-map-tile-status { top: 12px; max-width: calc(100% - 230px); max-height: 64px; overflow: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ag-map-control-card, .ag-map-navigation button, .ag-drawing-tool-btn { transition: none; }
+  .ag-map-control-card, .ag-map-navigation button, .ag-drawing-tool-btn, .ag-drawing-hud { transition: none; }
   .ag-map-navigation button:active:not(:disabled), .ag-drawing-tool-btn:active:not(:disabled) { transform: none; }
+  .ag-kink-marker-pulse { animation: none; opacity: 0.4; }
 }
