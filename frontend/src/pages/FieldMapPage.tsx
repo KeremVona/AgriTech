@@ -63,7 +63,7 @@ function FieldMapView({
   const [feedbackNotice, setFeedbackNotice] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
-  const [selectedParcel, setSelectedParcel] = useState<GeoJSON.Feature<GeoJSON.Polygon> | null>(null);
+  const [selectedParcel, setSelectedParcel] = useState<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null>(null);
   const [pendingParcel, setPendingParcel] = useState<{ feature: GeoJSON.Feature<GeoJSON.Polygon>; metrics: ParcelMetrics } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -115,10 +115,25 @@ function FieldMapView({
     if (drawerMode === 'create') {
       return pendingParcel?.metrics ?? null;
     }
-    if (drawerMode === 'edit' && selectedParcel?.geometry?.type === 'Polygon') {
-      const coords = selectedParcel.geometry.coordinates?.[0];
+    if (drawerMode === 'edit' && selectedParcel?.geometry) {
+      let coords: [number, number][] | null = null;
+      if (selectedParcel.geometry.type === 'Polygon') {
+        coords = selectedParcel.geometry.coordinates?.[0] as [number, number][];
+      } else if (selectedParcel.geometry.type === 'MultiPolygon') {
+        coords = selectedParcel.geometry.coordinates?.[0]?.[0] as [number, number][];
+      }
       if (Array.isArray(coords) && coords.length >= 3) {
-        return calculateParcelMetrics(coords as [number, number][]);
+        return calculateParcelMetrics(coords);
+      }
+      if (typeof selectedParcel.properties?.area_hectares === 'number') {
+        const areaHa = selectedParcel.properties.area_hectares;
+        return {
+          areaM2: areaHa * 10000,
+          areaHa,
+          acres: areaHa * 2.47105,
+          perimeterM: 0,
+          vertexCount: 0,
+        };
       }
     }
     return null;
@@ -128,6 +143,7 @@ function FieldMapView({
     if (drawerMode === 'create') {
       if (!pendingParcel) return null;
       return {
+        id: pendingParcel.feature.id,
         name: pendingParcel.feature.properties?.name || '',
         fieldId: pendingParcel.feature.properties?.field_id ?? fieldId ?? null,
       };
@@ -135,13 +151,14 @@ function FieldMapView({
     if (drawerMode === 'edit' && selectedParcel) {
       const p = selectedParcel.properties;
       return {
+        id: selectedParcel.id ?? p?.id,
         name: p?.name || '',
         cropId: p?.crop_id || '',
-        cropName: p?.crop_name || '',
-        crop: p?.crop_name || '',
+        cropName: p?.crop_name || (p as any)?.crop || '',
+        crop: p?.crop_name || (p as any)?.crop || '',
         soilProfileId: p?.soil_profile_id || '',
-        soilProfileName: p?.soil_profile_name || '',
-        soil: p?.soil_profile_name || '',
+        soilProfileName: p?.soil_profile_name || (p as any)?.soil || '',
+        soil: p?.soil_profile_name || (p as any)?.soil || '',
         plantingDate: p?.planting_date || '',
         fieldId: p?.field_id ?? null,
       };
@@ -159,7 +176,7 @@ function FieldMapView({
     setFeedbackNotice(formatParcelFeedback('complete', metrics));
   };
 
-  const handleParcelSelect = (feature: GeoJSON.Feature<GeoJSON.Polygon>) => {
+  const handleParcelSelect = (feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>) => {
     if (drawerMode === 'create' && pendingParcel) {
       const pendingId = pendingParcel.feature.id ?? pendingParcel.feature.properties?.id;
       if (pendingId !== undefined && pendingId !== null) {
@@ -220,6 +237,7 @@ function FieldMapView({
   };
 
   const handleDrawerSave = async (formData: ParcelFormData) => {
+    if (isSaving) return;
     setIsSaving(true);
     try {
       const effectiveConfig = config ?? configuration.config ?? {
@@ -293,7 +311,7 @@ function FieldMapView({
   };
 
   const handleDrawerDelete = async () => {
-    if (!selectedParcel) return;
+    if (!selectedParcel || isSaving) return;
     const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
     setIsSaving(true);
     try {

@@ -23,7 +23,7 @@
 .ag-field-map-menu-data { display: none; }
 .ag-field-map-sample-info { margin: 12px 8px; color: var(--ag-ink-secondary); font-size: 12px; }
 .ag-field-map-workspace { position: relative; min-width: 0; }
-.ag-field-map-notices { position: absolute; z-index: 1; top: 32%; left: 20px; width: min(340px, calc(100% - 40px)); max-height: 42%; overflow: auto; overscroll-behavior: contain; pointer-events: none; }
+.ag-field-map-notices { position: absolute; z-index: 1300; top: 32%; left: 20px; width: min(340px, calc(100% - 40px)); max-height: 42%; overflow: auto; overscroll-behavior: contain; pointer-events: none; }
 .ag-field-map-notice { pointer-events: auto; padding: 12px; border: 1px solid var(--ag-border-field); border-radius: 8px; background: var(--ag-surface); margin-bottom: 8px; font-size: 12px; }
 .ag-field-map-notice[role="alert"] { border-color: var(--ag-risk-critical-border); }
 .ag-field-map-notice h2 { font-size: 13px; font-weight: 700; margin: 0 0 4px; }
