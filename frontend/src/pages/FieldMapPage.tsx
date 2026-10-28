@@ -266,7 +266,10 @@ function FieldMapView({
   };
 
   const handlePolygonDelete = async (parcelId: string | number) => {
-    if (isSaving) return;
+    if (isSaving) {
+      setRenderVersion((v) => v + 1);
+      return;
+    }
     const targetStr = String(parcelId);
 
     // Ignore pm:remove events for layers that are not parcels
