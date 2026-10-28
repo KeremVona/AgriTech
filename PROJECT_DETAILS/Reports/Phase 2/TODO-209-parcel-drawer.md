@@ -279,3 +279,87 @@ With TODO-209 complete, the platform possesses an end-to-end interactive spatial
    - Connect frontend `farmMapService` to the completed ASP.NET Core spatial controllers once migrations and spatial procedures are fully deployed.
 3. **Multi-Polygon Support & Hole Cutting:**
    - Extend drawing capabilities to support complex agricultural parcels containing exclusion zones (e.g., farm roads, irrigation ponds, rock outcroppings).
+---
+
+## 7. Review Fixes (TODO-208 & TODO-209 Code Review Findings)
+
+Following thorough code-review of the Phase 2 frontend map implementations (TODO-208 and TODO-209), seven critical issues were identified and resolved:
+
+### 1. Failed Writes Reject Instead of Optimistic Success (Fix 1)
+- **Problem:** `saveParcel`, `updateParcelMetadata`, and `deleteParcelBoundary` treated 404, 5xx, or network drops under `auto` mode as offline availability errors and resolved with optimistic features, masquerading server failures as success.
+- **Fix:** Removed availability error absorption for spatial writes. In `FieldMapPage.tsx`, write operations select `sample` mode only when loaded data source is explicitly `sample` (`data?.source === 'sample'`); otherwise, writes execute against the live API and reject on failure with error banners.
+- **UI Clarification:** Feedback notices for sample-mode writes explicitly state `(not sent to the server)`.
+
+### 2. Disentangled Read vs. Write Endpoints (Fix 2)
+- **Problem:** Write requests appended to the GIS read path (`/api/v1/spatial/geojson/parcels`), violating the REST architecture.
+- **Fix:** Write requests are routed strictly to `PARCELS_WRITE_PATH = '/api/v1/parcels'` (`POST /api/v1/parcels`, `PUT /api/v1/parcels/{id}`, `DELETE /api/v1/parcels/{id}`). `loadParcelMapData` retains the configurable `parcelsPath` for reads.
+
+### 3. Removed Abandoned Geoman Layer on Drawing Completion (Fix 3)
+- **Problem:** Finishing a polygon left Geoman's temporary vector layer active underneath the React `<ParcelLayer>`, producing double borders or lingering outlines when discarded.
+- **Fix:** In `FarmMapDrawingManager.tsx` `handleCreate`, immediately removed the temporary Leaflet layer via `layer.remove()` upon capturing geometry and assigning a stable ID.
+
+### 4. Preserved Vertex Edits and Drags (Fix 4)
+- **Problem:** Geoman vertex edits (`pm:edit`) and drags (`pm:dragend`) modified Leaflet layers in place without propagating back to React state, causing edited shapes to revert on re-render.
+- **Fix:** Added `applyGeometryOverrides` helper and wired `pm:edit` / `pm:dragend` layer events through `onParcelGeometryChange` to a dedicated `geometryOverrides` map in `FieldMapPage.tsx`. Overrides are merged into `activeCollection`, update `pendingParcel` metrics, and supply up-to-date geometry to the edit drawer and `PUT` request bodies.
+
+### 5. Unified Parcel Deletion & Error Recovery (Fix 5)
+- **Problem:** Toolbar delete (`handlePolygonDelete`) merely removed parcels from local state without issuing backend delete requests, and failed deletions left Leaflet layers permanently removed from the map.
+- **Fix:** Extracted a unified `deleteParcel(id)` handler invoked by both the drawer delete button and the map toolbar delete tool. Distinguishes pending (local-only) parcels from persisted parcels. Added `renderVersion` remount mechanism to force `<ParcelLayer>` remounting upon deletion failure, restoring the polygon to the canvas with an error notice.
+
+### 6. Live Database UUID & Crop/Soil Candidate Matching (Fix 6)
+- **Problem:** The live backend returns database UUIDs for `crop_id` (`Crop.Id`) and readable common names in `crop_name`, whereas the drawer expected frontend catalog IDs (`crop-tomato`). The drawer failed to pre-select crops/soils and blocked editing saves.
+- **Fix:** Implemented `findCrop` and `findSoil` candidate matchers in `parcelMetadataPolicy.ts`. Candidate resolution tests `cropName`, `crop_name`, `crop`, `cropId`, `crop_id` in sequence, matching across ID, name, commonName, category, and scientificName.
+
+### 7. Aligned Write Payload with Spec Contract (Fix 7)
+- **Problem:** Write payloads included frontend-specific IDs (`crop_id: 'crop-tomato'`), redundant calculated fields (`area_hectares`, `crop_name`, `soil_profile_name`), invented irrigation defaults, and permitted drawing on `/map` without a field ID.
+- **Fix:**
+  - Write payloads for `POST /api/v1/parcels` and `PUT /api/v1/parcels/{id}` strictly match Phase 2 §4 spec:
+    ```json
+    {
+      "field_id": "20700000-0000-4000-8000-000000000010",
+      "name": "North Field Potato",
+      "crop_type": "Potato",
+      "soil_type": "Sandy Loam",
+      "planting_date": "2026-04-15",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[27.14, 38.42], [27.16, 38.42], [27.16, 38.44], [27.14, 38.44], [27.14, 38.42]]]
+      }
+    }
+    ```
+  - `area_hectares` is omitted from write payloads as it is computed by the database trigger.
+  - Drawing is disabled on `/map` (`fieldId` is undefined) by setting `editable={Boolean(fieldId)}` and rendering a guidance notice: `"Select a field to draw parcels"`. Clicking existing parcels to inspect/edit remains fully functional.
+  - Display properties (`crop_name`, `crop_id`, `soil_profile_id`, `soil_profile_name`, `area_hectares`, `planting_date`, `field_id`) in `buildOptimisticFeature` are constructed directly from catalog matching.
+
+---
+
+### Review Follow-ups (Post-Review Polish & Bugfixes)
+1. **Item 1 (Bug) — Restricted Selection & Click Interception to Idle Mode:**
+   - In `FarmMapContainer.tsx`, `parcelSelectHandler` is passed to `<ParcelLayer>` and `<ParcelCentroidLabelsLayer>` only when `effectiveActiveMode === 'idle'`.
+   - In `ParcelLayer` and `ParcelCentroidLabelsLayer`, the click handler returns early before stopping event propagation if no select handler is active, allowing Geoman drawing and deletion interactions to receive clicks without erroneously opening the metadata edit drawer.
+2. **Item 2 (Bug) — Decoupled Viewport Auto-Fit from Local Drawing/Edits:**
+   - Added `fitCollection` prop to `FarmMapContainer.tsx` and computed it in `FieldMapPage.tsx` strictly from loaded field data (`data?.collection`). Local polygon creation, vertex drags, or deletions no longer trigger unexpected viewport auto-fit jumps.
+3. **Item 3 — Dynamic Map Centroid Label Area Updates:**
+   - Added pure `geometryAreaHa` helper in `farmMapPage.ts` computing polygon and multipolygon surface areas via `calculateParcelMetrics`.
+   - `applyGeometryOverrides` and `handleParcelGeometryChange` now update `properties.area_hectares` when geometry changes, ensuring map centroid badges immediately display updated hectares following vertex edits or drags.
+4. **Item 4 — Layer Remount on Save-Blocked Toolbar Deletion:**
+   - In `FieldMapPage.tsx`, `handlePolygonDelete` now increments `renderVersion` if deletion is rejected due to an in-flight save (`isSaving`), cleanly remounting the layer so Geoman-removed polygons reappear.
+5. **Item 5 — Code Cleanups:**
+   - Moved `PARCELS_WRITE_PATH` below import declarations in `farmMapService.ts`.
+   - Streamlined `formatParcelFeedback` signature to `(type, metrics?, options?: { localOnly?: boolean })`, eliminating ambiguous union inspection (`'areaHa' in ...` / `'localOnly' in ...`) and updating callers and unit tests.
+
+---
+
+### Backend API Contract Summary (for TODO-205)
+For the backend developer implementing `/api/v1/parcels` (TODO-205):
+- **Endpoints:**
+  - `POST /api/v1/parcels`: Creates a new parcel. Returns HTTP 201 with created GeoJSON Feature (or `{ id: "..." }`).
+  - `PUT /api/v1/parcels/{id}`: Updates existing parcel metadata/geometry. Returns HTTP 200 with updated GeoJSON Feature.
+  - `DELETE /api/v1/parcels/{id}`: Deletes parcel boundary. Returns HTTP 200 or 204.
+- **Write Request Body (POST / PUT):**
+  - `field_id`: UUID (string, required, references `fields.id`).
+  - `name`: string (required).
+  - `crop_type`: string (`"Tomato"` | `"Corn"` | `"Potato"` | `"Apple"`). The backend maps this category to `Crop.Id`.
+  - `soil_type`: string (`"Sand"` | `"Sandy Loam"` | `"Silt"` | `"Clay"`). The backend maps this to `SoilProfile.Id`.
+  - `planting_date`: string (`YYYY-MM-DD`).
+  - `geometry`: GeoJSON Polygon or MultiPolygon object.

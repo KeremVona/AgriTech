@@ -118,8 +118,9 @@ export function ParcelCentroidLabelsLayer({
                 attachDomInteractions(e.target.getElement());
               },
               click: (e) => {
+                if (!onParcelSelectRef.current) return;
                 L.DomEvent.stopPropagation(e);
-                if (onParcelSelectRef.current && item.feature) {
+                if (item.feature) {
                   onParcelSelectRef.current(item.feature as GeoJSON.Feature<GeoJSON.Polygon>);
                 }
               },

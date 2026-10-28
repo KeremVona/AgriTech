@@ -9,7 +9,10 @@ import {
   updateParcelInCollection,
   formatParcelFeedback,
   mergeDrawnParcels,
+  applyGeometryOverrides,
+  geometryAreaHa,
 } from '../src/utils/farmMapPage.ts';
+import { calculateParcelMetrics } from '../src/utils/parcelTopology.ts';
 
 const sampleGeometry = {
   type: 'Polygon',
@@ -83,14 +86,18 @@ test('saveParcel in api mode sends POST with JSON payload and returns response f
     fetchImpl: mockFetch,
   });
 
-  assert.equal(calledUrl, 'http://localhost:5051/api/v1/spatial/geojson/parcels');
+  assert.equal(calledUrl, 'http://localhost:5051/api/v1/parcels');
   assert.equal(calledMethod, 'POST');
   assert.equal(calledHeaders['Content-Type'], 'application/json');
   assert.match(calledHeaders['Accept'], /application\/geo\+json/);
   assert.equal(calledBody.name, 'North Tomato Plot');
-  assert.equal(calledBody.crop_name, 'Tomato');
-  assert.equal(calledBody.area_hectares, 2.5);
+  assert.equal(calledBody.crop_type, 'Tomato');
+  assert.equal(calledBody.soil_type, 'Sandy Loam');
+  assert.equal(calledBody.planting_date, '2026-04-15');
+  assert.equal(calledBody.field_id, 'field-101');
   assert.deepEqual(calledBody.geometry, sampleGeometry);
+  assert.equal(calledBody.crop_name, undefined);
+  assert.equal(calledBody.area_hectares, undefined);
 
   assert.equal(feature.type, 'Feature');
   assert.equal(feature.id, 'parcel-api-1');
@@ -141,41 +148,49 @@ test('saveParcel in api mode throws on 404, 5xx and network errors', async () =>
   );
 });
 
-test('saveParcel in auto mode falls back cleanly to client optimistic Feature on 404, 5xx or network error', async () => {
+test('saveParcel in auto mode rejects on 404, 5xx or network error without fallback', async () => {
   const mock503 = async () => new Response(null, { status: 503 });
-  const feature503 = await saveParcel({
-    ...baseOptions,
-    mode: 'auto',
-    parcel: sampleParcelData,
-    geometry: sampleGeometry,
-    areaHa: 2.5,
-    fieldId: 'field-101',
-    fetchImpl: mock503,
-  });
+  await assert.rejects(
+    saveParcel({
+      ...baseOptions,
+      mode: 'auto',
+      parcel: sampleParcelData,
+      geometry: sampleGeometry,
+      areaHa: 2.5,
+      fieldId: 'field-101',
+      fetchImpl: mock503,
+    }),
+    /503/
+  );
 
-  assert.equal(feature503.type, 'Feature');
-  assert.ok(feature503.id);
-  assert.equal(feature503.properties?.name, 'North Tomato Plot');
-  assert.equal(feature503.properties?.crop_name, 'Tomato');
-  assert.equal(feature503.properties?.soil_profile_name, 'Sandy Loam');
-  assert.equal(feature503.properties?.area_hectares, 2.5);
-  assert.deepEqual(feature503.geometry, sampleGeometry);
+  const mock404 = async () => new Response(null, { status: 404 });
+  await assert.rejects(
+    saveParcel({
+      ...baseOptions,
+      mode: 'auto',
+      parcel: sampleParcelData,
+      geometry: sampleGeometry,
+      areaHa: 2.5,
+      fieldId: 'field-101',
+      fetchImpl: mock404,
+    }),
+    /404/
+  );
 
   const mockOffline = async () => {
     throw new TypeError('Failed to fetch');
   };
-  const featureOffline = await saveParcel({
-    ...baseOptions,
-    mode: 'auto',
-    parcel: sampleParcelData,
-    geometry: sampleGeometry,
-    areaHa: 2.5,
-    fetchImpl: mockOffline,
-  });
-
-  assert.equal(featureOffline.type, 'Feature');
-  assert.equal(featureOffline.properties?.name, 'North Tomato Plot');
-  assert.equal(featureOffline.properties?.crop_name, 'Tomato');
+  await assert.rejects(
+    saveParcel({
+      ...baseOptions,
+      mode: 'auto',
+      parcel: sampleParcelData,
+      geometry: sampleGeometry,
+      areaHa: 2.5,
+      fetchImpl: mockOffline,
+    }),
+    /unreachable|network|fetch/i
+  );
 });
 
 test('saveParcel in auto mode rejects hard 4xx client errors without fallback', async () => {
@@ -263,19 +278,21 @@ test('updateParcelMetadata in api mode sends PUT and returns updated feature', a
     fetchImpl: mockFetch,
   });
 
-  assert.equal(calledUrl, 'http://localhost:5051/api/v1/spatial/geojson/parcels/parcel-100');
+  assert.equal(calledUrl, 'http://localhost:5051/api/v1/parcels/parcel-100');
   assert.equal(calledMethod, 'PUT');
   assert.equal(calledBody.name, 'Updated Corn Plot');
-  assert.equal(calledBody.crop_name, 'Corn (Maize)');
-  assert.equal(calledBody.soil_profile_name, 'Clay');
+  assert.equal(calledBody.crop_type, 'Corn');
+  assert.equal(calledBody.soil_type, 'Clay');
   assert.equal(calledBody.planting_date, '2026-05-01');
+  assert.equal(calledBody.crop_name, undefined);
+  assert.equal(calledBody.area_hectares, undefined);
 
   assert.equal(feature.id, 'parcel-100');
   assert.equal(feature.properties?.name, 'Updated Corn Plot');
   assert.equal(feature.properties?.crop_name, 'Corn (Maize)');
 });
 
-test('updateParcelMetadata in auto mode falls back to optimistic update on 5xx or offline', async () => {
+test('updateParcelMetadata in auto mode rejects on 5xx or offline', async () => {
   const updatedData = {
     name: 'Offline Updated Plot',
     cropId: 'crop-apple',
@@ -287,25 +304,36 @@ test('updateParcelMetadata in auto mode falls back to optimistic update on 5xx o
     plantingDate: '2026-03-20',
   };
 
+  const mock500 = async () => new Response(null, { status: 500 });
+  await assert.rejects(
+    updateParcelMetadata({
+      ...baseOptions,
+      mode: 'auto',
+      parcelId: 'parcel-200',
+      data: updatedData,
+      geometry: sampleGeometry,
+      areaHa: 1.8,
+      fetchImpl: mock500,
+    }),
+    /500/
+  );
+
   const mockOffline = async () => {
     throw new TypeError('Failed to fetch');
   };
 
-  const feature = await updateParcelMetadata({
-    ...baseOptions,
-    mode: 'auto',
-    parcelId: 'parcel-200',
-    data: updatedData,
-    geometry: sampleGeometry,
-    areaHa: 1.8,
-    fetchImpl: mockOffline,
-  });
-
-  assert.equal(feature.id, 'parcel-200');
-  assert.equal(feature.properties?.name, 'Offline Updated Plot');
-  assert.equal(feature.properties?.crop_name, 'Apple');
-  assert.equal(feature.properties?.soil_profile_name, 'Silt');
-  assert.equal(feature.properties?.planting_date, '2026-03-20');
+  await assert.rejects(
+    updateParcelMetadata({
+      ...baseOptions,
+      mode: 'auto',
+      parcelId: 'parcel-200',
+      data: updatedData,
+      geometry: sampleGeometry,
+      areaHa: 1.8,
+      fetchImpl: mockOffline,
+    }),
+    /unreachable|network|fetch/i
+  );
 });
 
 test('updateParcelMetadata in sample mode updates locally without network call', async () => {
@@ -354,7 +382,7 @@ test('deleteParcelBoundary in api mode sends DELETE and handles success', async 
     fetchImpl: mockFetch,
   });
 
-  assert.equal(calledUrl, 'http://localhost:5051/api/v1/spatial/geojson/parcels/parcel-del-1');
+  assert.equal(calledUrl, 'http://localhost:5051/api/v1/parcels/parcel-del-1');
   assert.equal(calledMethod, 'DELETE');
   assert.equal(result.success, true);
   assert.equal(result.id, 'parcel-del-1');
@@ -373,20 +401,31 @@ test('deleteParcelBoundary in api mode throws on 500 error', async () => {
   );
 });
 
-test('deleteParcelBoundary in auto mode falls back cleanly on network failure', async () => {
+test('deleteParcelBoundary in auto mode rejects on network failure or 5xx', async () => {
+  const mock500 = async () => new Response(null, { status: 500 });
+  await assert.rejects(
+    deleteParcelBoundary({
+      ...baseOptions,
+      mode: 'auto',
+      parcelId: 'parcel-del-err',
+      fetchImpl: mock500,
+    }),
+    /500/
+  );
+
   const mockOffline = async () => {
     throw new TypeError('Failed to fetch');
   };
 
-  const result = await deleteParcelBoundary({
-    ...baseOptions,
-    mode: 'auto',
-    parcelId: 'parcel-del-offline',
-    fetchImpl: mockOffline,
-  });
-
-  assert.equal(result.success, true);
-  assert.equal(result.id, 'parcel-del-offline');
+  await assert.rejects(
+    deleteParcelBoundary({
+      ...baseOptions,
+      mode: 'auto',
+      parcelId: 'parcel-del-offline',
+      fetchImpl: mockOffline,
+    }),
+    /unreachable|network|fetch/i
+  );
 });
 
 test('deleteParcelBoundary in sample mode returns success without network call', async () => {
@@ -509,6 +548,63 @@ test('updateParcelInCollection matches target parcel by properties.id or numeric
   assert.equal(updatedByProp.features[0].properties?.name, 'Matched by prop id');
 });
 
+test('geometryAreaHa calculates hectare area for Polygon and MultiPolygon', () => {
+  const polyArea = geometryAreaHa(sampleGeometry);
+  const expectedArea = calculateParcelMetrics(sampleGeometry.coordinates[0]).areaHa;
+  assert.equal(polyArea, expectedArea);
+  assert.ok(polyArea > 0);
+
+  const multiPoly = {
+    type: 'MultiPolygon',
+    coordinates: [
+      sampleGeometry.coordinates,
+      sampleGeometry.coordinates,
+    ],
+  };
+  const multiArea = geometryAreaHa(multiPoly);
+  assert.equal(multiArea, expectedArea * 2);
+});
+
+test('applyGeometryOverrides updates matching parcel geometries by id and properties.id', () => {
+  const collection = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        id: 'parcel-1',
+        geometry: sampleGeometry,
+        properties: { id: 'parcel-1', name: 'Parcel 1' },
+      },
+      {
+        type: 'Feature',
+        id: 'feat-2',
+        geometry: sampleGeometry,
+        properties: { id: 'prop-2', name: 'Parcel 2' },
+      },
+    ],
+  };
+
+  const newGeom1 = {
+    type: 'Polygon',
+    coordinates: [[[30, 40], [31, 40], [31, 41], [30, 41], [30, 40]]],
+  };
+  const newGeom2 = {
+    type: 'Polygon',
+    coordinates: [[[35, 42], [36, 42], [36, 43], [35, 43], [35, 42]]],
+  };
+
+  const updated = applyGeometryOverrides(collection, {
+    'parcel-1': newGeom1,
+    'prop-2': newGeom2,
+  });
+
+  assert.deepEqual(updated.features[0].geometry, newGeom1);
+  assert.deepEqual(updated.features[1].geometry, newGeom2);
+  assert.equal(updated.features[0].properties?.area_hectares, geometryAreaHa(newGeom1));
+  assert.equal(updated.features[1].properties?.area_hectares, geometryAreaHa(newGeom2));
+  assert.deepEqual(collection.features[0].geometry, sampleGeometry, 'Must be immutable');
+});
+
 // 5. formatParcelFeedback tests
 test('formatParcelFeedback formats register, update and delete messages accurately', () => {
   const registerNotice = formatParcelFeedback('register');
@@ -522,6 +618,18 @@ test('formatParcelFeedback formats register, update and delete messages accurate
   const deleteNotice = formatParcelFeedback('delete');
   assert.equal(deleteNotice.type, 'info');
   assert.equal(deleteNotice.message, 'Parcel boundary removed.');
+
+  const registerSampleNotice = formatParcelFeedback('register', undefined, { localOnly: true });
+  assert.equal(registerSampleNotice.type, 'success');
+  assert.match(registerSampleNotice.message, /sample data/i);
+
+  const updateSampleNotice = formatParcelFeedback('update', undefined, { localOnly: true });
+  assert.equal(updateSampleNotice.type, 'success');
+  assert.match(updateSampleNotice.message, /sample data/i);
+
+  const deleteSampleNotice = formatParcelFeedback('delete', undefined, { localOnly: true });
+  assert.equal(deleteSampleNotice.type, 'info');
+  assert.match(deleteSampleNotice.message, /sample data/i);
 });
 
 // 6. Edge cases and reconciliation

@@ -34,17 +34,26 @@ function ParcelLayer({
   collection,
   selectedParcelId,
   onParcelSelect,
+  onParcelGeometryChange,
+  renderVersion,
 }: {
   collection: ParcelFeatureCollection;
   selectedParcelId?: string | number | null;
   onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>) => void;
+  onParcelGeometryChange?: (id: string, geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon) => void;
+  renderVersion?: number;
 }) {
   const layer = useRef<L.GeoJSON>(null);
   const onParcelSelectRef = useRef(onParcelSelect);
+  const onParcelGeometryChangeRef = useRef(onParcelGeometryChange);
 
   useEffect(() => {
     onParcelSelectRef.current = onParcelSelect;
   }, [onParcelSelect]);
+
+  useEffect(() => {
+    onParcelGeometryChangeRef.current = onParcelGeometryChange;
+  }, [onParcelGeometryChange]);
 
   const styleFunction = useCallback(
     (feature: any) => resolveParcelFeatureStyle(feature, selectedParcelId),
@@ -54,8 +63,19 @@ function ParcelLayer({
   const onEachFeature = (feature: any, featureLayer: L.Layer) => {
     featureLayer.on({
       click: (e) => {
+        if (!onParcelSelectRef.current) return;
         L.DomEvent.stopPropagation(e);
-        onParcelSelectRef.current?.(feature);
+        onParcelSelectRef.current(feature);
+      },
+      'pm:edit': () => {
+        const id = String(feature.id ?? feature.properties?.id);
+        const geom = (featureLayer as L.Polygon).toGeoJSON().geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon;
+        onParcelGeometryChangeRef.current?.(id, geom);
+      },
+      'pm:dragend': () => {
+        const id = String(feature.id ?? feature.properties?.id);
+        const geom = (featureLayer as L.Polygon).toGeoJSON().geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon;
+        onParcelGeometryChangeRef.current?.(id, geom);
       },
     });
   };
@@ -90,7 +110,7 @@ function ParcelLayer({
 
   return (
     <GeoJSON
-      key={collection.features.length}
+      key={`${collection.features.length}-${renderVersion ?? 0}`}
       ref={layer}
       data={collection}
       style={styleFunction as any}
@@ -102,20 +122,26 @@ function ParcelLayer({
 
 export interface FarmMapContainerProps {
   collection: ParcelFeatureCollection;
+  fitCollection?: ParcelFeatureCollection;
   editable?: boolean;
   selectedParcelId?: string | number | null;
   onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>) => void;
+  onParcelGeometryChange?: (id: string, geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon) => void;
   onPolygonComplete?: (feature: GeoJSON.Feature<GeoJSON.Polygon>, metrics: ParcelMetrics) => void;
   onPolygonDelete?: (parcelId: string | number) => void;
+  renderVersion?: number;
 }
 
 export function FarmMapContainer({
   collection,
+  fitCollection,
   editable = true,
   selectedParcelId,
   onParcelSelect,
+  onParcelGeometryChange,
   onPolygonComplete,
   onPolygonDelete,
+  renderVersion,
 }: FarmMapContainerProps): React.JSX.Element {
   const [baseLayer, setBaseLayer] = useState<BaseLayer>('satellite');
   const [tileStatus, setTileStatus] = useState<TileStatus>('loading');
@@ -131,6 +157,7 @@ export function FarmMapContainer({
   const effectiveActiveMode: DrawingMode = editable ? activeMode : 'idle';
   const effectiveMetrics = effectiveActiveMode === 'idle' ? null : metrics;
   const effectiveKinks = effectiveActiveMode === 'idle' ? [] : kinks;
+  const parcelSelectHandler = effectiveActiveMode === 'idle' ? onParcelSelect : undefined;
 
   const handleModeChange = (mode: DrawingMode) => {
     setActiveMode(mode);
@@ -155,7 +182,7 @@ export function FarmMapContainer({
 
   const drawingState: DrawingState = getDrawingState(activeMode, effectiveKinks.length, false);
 
-  const bounds = useMemo(() => getParcelBounds(collection), [collection]);
+  const bounds = useMemo(() => getParcelBounds(fitCollection ?? collection), [fitCollection, collection]);
   const active = layers[baseLayer];
   const changeLayer = (layer: BaseLayer) => {
     if (layer === baseLayer) return;
@@ -173,12 +200,19 @@ export function FarmMapContainer({
       role="region"
       aria-label="Interactive farm parcel map"
     >
-      {editable && (
+      {editable ? (
         <DrawingToolbar
           activeMode={effectiveActiveMode}
           onModeChange={handleModeChange}
           onCancel={handleCancel}
         />
+      ) : (
+        <div
+          className="ag-drawing-hint ag-map-control-card absolute top-4 left-4 z-[1000] px-3 py-2 text-xs font-medium text-slate-600 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-lg shadow-sm"
+          role="note"
+        >
+          Select a field to draw parcels
+        </div>
       )}
       {editable && effectiveActiveMode !== 'idle' && (
         <DrawingLiveAreaBadge
@@ -211,12 +245,14 @@ export function FarmMapContainer({
         <ParcelLayer
           collection={collection}
           selectedParcelId={selectedParcelId}
-          onParcelSelect={onParcelSelect}
+          onParcelSelect={parcelSelectHandler}
+          onParcelGeometryChange={onParcelGeometryChange}
+          renderVersion={renderVersion}
         />
         <ParcelCentroidLabelsLayer
           collection={collection}
           selectedParcelId={selectedParcelId}
-          onParcelSelect={onParcelSelect}
+          onParcelSelect={parcelSelectHandler}
         />
         <FarmMapViewport bounds={bounds} fitRequest={fitRequest} />
         <FarmMapControls
