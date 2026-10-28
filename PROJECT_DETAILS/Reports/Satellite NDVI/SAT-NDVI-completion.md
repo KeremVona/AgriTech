@@ -137,10 +137,12 @@ The sample parcels defined in `frontend/src/data/sampleFarmMap.ts` span coordina
 - Latitude: $38.000^\circ\text{N}$ to $38.002^\circ\text{N}$
 - Longitude: $32.600^\circ\text{E}$ to $32.604^\circ\text{E}$ (rural Konya plain, Türkiye)
 
-Analysis of Sentinel-2 multi-temporal acquisitions confirms active agricultural land cover:
-- **Peak Vegetative Growth (May 16, 2023 - `S2A_36SVH_20230516_0_L2A`)**: SCL scene classification indicates dense vegetation (class 4) across the parcel area with NDVI peaking at **0.6283** (median **0.3520**).
-- **Post-Harvest Dry Stubble (July / August 2021 & 2023)**: SCL classifies the area as bare soil (class 5) and dry vegetation with median NDVI dropping to **~0.20 - 0.22**.
-- **Conclusion**: The sample parcels represent active winter cereal cropland following the typical central Anatolian wheat phenological cycle.
+Analysis of Sentinel-2 multi-temporal acquisitions and visual satellite evidence shows:
+- **Observed Land Cover**: The sample parcels lie on mixed scrub or grassland with some tree planting adjacent to an industrial yard, **not confirmed cropland**.
+- **Seasonal Vegetation Curve**: The NDVI curve displays a typical Mediterranean spring green-up (peak ~0.75) and dry summer decline (~0.2).
+- **Peak Vegetative Growth (May 16, 2023 - `S2A_36SVH_20230516_0_L2A`)**: SCL scene classification indicates vegetation (class 4) across the parcel area with NDVI peaking at **0.6283** (median **0.3520**).
+- **Post-Harvest / Dry Season (July / August 2021 & 2023)**: SCL classifies the area as bare soil (class 5) and dry vegetation with median NDVI dropping to **~0.20 - 0.22**.
+- **Usage Recommendation**: For demonstrations highlighting specific agricultural crop phenology, users should draw parcels over active agricultural fields via the Field Map rather than using the sample fallback parcels.
 
 ---
 
@@ -182,3 +184,34 @@ Analysis of Sentinel-2 multi-temporal acquisitions confirms active agricultural 
 
 5. **Radiometric BOA Offset Handling**:
    The empirical 3-branch offset logic guarantees consistent surface reflectance calculations across Sentinel-2 processing baselines and reprocessed catalogs.
+
+---
+
+## 8. Review Fixes
+
+### 8.1 Summary of Findings and Commits
+
+| Finding | Summary | Target File(s) | Commit |
+|---|---|---|---|
+| **Finding 1** | Retry button missing on offline error | `frontend/src/pages/SatellitePage.tsx` | `ee94de8 fix(satellite-web): offer retry when satellite service is offline` |
+| **Finding 2** | Unvalidated job_id in `get()` allows path traversal on Windows | `satellite-service/jobs.py`<br>`satellite-service/tests/test_jobs_api.py` | `634cc91 fix(satellite): validate job_id before reading manifest` |
+| **Finding 3** | Sample parcel land cover was described as active cereal cropland rather than scrub/grassland next to industrial yard | `PROJECT_DETAILS/Reports/Satellite NDVI/SAT-NDVI-completion.md` | *(this commit)* `docs(satellite): correct sample-parcel land cover and record review fixes` |
+| **Finding 4** | Legend labels squeezed on desktop to 60 px | `frontend/src/components/SatelliteTimeline/NdviLegend.tsx`<br>`PROJECT_DETAILS/Reports/Satellite NDVI/screenshots/` | `fb53042 fix(satellite-web): keep ndvi legend labels readable` |
+| **Finding 5** | Manifest loading and validation duplicated across `submit()` and `get()` in `jobs.py` | `satellite-service/jobs.py` | `3de60c1 refactor(satellite): load manifest in one place` |
+
+### 8.2 Docker Execution Status
+
+The Docker daemon remains unavailable on the Windows host (`npipe:////./pipe/dockerDesktopLinuxEngine`), so container execution remains blocked as noted during initial Task 6, while Compose syntax remains verified via `docker compose config`.
+
+### 8.3 Fresh Verification Results
+
+All verification suites were re-run fresh across the worktree:
+
+| Suite | Working Directory | Command | Pass Count / Output Summary | Status |
+|---|---|---|---|---|
+| Service Unit Tests | `satellite-service/` | `.venv\Scripts\python -m pytest -q` | 42 passed, 1 deselected, 1 warning in 1.50s | **PASS** |
+| Frontend Build | `frontend/` | `npm run build` | Built cleanly (`tsc -b && vite build`) in 434ms | **PASS** |
+| Frontend Linter | `frontend/` | `npm run lint` | 0 errors, 0 warnings (128 files, 116 rules) in 77ms | **PASS** |
+| Frontend Satellite Tests | `frontend/` | `npm run test:satellite` | 21 passed, 0 failed in 11.28ms | **PASS** |
+| Frontend Map Tests | `frontend/` | `npm run test:map` | 8 test suites passed (185 tests total, 0 failed) in 32ms | **PASS** |
+
