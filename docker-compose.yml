@@ -84,6 +84,38 @@ services:
       postgres:
         condition: service_healthy
 
+  # -------------------------------------------------------------
+  # 4. AgriTech Satellite NDVI Timeline Service
+  #
+  # Build:  docker compose build satellite-service
+  # Start:  docker compose up satellite-service
+  # Logs:   docker compose logs -f satellite-service
+  # Docs:   http://localhost:8100/docs
+  # -------------------------------------------------------------
+  satellite-service:
+    build: ./satellite-service
+    container_name: agritech_satellite_service
+    restart: unless-stopped
+    ports:
+      - "8100:8100"
+    environment:
+      CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
+    volumes:
+      - satellite_cache:/app/cache
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - >
+          import urllib.request, sys;
+          r = urllib.request.urlopen('http://localhost:8100/health/live', timeout=4);
+          sys.exit(0 if r.status == 200 else 1)
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
 volumes:
   postgres_data:
     name: agritech_postgres_data
@@ -91,4 +123,5 @@ volumes:
     name: agritech_mosquitto_data
   mosquitto_log:
     name: agritech_mosquitto_log
-
+  satellite_cache:
+    name: agritech_satellite_cache
