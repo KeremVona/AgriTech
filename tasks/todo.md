@@ -1,50 +1,63 @@
-# TODO-205: Field and Parcel Management RESTful Endpoints
+# TODO-112: Disease Progression Studio Integration & Light-Mode Refactor
 
-## Current Status: COMPLETED
-**Branch:** `feat/backend-todo205-field-parcel-crud`  
-**Assignee:** Backend Engineer  
-**Phase:** Phase 2 — Spatial Foundation, GIS & Relational Data Layer  
+## Current Status: READY FOR APPROVAL
+**Assignee:** Senior Front-End Engineer  
+**Phase:** Phase 1 — Prompt-to-Prompt Cross-Attention Progression Core  
+**Spec:** `design/DISEASE_PROGRESSION_SPEC.md` (SPEC-UI-007)  
+**Plan:** `tasks/plan.md`  
+**Artifact:** `Disease_Progression_Studio_Implementation_Plan.md`
 
 ---
 
-- [x] **Subtask 1: Spatial Validation Layer (`ValidPolygonAttribute.cs`)**
-  - Custom DataAnnotations attribute validating NetTopologySuite `Polygon` instances.
-  - Enforces minimum coordinate count $N \ge 4$ (3 distinct vertices + 1 closure point).
-  - Enforces ring closure (`Coordinates[0] == Coordinates[^1]`).
-  - Enforces topological validity via `polygon.IsValid` (rejecting self-intersecting butterfly polygons).
-  - Short-circuits with `400 Bad Request` before database interaction.
+### Task List & Subagent Review Cadence
 
-- [x] **Subtask 2: Strongly-Typed DTO Models (`Models/DTOs/`)**
-  - Created `BoundingBoxDto.cs` computing standard RFC 7946 `[minLng, minLat, maxLng, maxLat]` envelope in-process.
-  - Created `FieldDtos.cs` (`CreateFieldRequest`, `UpdateFieldRequest`, `FieldResponseDto`, `ParcelSummaryDto`).
-  - Created `ParcelDtos.cs` (`CreateParcelRequest`, `UpdateParcelRequest`, `ParcelResponseDto`).
-  - Created `SpatialMappingExtensions.cs` centralizing entity-to-DTO projection with BBOX calculation.
+- [x] **Task 1: Domain Model Promotion, Canonical Services & Test Backward Compatibility**
+  - [x] Promote domain models from `p2p-experimental/models/` to canonical `frontend/src/models/`
+  - [x] Promote `timelapseRecorder.ts` to `frontend/src/utils/timelapseRecorder.ts`
+  - [x] Promote progression service & hook to `frontend/src/services/` and `frontend/src/hooks/`
+  - [x] Provide backward-compatible aliases in `frontend/src/p2p-experimental/`
+  - [x] Verify existing test suites pass: `npm run test:agronomy`, `npm run test:crops`, `npm run test:treatment`, `npm run test:hotspots`, `npm run test:export`
+  - [x] Commit changes
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [x] **Subtask 3: FieldsController Implementation (`FieldsController.cs`)**
-  - `GET /api/v1/fields` — Lists farm fields with parcel counts and bounding boxes.
-  - `POST /api/v1/fields` — Validates owner, persists boundary polygon, triggers automatic `total_area_hectares` calculation via DB trigger, returns `201 Created`.
-  - `GET /api/v1/fields/{id}` — Returns field detail with embedded parcel summaries and bounding box.
+- [x] **Task 2: WebGL Shader View Mode Extension & Attention Map Colormap**
+  - [x] Create test script `frontend/scripts/test_shader_modes.js`
+  - [x] Extend `ProgressionShaderRenderer.ts` with `u_view_mode` (RGB, Attention Heatmap, Difference Mask)
+  - [x] Implement Turbo/Viridis color-coded attention heatmap gradient in GLSL
+  - [x] Implement difference mask mode & split curtain support
+  - [x] Verify WebGL context disposal hygiene
+  - [x] Verify compilation: `npm run build`
+  - [x] Commit changes
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [x] **Subtask 4: ParcelsController Implementation (`ParcelsController.cs`)**
-  - `GET /api/v1/fields/{fieldId}/parcels` — Returns all parcels in a field as an RFC 7946 GeoJSON `FeatureCollection`.
-  - `POST /api/v1/parcels` — Validates parent field, crop, and soil profile; enforces spatial containment inside field (`ST_Covers`); detects candidate parcel overlap via `fn_check_parcel_overlap` (`409 Conflict`); triggers automatic `area_hectares` calculation; returns `201 Created`.
-  - `PUT /api/v1/parcels/{id}` — Partial updates for metadata and/or geometry; recalculates bounding box and area metrics upon geometry update; returns `200 OK`.
-  - `DELETE /api/v1/parcels/{id}` — Deletes parcel; enforces DB cascade (`SensorNodes` cascade, `CropScans` set null); returns `204 No Content`.
+- [x] **Task 3: Studio Parameter Inspector Rail & Prompt Attention Inspector (Light Mode)**
+  - [x] Implement `<PromptAttentionInspector />` with Needleman-Wunsch prompt diff token visualizer & hyperparameters
+  - [x] Refactor `<MicroclimateControlPanel />` into light-mode tokens with interactive cardinal curve mini-SVG
+  - [x] Refactor `<TreatmentBranchingControls />` & `<TreatmentOutcomeCard />` into light mode with dual-coded severity callouts
+  - [x] Refactor `<ExportToolbar />` and `<DiagnosticPdfReportModal />` into light mode
+  - [x] Assemble `<StudioInspectorRail />` with tactile tab switching and light-mode tokens
+  - [x] Verify compilation: `npm run build`
+  - [x] Commit changes
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [x] **Subtask 5: Global Exception Handling for Spatial Parsing (`Program.cs`)**
-  - Configured middleware catching `ArgumentException` and `TopologyException` during request body deserialization.
-  - Automatically translates NetTopologySuite unclosed ring errors into RFC 7807 `400 Bad Request`.
+- [x] **Task 4: Interactive Foliar Canvas Viewport, Hotspots & Agronomic Scrubber (Light Mode)**
+  - [x] Refactor `<CompactCropSelectorRail />` in light mode with auto-scrolling active pill and 44px+ hit targets
+  - [x] Refactor `<LeafHotspotOverlay />` in light mode with 24 registered anatomical pins and popover cards
+  - [x] Refactor `<AgronomicTimelineSlider />` in light mode with Magarey Beta days $\longleftrightarrow$ severity sync, tabular numerals, play/pause loop, milestone tick marks, and `setPointerCapture`
+  - [x] Assemble `<ProgressionCanvasViewport />` with view mode toolbar, WebGL canvas, and 2D fallback
+  - [x] Export components in `frontend/src/components/DiseaseProgressionViewer/index.ts`
+  - [x] Verify compilation: `npm run build`
+  - [x] Commit changes
+  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
 
-- [x] **Subtask 6: Automated Verification Test Harness (`scripts/verify_field_parcel_crud.ps1`)**
-  - Automated PowerShell test harness executing 7 validation test cases:
-    - Test 1: $N < 4$ coordinates rejected -> `400 Bad Request` -> PASS.
-    - Test 2: Unclosed polygon ring rejected -> `400 Bad Request` -> PASS.
-    - Test 3: Self-intersecting butterfly polygon rejected -> `400 Bad Request` -> PASS.
-    - Test 4: Create field -> `201 Created` with BBOX and DB-computed area -> PASS.
-    - Test 5: Create parcel inside field -> `201 Created` with BBOX and DB-computed area -> PASS.
-    - Test 6: Update parcel boundary -> BBOX and area updated -> PASS.
-    - Test 7: Delete parcel -> `204 No Content` with FK cascade verification -> PASS.
-
-- [x] **Subtask 7: Formal Completion Report (DoD) & Documentation**
-  - Created `PROJECT_DETAILS/Reports/Phase 2/TODO-205-field-parcel-management.md`.
-  - Updated `tasks/todo.md`.
+- [x] **Task 5: Production Page Assembly, Route Deprecation & End-to-End Verification**
+  - [x] Assemble `<DiseaseProgressionPage />` in `frontend/src/pages/DiseaseProgressionPage.tsx` with 12-column responsive layout (7 cols left / 5 cols right)
+  - [x] Manage 8-state state machine with zero memory leaks
+  - [x] Wire `/disease-progression` route and redirect `/disease-progression-experimental`
+  - [x] Update navigation links in `Navbar.tsx` and `LandingPage.tsx`
+  - [x] Run full automated verification: `test:agronomy`, `test:crops`, `test:treatment`, `test:hotspots`, `test:export`, `test:diagnostics`, `test:shader`, `test:inspector`, `test:canvas`, `test:assembly`
+  - [x] Run linter: `npm run lint` (`oxlint` 0 warnings, 0 errors)
+  - [x] Run production build: `npm run build`
+  - [x] Generate completion report `PROJECT_DETAILS/Reports/Phase 1/TODO-112-disease-progression-studio.md`
+  - [x] Final whole-feature code review subagent gate
+  - [x] Final commit and sign-off
