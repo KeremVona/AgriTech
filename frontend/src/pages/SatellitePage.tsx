@@ -227,17 +227,17 @@ export function SatellitePage(): React.JSX.Element {
 
             {jobState.phase === 'error' && (
               <div className="py-4">
-                {jobState.kind === 'offline' ? (
-                  <div className="p-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
-                    Satellite service is offline.
-                  </div>
-                ) : jobState.kind === 'invalid' ? (
+                {jobState.kind === 'invalid' ? (
                   <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
                     {jobState.message}
                   </div>
                 ) : (
                   <div className="p-3 flex items-center justify-between gap-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
-                    <span>{jobState.message}</span>
+                    <span>
+                      {jobState.kind === 'offline'
+                        ? 'Satellite service is offline.'
+                        : jobState.message}
+                    </span>
                     <button
                       type="button"
                       onClick={retry}
