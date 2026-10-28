@@ -10,6 +10,12 @@ import {
   chartScales,
   ndviJobReducer,
 } from '../src/utils/satelliteTimeline.ts';
+import {
+  SatelliteRequestError,
+  createNdviJob,
+  getNdviJob,
+  frameUrl,
+} from '../src/services/satelliteService.ts';
 
 const fixture = JSON.parse(
   fs.readFileSync(new URL('./fixtures/ndvi_job_done.json', import.meta.url), 'utf8')
@@ -274,3 +280,176 @@ test('fixture validates against expected structure and constraints', () => {
     assert.ok(toDayNumber(fixture.skipped[i].date) > toDayNumber(fixture.skipped[i - 1].date));
   }
 });
+
+test('createNdviJob posts geometry and parcel_id as JSON', async () => {
+  const geometry = {
+    type: 'Polygon',
+    coordinates: [
+      [
+        [32.6, 38.0],
+        [32.602, 38.0],
+        [32.602, 38.002],
+        [32.6, 38.002],
+        [32.6, 38.0],
+      ],
+    ],
+  };
+  let capturedUrl = null;
+  let capturedInit = null;
+  const fakeFetch = async (url, init) => {
+    capturedUrl = url;
+    capturedInit = init;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ ...fixture, parcel_id: 'p-123' }),
+    };
+  };
+
+  const res = await createNdviJob({
+    geometry,
+    parcelId: 'p-123',
+    baseUrl: 'http://test-satellite:8100',
+    fetchImpl: fakeFetch,
+  });
+
+  assert.equal(capturedUrl, 'http://test-satellite:8100/api/v1/ndvi/jobs');
+  assert.equal(capturedInit.method, 'POST');
+  assert.equal(capturedInit.headers['Content-Type'], 'application/json');
+  assert.deepEqual(JSON.parse(capturedInit.body), {
+    geometry,
+    parcel_id: 'p-123',
+  });
+  assert.equal(res.parcel_id, 'p-123');
+});
+
+test('createNdviJob maps 422 to invalid with detail message', async () => {
+  const fakeFetch = async () => ({
+    ok: false,
+    status: 422,
+    json: async () => ({ detail: 'Parcel area exceeds 1000 ha limit' }),
+  });
+
+  await assert.rejects(
+    async () => {
+      await createNdviJob({
+        geometry: { type: 'Polygon', coordinates: [] },
+        parcelId: 'p-too-large',
+        baseUrl: 'http://test-satellite:8100',
+        fetchImpl: fakeFetch,
+      });
+    },
+    (err) => {
+      assert.ok(err instanceof SatelliteRequestError);
+      assert.equal(err.kind, 'invalid');
+      assert.equal(err.message, 'Parcel area exceeds 1000 ha limit');
+      return true;
+    }
+  );
+});
+
+test('network failure maps to offline', async () => {
+  const fakeFetch = async () => {
+    throw new TypeError('Failed to fetch');
+  };
+
+  await assert.rejects(
+    async () => {
+      await createNdviJob({
+        geometry: { type: 'Polygon', coordinates: [] },
+        parcelId: 'p-offline',
+        baseUrl: 'http://test-satellite:8100',
+        fetchImpl: fakeFetch,
+      });
+    },
+    (err) => {
+      assert.ok(err instanceof SatelliteRequestError);
+      assert.equal(err.kind, 'offline');
+      return true;
+    }
+  );
+});
+
+test('500 maps to other', async () => {
+  const fakeFetch = async () => ({
+    ok: false,
+    status: 500,
+    json: async () => ({ detail: 'Internal server error' }),
+  });
+
+  await assert.rejects(
+    async () => {
+      await createNdviJob({
+        geometry: { type: 'Polygon', coordinates: [] },
+        parcelId: 'p-500',
+        baseUrl: 'http://test-satellite:8100',
+        fetchImpl: fakeFetch,
+      });
+    },
+    (err) => {
+      assert.ok(err instanceof SatelliteRequestError);
+      assert.equal(err.kind, 'other');
+      return true;
+    }
+  );
+});
+
+test('frameUrl joins base and path with one slash', () => {
+  assert.equal(
+    frameUrl('/api/v1/ndvi/frames/123/2026-05-14.png', 'http://x:8100/'),
+    'http://x:8100/api/v1/ndvi/frames/123/2026-05-14.png'
+  );
+  assert.equal(
+    frameUrl('api/v1/ndvi/frames/123/2026-05-14.png', 'http://x:8100'),
+    'http://x:8100/api/v1/ndvi/frames/123/2026-05-14.png'
+  );
+  assert.equal(
+    frameUrl('/api/v1/ndvi/frames/123/2026-05-14.png', 'http://x:8100'),
+    'http://x:8100/api/v1/ndvi/frames/123/2026-05-14.png'
+  );
+  assert.equal(
+    frameUrl('///api/v1/ndvi/frames/123/2026-05-14.png', 'http://x:8100///'),
+    'http://x:8100/api/v1/ndvi/frames/123/2026-05-14.png'
+  );
+});
+
+test('getNdviJob fetches job status and handles errors', async () => {
+  let capturedUrl = null;
+  const fakeFetch = async (url) => {
+    capturedUrl = url;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => fixture,
+    };
+  };
+
+  const res = await getNdviJob({
+    jobId: 'job-xyz',
+    baseUrl: 'http://test-satellite:8100',
+    fetchImpl: fakeFetch,
+  });
+
+  assert.equal(capturedUrl, 'http://test-satellite:8100/api/v1/ndvi/jobs/job-xyz');
+  assert.equal(res.job_id, fixture.job_id);
+});
+
+test('abort errors are rethrown untouched', async () => {
+  const abortError = new DOMException('The user aborted a request.', 'AbortError');
+  const fakeFetch = async () => {
+    throw abortError;
+  };
+
+  await assert.rejects(
+    async () => {
+      await createNdviJob({
+        geometry: { type: 'Polygon', coordinates: [] },
+        parcelId: 'p-abort',
+        baseUrl: 'http://test-satellite:8100',
+        fetchImpl: fakeFetch,
+      });
+    },
+    (err) => err === abortError
+  );
+});
+
