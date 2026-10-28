@@ -333,6 +333,23 @@ Following thorough code-review of the Phase 2 frontend map implementations (TODO
 
 ---
 
+### Review Follow-ups (Post-Review Polish & Bugfixes)
+1. **Item 1 (Bug) — Restricted Selection & Click Interception to Idle Mode:**
+   - In `FarmMapContainer.tsx`, `parcelSelectHandler` is passed to `<ParcelLayer>` and `<ParcelCentroidLabelsLayer>` only when `effectiveActiveMode === 'idle'`.
+   - In `ParcelLayer` and `ParcelCentroidLabelsLayer`, the click handler returns early before stopping event propagation if no select handler is active, allowing Geoman drawing and deletion interactions to receive clicks without erroneously opening the metadata edit drawer.
+2. **Item 2 (Bug) — Decoupled Viewport Auto-Fit from Local Drawing/Edits:**
+   - Added `fitCollection` prop to `FarmMapContainer.tsx` and computed it in `FieldMapPage.tsx` strictly from loaded field data (`data?.collection`). Local polygon creation, vertex drags, or deletions no longer trigger unexpected viewport auto-fit jumps.
+3. **Item 3 — Dynamic Map Centroid Label Area Updates:**
+   - Added pure `geometryAreaHa` helper in `farmMapPage.ts` computing polygon and multipolygon surface areas via `calculateParcelMetrics`.
+   - `applyGeometryOverrides` and `handleParcelGeometryChange` now update `properties.area_hectares` when geometry changes, ensuring map centroid badges immediately display updated hectares following vertex edits or drags.
+4. **Item 4 — Layer Remount on Save-Blocked Toolbar Deletion:**
+   - In `FieldMapPage.tsx`, `handlePolygonDelete` now increments `renderVersion` if deletion is rejected due to an in-flight save (`isSaving`), cleanly remounting the layer so Geoman-removed polygons reappear.
+5. **Item 5 — Code Cleanups:**
+   - Moved `PARCELS_WRITE_PATH` below import declarations in `farmMapService.ts`.
+   - Streamlined `formatParcelFeedback` signature to `(type, metrics?, options?: { localOnly?: boolean })`, eliminating ambiguous union inspection (`'areaHa' in ...` / `'localOnly' in ...`) and updating callers and unit tests.
+
+---
+
 ### Backend API Contract Summary (for TODO-205)
 For the backend developer implementing `/api/v1/parcels` (TODO-205):
 - **Endpoints:**
