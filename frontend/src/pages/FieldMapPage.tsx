@@ -68,6 +68,7 @@ function FieldMapView({
   const [selectedParcel, setSelectedParcel] = useState<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null>(null);
   const [pendingParcel, setPendingParcel] = useState<{ feature: GeoJSON.Feature<GeoJSON.Polygon>; metrics: ParcelMetrics } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [renderVersion, setRenderVersion] = useState(0);
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -203,39 +204,93 @@ function FieldMapView({
     setIsDrawerOpen(true);
   };
 
-  const handlePolygonDelete = (parcelId: string | number) => {
-    let wasDeleted = false;
-    setDrawnParcels((prev) => {
-      const updated = removeDrawnParcel(prev, parcelId);
-      if (updated.length !== prev.length) {
-        wasDeleted = true;
-      }
-      return updated;
-    });
-    setPendingParcel((curr) => {
-      if (curr) {
-        const targetStr = String(parcelId);
-        const currIdStr = curr.feature.id !== undefined && curr.feature.id !== null ? String(curr.feature.id) : null;
-        const currPropIdStr = curr.feature.properties?.id !== undefined && curr.feature.properties?.id !== null ? String(curr.feature.properties.id) : null;
-        if (currIdStr === targetStr || currPropIdStr === targetStr) {
-          wasDeleted = true;
-          return null;
+  const deleteParcel = async (targetId: string) => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const effectiveConfig = config ?? configuration.config ?? {
+        apiBaseUrl: 'http://localhost:5051',
+        parcelsPath: '/api/v1/spatial/geojson/parcels',
+        mode: 'auto',
+      };
+      const writeMode: GisDataMode = data?.source === 'sample' ? 'sample' : effectiveConfig.mode;
+      const isLocalOnly = writeMode === 'sample';
+
+      await deleteParcelBoundary({
+        apiBaseUrl: effectiveConfig.apiBaseUrl,
+        mode: writeMode,
+        parcelId: targetId,
+      });
+
+      setDrawnParcels((prev) => removeDrawnParcel(prev, targetId));
+      setDeletedIds((prev) => {
+        const next = new Set(prev);
+        next.add(targetId);
+        return next;
+      });
+      setParcelOverrides((prev) => {
+        const next = { ...prev };
+        delete next[targetId];
+        return next;
+      });
+      setGeometryOverrides((prev) => {
+        const next = { ...prev };
+        delete next[targetId];
+        return next;
+      });
+
+      if (selectedParcel) {
+        const selId = String(selectedParcel.properties?.id ?? selectedParcel.id);
+        if (selId === targetId) {
+          setSelectedParcel(null);
+          setIsDrawerOpen(false);
         }
       }
-      return curr;
+
+      setFeedbackNotice(formatParcelFeedback('delete', { localOnly: isLocalOnly }));
+    } catch (err: any) {
+      setRenderVersion((v) => v + 1);
+      setFeedbackNotice({
+        type: 'info',
+        message: `Failed to delete parcel: ${err?.message ?? 'Unknown error'}`,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePolygonDelete = async (parcelId: string | number) => {
+    if (isSaving) return;
+    const targetStr = String(parcelId);
+
+    // Ignore pm:remove events for layers that are not parcels
+    const matchingParcel = activeCollection.features.find((f) => {
+      const fId = f.id !== undefined && f.id !== null ? String(f.id) : null;
+      const pId = f.properties?.id !== undefined && f.properties?.id !== null ? String(f.properties.id) : null;
+      return fId === targetStr || pId === targetStr;
     });
-    if (selectedParcel) {
-      const targetStr = String(parcelId);
-      const selIdStr = selectedParcel.id !== undefined && selectedParcel.id !== null ? String(selectedParcel.id) : null;
-      const selPropIdStr = selectedParcel.properties?.id !== undefined && selectedParcel.properties?.id !== null ? String(selectedParcel.properties.id) : null;
-      if (selIdStr === targetStr || selPropIdStr === targetStr) {
-        setSelectedParcel(null);
-        setIsDrawerOpen(false);
+    if (!matchingParcel) {
+      return;
+    }
+
+    const pendingIdStr = pendingParcel ? String(pendingParcel.feature.id ?? pendingParcel.feature.properties?.id) : null;
+    const isPending = pendingParcel && pendingIdStr === targetStr;
+
+    if (isPending) {
+      setPendingParcel(null);
+      setDrawnParcels((prev) => removeDrawnParcel(prev, targetStr));
+      if (selectedParcel) {
+        const selId = String(selectedParcel.properties?.id ?? selectedParcel.id);
+        if (selId === targetStr) {
+          setSelectedParcel(null);
+          setIsDrawerOpen(false);
+        }
       }
-    }
-    if (wasDeleted) {
       setFeedbackNotice(formatParcelFeedback('delete'));
+      return;
     }
+
+    await deleteParcel(targetStr);
   };
 
   const handleParcelGeometryChange = (id: string, geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon) => {
@@ -365,50 +420,7 @@ function FieldMapView({
   const handleDrawerDelete = async () => {
     if (!selectedParcel || isSaving) return;
     const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
-    setIsSaving(true);
-    try {
-      const effectiveConfig = config ?? configuration.config ?? {
-        apiBaseUrl: 'http://localhost:5051',
-        parcelsPath: '/api/v1/spatial/geojson/parcels',
-        mode: 'auto',
-      };
-      const writeMode: GisDataMode = data?.source === 'sample' ? 'sample' : effectiveConfig.mode;
-      const isLocalOnly = writeMode === 'sample';
-
-      await deleteParcelBoundary({
-        apiBaseUrl: effectiveConfig.apiBaseUrl,
-        mode: writeMode,
-        parcelId: targetId,
-      });
-
-      setDrawnParcels((prev) => removeDrawnParcel(prev, targetId));
-      setDeletedIds((prev) => {
-        const next = new Set(prev);
-        next.add(targetId);
-        return next;
-      });
-      setParcelOverrides((prev) => {
-        const next = { ...prev };
-        delete next[targetId];
-        return next;
-      });
-      setGeometryOverrides((prev) => {
-        const next = { ...prev };
-        delete next[targetId];
-        return next;
-      });
-
-      setSelectedParcel(null);
-      setIsDrawerOpen(false);
-      setFeedbackNotice(formatParcelFeedback('delete', { localOnly: isLocalOnly }));
-    } catch (err: any) {
-      setFeedbackNotice({
-        type: 'info',
-        message: `Failed to delete parcel: ${err?.message ?? 'Unknown error'}`,
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    await deleteParcel(targetId);
   };
 
   const unknownField = fieldId !== undefined && !fields.some(({ id }) => id === fieldId);
@@ -488,6 +500,7 @@ function FieldMapView({
         <FarmMapContainer
           collection={activeCollection}
           editable
+          renderVersion={renderVersion}
           selectedParcelId={selectedParcelId}
           onParcelSelect={handleParcelSelect}
           onParcelGeometryChange={handleParcelGeometryChange}

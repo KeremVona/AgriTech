@@ -35,11 +35,13 @@ function ParcelLayer({
   selectedParcelId,
   onParcelSelect,
   onParcelGeometryChange,
+  renderVersion,
 }: {
   collection: ParcelFeatureCollection;
   selectedParcelId?: string | number | null;
   onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>) => void;
   onParcelGeometryChange?: (id: string, geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon) => void;
+  renderVersion?: number;
 }) {
   const layer = useRef<L.GeoJSON>(null);
   const onParcelSelectRef = useRef(onParcelSelect);
@@ -107,7 +109,7 @@ function ParcelLayer({
 
   return (
     <GeoJSON
-      key={collection.features.length}
+      key={`${collection.features.length}-${renderVersion ?? 0}`}
       ref={layer}
       data={collection}
       style={styleFunction as any}
@@ -125,6 +127,7 @@ export interface FarmMapContainerProps {
   onParcelGeometryChange?: (id: string, geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon) => void;
   onPolygonComplete?: (feature: GeoJSON.Feature<GeoJSON.Polygon>, metrics: ParcelMetrics) => void;
   onPolygonDelete?: (parcelId: string | number) => void;
+  renderVersion?: number;
 }
 
 export function FarmMapContainer({
@@ -135,6 +138,7 @@ export function FarmMapContainer({
   onParcelGeometryChange,
   onPolygonComplete,
   onPolygonDelete,
+  renderVersion,
 }: FarmMapContainerProps): React.JSX.Element {
   const [baseLayer, setBaseLayer] = useState<BaseLayer>('satellite');
   const [tileStatus, setTileStatus] = useState<TileStatus>('loading');
@@ -232,6 +236,7 @@ export function FarmMapContainer({
           selectedParcelId={selectedParcelId}
           onParcelSelect={onParcelSelect}
           onParcelGeometryChange={onParcelGeometryChange}
+          renderVersion={renderVersion}
         />
         <ParcelCentroidLabelsLayer
           collection={collection}
