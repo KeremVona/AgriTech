@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic>=2
+pydantic-settings
+pystac-client
+rasterio
+numpy
+pillow
+shapely>=2
+pyproj
