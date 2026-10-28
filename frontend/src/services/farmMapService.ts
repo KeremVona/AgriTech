@@ -4,7 +4,7 @@ import { sampleFarmMap } from '../data/sampleFarmMap.ts';
 import type { GisDataMode, ParcelMapData } from '../types/farmMap.ts';
 import type { ParcelFormData } from '../types/parcelMetadata.ts';
 import { parseParcelCollection } from '../utils/farmMapGeometry.ts';
-import { buildParcelCreatePayload } from '../utils/parcelMetadataPolicy.ts';
+import { buildParcelCreatePayload, findCrop, findSoil } from '../utils/parcelMetadataPolicy.ts';
 
 class AvailabilityError extends Error {}
 
@@ -31,22 +31,44 @@ function buildOptimisticFeature<G extends GeoJSON.Polygon | GeoJSON.MultiPolygon
   areaHa: number,
   fieldId?: string | null
 ): GeoJSON.Feature<G> {
-  const payload = buildParcelCreatePayload(parcel, geometry, areaHa);
+  const matchedCrop = findCrop(
+    parcel.cropName,
+    (parcel as any)?.crop_name,
+    parcel.crop,
+    parcel.cropId,
+    (parcel as any)?.crop_id,
+  );
+  const matchedSoil = findSoil(
+    parcel.soilProfileName,
+    (parcel as any)?.soil_profile_name,
+    parcel.soil,
+    parcel.soilProfileId,
+    (parcel as any)?.soil_profile_id,
+  );
+
+  const cropName = matchedCrop?.name || parcel.cropName || (parcel as any)?.crop_name || parcel.crop || null;
+  const cropId = matchedCrop?.id || parcel.cropId || (parcel as any)?.crop_id || null;
+  const soilProfileName = matchedSoil?.name || parcel.soilProfileName || (parcel as any)?.soil_profile_name || parcel.soil || null;
+  const soilProfileId = matchedSoil?.id || parcel.soilProfileId || (parcel as any)?.soil_profile_id || null;
+  const resolvedFieldId = parcel.fieldId ?? (parcel as any)?.field_id ?? fieldId ?? null;
+  const plantingDate = parcel.plantingDate || (parcel as any)?.planting_date || null;
+  const name = parcel.name || 'Unnamed parcel';
+
   return {
     type: 'Feature',
     id,
     geometry,
     properties: {
       id,
-      name: payload.name || 'Unnamed parcel',
-      field_id: payload.field_id ?? fieldId ?? null,
+      name,
+      field_id: resolvedFieldId,
       field_name: null,
-      crop_id: payload.crop_id || null,
-      crop_name: payload.crop_name || null,
-      soil_profile_id: payload.soil_profile_id || null,
-      soil_profile_name: payload.soil_profile_name || null,
+      crop_id: cropId,
+      crop_name: cropName,
+      soil_profile_id: soilProfileId,
+      soil_profile_name: soilProfileName,
       area_hectares: areaHa,
-      planting_date: payload.planting_date || null,
+      planting_date: plantingDate,
     },
   };
 }
@@ -151,7 +173,7 @@ export async function saveParcel(options: {
     const request = async (): Promise<GeoJSON.Feature<GeoJSON.Polygon>> => {
       let response: Response;
       const url = `${apiBaseUrl.replace(/\/$/, '')}${PARCELS_WRITE_PATH}`;
-      const payload = buildParcelCreatePayload(effectiveParcel, geometry, areaHa);
+      const payload = buildParcelCreatePayload(effectiveParcel, geometry);
 
       try {
         response = await fetchImpl(url, {
@@ -246,7 +268,7 @@ export async function updateParcelMetadata(options: {
     const request = async (): Promise<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> => {
       let response: Response;
       const url = `${apiBaseUrl.replace(/\/$/, '')}${PARCELS_WRITE_PATH}/${encodeURIComponent(parcelId)}`;
-      const payload = buildParcelCreatePayload(data, effectiveGeom, effectiveArea);
+      const payload = buildParcelCreatePayload(data, effectiveGeom);
 
       try {
         response = await fetchImpl(url, {
