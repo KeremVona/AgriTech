@@ -1,0 +1,96 @@
+{
+  "job_id": "3f9a0c1b2d4e5f60",
+  "parcel_id": "20700000-0000-4000-8000-000000000001",
+  "status": "done",
+  "window": {
+    "start": "2025-10-27",
+    "end": "2026-10-26"
+  },
+  "bounds": [
+    [37.9998, 32.5997],
+    [38.0022, 32.6023]
+  ],
+  "progress": {
+    "processed": 11,
+    "total": 11
+  },
+  "frames": [
+    {
+      "date": "2025-11-15",
+      "scene_id": "S2A_36SVD_20251115_0_L2A",
+      "mean_ndvi": 0.2145,
+      "valid_fraction": 0.88,
+      "png_url": "/api/v1/ndvi/frames/3f9a0c1b2d4e5f60/2025-11-15.png"
+    },
+    {
+      "date": "2025-12-20",
+      "scene_id": "S2B_36SVD_20251220_0_L2A",
+      "mean_ndvi": 0.1832,
+      "valid_fraction": 0.91,
+      "png_url": "/api/v1/ndvi/frames/3f9a0c1b2d4e5f60/2025-12-20.png"
+    },
+    {
+      "date": "2026-02-18",
+      "scene_id": "S2A_36SVD_20260218_0_L2A",
+      "mean_ndvi": 0.245,
+      "valid_fraction": 0.85,
+      "png_url": "/api/v1/ndvi/frames/3f9a0c1b2d4e5f60/2026-02-18.png"
+    },
+    {
+      "date": "2026-04-09",
+      "scene_id": "S2B_36SVD_20260409_0_L2A",
+      "mean_ndvi": 0.4512,
+      "valid_fraction": 0.95,
+      "png_url": "/api/v1/ndvi/frames/3f9a0c1b2d4e5f60/2026-04-09.png"
+    },
+    {
+      "date": "2026-05-19",
+      "scene_id": "S2A_36SVD_20260519_0_L2A",
+      "mean_ndvi": 0.7241,
+      "valid_fraction": 0.98,
+      "png_url": "/api/v1/ndvi/frames/3f9a0c1b2d4e5f60/2026-05-19.png"
+    },
+    {
+      "date": "2026-06-23",
+      "scene_id": "S2B_36SVD_20260623_0_L2A",
+      "mean_ndvi": 0.6815,
+      "valid_fraction": 0.92,
+      "png_url": "/api/v1/ndvi/frames/3f9a0c1b2d4e5f60/2026-06-23.png"
+    },
+    {
+      "date": "2026-08-12",
+      "scene_id": "S2A_36SVD_20260812_0_L2A",
+      "mean_ndvi": 0.312,
+      "valid_fraction": 0.97,
+      "png_url": "/api/v1/ndvi/frames/3f9a0c1b2d4e5f60/2026-08-12.png"
+    },
+    {
+      "date": "2026-09-26",
+      "scene_id": "S2B_36SVD_20260926_0_L2A",
+      "mean_ndvi": 0.2289,
+      "valid_fraction": 0.94,
+      "png_url": "/api/v1/ndvi/frames/3f9a0c1b2d4e5f60/2026-09-26.png"
+    }
+  ],
+  "skipped": [
+    {
+      "date": "2026-01-14",
+      "scene_id": "S2A_36SVD_20260114_0_L2A",
+      "reason": "cloudy",
+      "valid_fraction": 0.15
+    },
+    {
+      "date": "2026-03-15",
+      "scene_id": "S2B_36SVD_20260315_0_L2A",
+      "reason": "read_error",
+      "valid_fraction": null
+    },
+    {
+      "date": "2026-07-18",
+      "scene_id": "S2A_36SVD_20260718_0_L2A",
+      "reason": "no_data",
+      "valid_fraction": 0.0
+    }
+  ],
+  "error": null
+}
