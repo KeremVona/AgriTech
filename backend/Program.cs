@@ -36,6 +36,30 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// Global exception handling: translates NetTopologySuite geometry/deserialization exceptions to 400 Bad Request
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex) when (ex is ArgumentException or NetTopologySuite.Geometries.TopologyException or System.Text.Json.JsonException)
+    {
+        if (!context.Response.HasStarted)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.ContentType = "application/problem+json";
+            var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Invalid geometry or request payload",
+                Detail = ex.Message
+            };
+            await context.Response.WriteAsJsonAsync(problem);
+        }
+    }
+});
+
 app.UseCors("AllowLocalhost");
 
 app.UseHttpsRedirection();
