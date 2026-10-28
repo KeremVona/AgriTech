@@ -251,7 +251,6 @@ function FieldMapView({
       if (drawerMode === 'create' && pendingParcel) {
         const saved = await saveParcel({
           apiBaseUrl: effectiveConfig.apiBaseUrl,
-          parcelsPath: effectiveConfig.parcelsPath,
           mode: writeMode,
           parcel: formData,
           geometry: pendingParcel.feature.geometry,
@@ -277,7 +276,6 @@ function FieldMapView({
 
         await updateParcelMetadata({
           apiBaseUrl: effectiveConfig.apiBaseUrl,
-          parcelsPath: effectiveConfig.parcelsPath,
           mode: writeMode,
           parcelId: targetId,
           data: formData,
@@ -327,7 +325,6 @@ function FieldMapView({
 
       await deleteParcelBoundary({
         apiBaseUrl: effectiveConfig.apiBaseUrl,
-        parcelsPath: effectiveConfig.parcelsPath,
         mode: writeMode,
         parcelId: targetId,
       });

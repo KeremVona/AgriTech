@@ -1,3 +1,5 @@
+export const PARCELS_WRITE_PATH = '/api/v1/parcels';
+
 import { sampleFarmMap } from '../data/sampleFarmMap.ts';
 import type { GisDataMode, ParcelMapData } from '../types/farmMap.ts';
 import type { ParcelFormData } from '../types/parcelMetadata.ts';
@@ -108,7 +110,6 @@ export async function loadParcelMapData(options: {
 
 export async function saveParcel(options: {
   apiBaseUrl: string;
-  parcelsPath: string;
   mode: GisDataMode;
   parcel: ParcelFormData;
   geometry: GeoJSON.Polygon;
@@ -119,7 +120,6 @@ export async function saveParcel(options: {
 }): Promise<GeoJSON.Feature<GeoJSON.Polygon>> {
   const {
     apiBaseUrl,
-    parcelsPath,
     mode,
     parcel,
     geometry,
@@ -150,7 +150,7 @@ export async function saveParcel(options: {
   try {
     const request = async (): Promise<GeoJSON.Feature<GeoJSON.Polygon>> => {
       let response: Response;
-      const url = `${apiBaseUrl.replace(/\/$/, '')}/${parcelsPath.replace(/^\//, '')}`;
+      const url = `${apiBaseUrl.replace(/\/$/, '')}${PARCELS_WRITE_PATH}`;
       const payload = buildParcelCreatePayload(effectiveParcel, geometry, areaHa);
 
       try {
@@ -203,7 +203,6 @@ export async function saveParcel(options: {
 
 export async function updateParcelMetadata(options: {
   apiBaseUrl: string;
-  parcelsPath: string;
   mode: GisDataMode;
   parcelId: string;
   data: ParcelFormData;
@@ -214,7 +213,6 @@ export async function updateParcelMetadata(options: {
 }): Promise<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> {
   const {
     apiBaseUrl,
-    parcelsPath,
     mode,
     parcelId,
     data,
@@ -247,7 +245,7 @@ export async function updateParcelMetadata(options: {
   try {
     const request = async (): Promise<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> => {
       let response: Response;
-      const url = `${apiBaseUrl.replace(/\/$/, '')}/${parcelsPath.replace(/^\//, '')}/${encodeURIComponent(parcelId)}`;
+      const url = `${apiBaseUrl.replace(/\/$/, '')}${PARCELS_WRITE_PATH}/${encodeURIComponent(parcelId)}`;
       const payload = buildParcelCreatePayload(data, effectiveGeom, effectiveArea);
 
       try {
@@ -299,7 +297,6 @@ export async function updateParcelMetadata(options: {
 
 export async function deleteParcelBoundary(options: {
   apiBaseUrl: string;
-  parcelsPath: string;
   mode: GisDataMode;
   parcelId: string;
   signal?: AbortSignal;
@@ -307,7 +304,6 @@ export async function deleteParcelBoundary(options: {
 }): Promise<{ success: boolean; id: string }> {
   const {
     apiBaseUrl,
-    parcelsPath,
     mode,
     parcelId,
     signal,
@@ -334,7 +330,7 @@ export async function deleteParcelBoundary(options: {
   try {
     const request = async (): Promise<{ success: boolean; id: string }> => {
       let response: Response;
-      const url = `${apiBaseUrl.replace(/\/$/, '')}/${parcelsPath.replace(/^\//, '')}/${encodeURIComponent(parcelId)}`;
+      const url = `${apiBaseUrl.replace(/\/$/, '')}${PARCELS_WRITE_PATH}/${encodeURIComponent(parcelId)}`;
 
       try {
         response = await fetchImpl(url, {
