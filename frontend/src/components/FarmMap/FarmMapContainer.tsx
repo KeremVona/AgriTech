@@ -122,6 +122,7 @@ function ParcelLayer({
 
 export interface FarmMapContainerProps {
   collection: ParcelFeatureCollection;
+  fitCollection?: ParcelFeatureCollection;
   editable?: boolean;
   selectedParcelId?: string | number | null;
   onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>) => void;
@@ -133,6 +134,7 @@ export interface FarmMapContainerProps {
 
 export function FarmMapContainer({
   collection,
+  fitCollection,
   editable = true,
   selectedParcelId,
   onParcelSelect,
@@ -180,7 +182,7 @@ export function FarmMapContainer({
 
   const drawingState: DrawingState = getDrawingState(activeMode, effectiveKinks.length, false);
 
-  const bounds = useMemo(() => getParcelBounds(collection), [collection]);
+  const bounds = useMemo(() => getParcelBounds(fitCollection ?? collection), [fitCollection, collection]);
   const active = layers[baseLayer];
   const changeLayer = (layer: BaseLayer) => {
     if (layer === baseLayer) return;
