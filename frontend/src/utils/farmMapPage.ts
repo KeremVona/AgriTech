@@ -160,6 +160,35 @@ export function updateParcelInCollection(
 }
 
 /**
+ * Immutably applies geometry overrides to matching features in a FeatureCollection.
+ * Matches across string, numeric, or properties.id identifiers.
+ */
+export function applyGeometryOverrides(
+  collection: ParcelFeatureCollection,
+  overrides: Record<string, GeoJSON.Polygon | GeoJSON.MultiPolygon>
+): ParcelFeatureCollection {
+  if (!collection || !collection.features || !overrides || Object.keys(overrides).length === 0) {
+    return collection;
+  }
+  const updatedFeatures = collection.features.map((feature) => {
+    const featId = feature.id !== undefined && feature.id !== null ? String(feature.id) : null;
+    const propId = feature.properties?.id !== undefined && feature.properties?.id !== null ? String(feature.properties.id) : null;
+    const matchingKey = (featId && overrides[featId]) ? featId : (propId && overrides[propId]) ? propId : null;
+    if (!matchingKey) {
+      return feature;
+    }
+    return {
+      ...feature,
+      geometry: overrides[matchingKey],
+    };
+  });
+  return {
+    ...collection,
+    features: updatedFeatures,
+  };
+}
+
+/**
  * Formats toast and banner feedback messages for parcel completion and removal events.
  */
 export function formatParcelFeedback(
