@@ -8,7 +8,7 @@ import {
   saveParcel,
   updateParcelMetadata,
 } from '../services/farmMapService.ts';
-import type { ParcelFeatureCollection, ParcelMapData } from '../types/farmMap.ts';
+import type { GisDataMode, ParcelFeatureCollection, ParcelMapData } from '../types/farmMap.ts';
 import type { ParcelMetrics } from '../types/farmMapDrawing.ts';
 import type { ParcelFormData } from '../types/parcelMetadata.ts';
 import {
@@ -245,12 +245,14 @@ function FieldMapView({
         parcelsPath: '/api/v1/spatial/geojson/parcels',
         mode: 'auto',
       };
+      const writeMode: GisDataMode = data?.source === 'sample' ? 'sample' : effectiveConfig.mode;
+      const isLocalOnly = writeMode === 'sample';
 
       if (drawerMode === 'create' && pendingParcel) {
         const saved = await saveParcel({
           apiBaseUrl: effectiveConfig.apiBaseUrl,
           parcelsPath: effectiveConfig.parcelsPath,
-          mode: effectiveConfig.mode,
+          mode: writeMode,
           parcel: formData,
           geometry: pendingParcel.feature.geometry,
           areaHa: pendingParcel.metrics.areaHa,
@@ -268,7 +270,7 @@ function FieldMapView({
         setPendingParcel(null);
         setSelectedParcel(null);
         setIsDrawerOpen(false);
-        setFeedbackNotice(formatParcelFeedback('register'));
+        setFeedbackNotice(formatParcelFeedback('register', { localOnly: isLocalOnly }));
       } else if (drawerMode === 'edit' && selectedParcel) {
         const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
         const areaHa = selectedParcel.properties?.area_hectares ?? drawerMetrics?.areaHa ?? 0;
@@ -276,7 +278,7 @@ function FieldMapView({
         await updateParcelMetadata({
           apiBaseUrl: effectiveConfig.apiBaseUrl,
           parcelsPath: effectiveConfig.parcelsPath,
-          mode: effectiveConfig.mode,
+          mode: writeMode,
           parcelId: targetId,
           data: formData,
           geometry: selectedParcel.geometry,
@@ -298,7 +300,7 @@ function FieldMapView({
 
         setSelectedParcel(null);
         setIsDrawerOpen(false);
-        setFeedbackNotice(formatParcelFeedback('update'));
+        setFeedbackNotice(formatParcelFeedback('update', { localOnly: isLocalOnly }));
       }
     } catch (err: any) {
       setFeedbackNotice({
@@ -320,11 +322,13 @@ function FieldMapView({
         parcelsPath: '/api/v1/spatial/geojson/parcels',
         mode: 'auto',
       };
+      const writeMode: GisDataMode = data?.source === 'sample' ? 'sample' : effectiveConfig.mode;
+      const isLocalOnly = writeMode === 'sample';
 
       await deleteParcelBoundary({
         apiBaseUrl: effectiveConfig.apiBaseUrl,
         parcelsPath: effectiveConfig.parcelsPath,
-        mode: effectiveConfig.mode,
+        mode: writeMode,
         parcelId: targetId,
       });
 
@@ -342,7 +346,7 @@ function FieldMapView({
 
       setSelectedParcel(null);
       setIsDrawerOpen(false);
-      setFeedbackNotice(formatParcelFeedback('delete'));
+      setFeedbackNotice(formatParcelFeedback('delete', { localOnly: isLocalOnly }));
     } catch (err: any) {
       setFeedbackNotice({
         type: 'info',
@@ -371,7 +375,7 @@ function FieldMapView({
       ? 'Action Failed'
       : feedbackNotice?.type === 'info'
       ? 'Parcel Removed'
-      : feedbackNotice?.message.includes('registered')
+      : feedbackNotice?.message.includes('registered') || feedbackNotice?.message.includes('saved')
       ? 'Parcel Registered'
       : feedbackNotice?.message.includes('updated')
       ? 'Parcel Updated'
