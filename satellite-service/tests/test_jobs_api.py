@@ -15,7 +15,7 @@ import pytest
 from geometry import job_id_for, parse_parcel_geometry, time_window
 from jobs import JobRegistry
 from main import create_app
-from schemas import Frame, Skipped
+from schemas import Frame, JobStatus, Progress, Skipped, Window
 
 SQUARE = {
     "type": "Polygon",
@@ -434,3 +434,37 @@ def test_interrupted_run_is_restarted(tmp_path: Path):
     final_data = _wait_done(client, job_id)
     assert final_data["status"] == "done"
     assert manifest_file.is_file()
+
+
+def test_get_job_rejects_non_hex_job_id(tmp_path: Path):
+    # put a valid-looking manifest OUTSIDE the cache dir, reachable via ".."
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    outside = tmp_path / "manifest.json"
+    dummy_status = JobStatus(
+        job_id="0123456789abcdef",
+        parcel_id="p1",
+        status="done",
+        window=Window(start="2025-10-27", end="2026-10-26"),
+        bounds=[[29.0, 41.0], [29.01, 41.01]],
+        progress=Progress(processed=1, total=1),
+        frames=[
+            Frame(
+                date="2026-05-14",
+                scene_id="s1",
+                mean_ndvi=0.7,
+                valid_fraction=0.9,
+                png_url="/api/v1/ndvi/frames/0123456789abcdef/2026-05-14.png",
+            )
+        ],
+        skipped=[],
+        error=None,
+    )
+    outside.write_text(dummy_status.model_dump_json(indent=2), encoding="utf-8")
+    registry = JobRegistry(cache, lambda g, s, e: [], lambda *args: None, workers=1)
+    assert registry.get("..") is None
+    assert registry.get("..\\x") is None
+    assert registry.get("ABCDEF0123456789") is None  # uppercase is not allowed
+    client = TestClient(create_app(registry=registry, today=lambda: date(2026, 10, 28)))
+    assert client.get("/api/v1/ndvi/jobs/..%5Cx").status_code == 404
+

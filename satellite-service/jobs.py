@@ -235,6 +235,8 @@ class JobRegistry:
 
     def get(self, job_id: str) -> JobStatus | None:
         """Retrieve JobStatus from memory or disk cache."""
+        if not JOB_ID_RE.match(job_id):
+            return None
         with self._lock:
             if job_id in self._jobs:
                 return self._jobs[job_id].to_status()
