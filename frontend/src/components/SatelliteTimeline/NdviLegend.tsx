@@ -11,7 +11,7 @@ export function NdviLegend(): React.JSX.Element {
   }).join(', ');
 
   return (
-    <div className="flex flex-col gap-1 w-full max-w-xs" aria-label="NDVI color scale">
+    <div className="flex flex-col gap-1 w-full max-w-xs min-w-40 shrink-0" aria-label="NDVI color scale">
       <div className="text-[11px] font-medium text-ag-ink-secondary">NDVI Scale</div>
       <div
         className="h-2.5 w-full rounded border border-ag-border"
