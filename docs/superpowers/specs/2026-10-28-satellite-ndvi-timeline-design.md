@@ -281,13 +281,13 @@ All functions are pure and covered by `test_satellite_timeline.js`:
   - Before the first frame or after the last, clamp to that frame.
   - With 0 frames, both are null.
 - `nearestFrame(frames, day)`: used for the date / NDVI / cloud-free label.
-- `chartScales(frames, skipped, width, height, padding)` → functions `x(day)` and `y(ndvi)`.
+- `chartScales(window, width, height, padding)` → functions `x(day)`, `y(ndvi)` and `dayAt(px)` (the inverse of `x`).
   - The y domain is fixed at [−0.2, 0.9], matching the colors.
   - The x domain is `[window.start, window.end]`.
 - `ndviJobReducer(state, action)`: the polling state machine.
   - States: `idle | starting | polling | done | failed | error`.
-  - Actions: `select(parcelId)`, `started(status)`, `polled(status)`, `requestFailed(message, kind: 'offline' | 'invalid' | 'other')`, `reset`.
-  - A `polled` or `started` action whose `job_id` doesn't match the current job is **ignored**. This is what stops a stale poll from an earlier parcel from overwriting the new one.
+  - Actions: `select(parcelId)`, `started(parcelId, status)`, `polled(parcelId, status)`, `requestFailed(parcelId, message, kind: 'offline' | 'invalid' | 'other')`, `reset`.
+  - A `started` or `polled` action whose `parcelId` doesn't match the current parcel (or a `polled` whose `job_id` doesn't match the current job) is **ignored**. This is what stops a stale poll from an earlier parcel from overwriting the new one.
 
 ### 4.4 Behaviour
 
