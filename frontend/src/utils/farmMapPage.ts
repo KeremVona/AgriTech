@@ -1,3 +1,4 @@
+import { calculateParcelMetrics } from './parcelTopology.ts';
 import type { GisDataMode, ParcelFeatureCollection } from '../types/farmMap.ts';
 import type { ParcelMetrics } from '../types/farmMapDrawing.ts';
 import type { ParcelFormData } from '../types/parcelMetadata.ts';
@@ -160,6 +161,29 @@ export function updateParcelInCollection(
 }
 
 /**
+ * Pure helper that calculates the area in hectares for a Polygon or MultiPolygon.
+ */
+export function geometryAreaHa(geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon): number {
+  if (!geometry || !geometry.coordinates) return 0;
+  if (geometry.type === 'Polygon') {
+    const ring = geometry.coordinates[0];
+    if (!ring || !Array.isArray(ring)) return 0;
+    return calculateParcelMetrics(ring as [number, number][]).areaHa;
+  }
+  if (geometry.type === 'MultiPolygon') {
+    let total = 0;
+    for (const poly of geometry.coordinates) {
+      const ring = poly?.[0];
+      if (ring && Array.isArray(ring)) {
+        total += calculateParcelMetrics(ring as [number, number][]).areaHa;
+      }
+    }
+    return Math.round(total * 10000) / 10000;
+  }
+  return 0;
+}
+
+/**
  * Immutably applies geometry overrides to matching features in a FeatureCollection.
  * Matches across string, numeric, or properties.id identifiers.
  */
@@ -177,9 +201,14 @@ export function applyGeometryOverrides(
     if (!matchingKey) {
       return feature;
     }
+    const newGeometry = overrides[matchingKey];
     return {
       ...feature,
-      geometry: overrides[matchingKey],
+      geometry: newGeometry,
+      properties: {
+        ...feature.properties,
+        area_hectares: geometryAreaHa(newGeometry),
+      },
     };
   });
   return {
