@@ -132,3 +132,5 @@ Desktop.ini
 *.pdf
 
 .agents
+
+.claude

@@ -337,6 +337,44 @@ test('Soil Selector Catalog: contains 4 canonical soils with thetaFc and descrip
 });
 
 // -----------------------------------------------------------------------------
+test('Initial Data: matches live database UUID crop/soil and non-catalog IDs by readable name', () => {
+  const liveDbParcel = {
+    crop_id: '6f1c2b1e-0000-4000-8000-000000000001',
+    crop_name: 'Tomato',
+    soil_profile_id: 'silt_loam',
+    soil_profile_name: 'Silt',
+    planting_date: '2026-04-15',
+    name: 'P1',
+  };
+
+  const formData = getInitialDrawerFormData('edit', liveDbParcel);
+  assert.equal(formData.cropId, 'crop-tomato');
+  assert.equal(formData.cropName, 'Tomato');
+  assert.equal(formData.soilProfileId, 'silt');
+  assert.equal(formData.soilProfileName, 'Silt');
+
+  let savedData = null;
+  const result = handleDrawerSubmit(formData, (data) => {
+    savedData = data;
+  });
+  assert.equal(result.success, true);
+  assert.ok(savedData);
+  assert.equal(savedData.cropId, 'crop-tomato');
+  assert.equal(savedData.soilProfileId, 'silt');
+});
+
+test('Initial Data: matches crop_name Corn without Maize suffix through category', () => {
+  const cornParcel = {
+    crop_name: 'Corn',
+    soil_profile_name: 'Clay',
+    name: 'Corn Plot',
+  };
+
+  const formData = getInitialDrawerFormData('edit', cornParcel);
+  assert.equal(formData.cropId, 'crop-corn');
+  assert.equal(formData.cropName, 'Corn (Maize)');
+});
+
 // Final Report
 // -----------------------------------------------------------------------------
 if (failures > 0) {
@@ -345,3 +383,4 @@ if (failures > 0) {
 } else {
   console.log(`\nAll ${tests} parcel drawer tests passed.`);
 }
+

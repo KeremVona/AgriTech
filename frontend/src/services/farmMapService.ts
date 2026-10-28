@@ -2,7 +2,9 @@ import { sampleFarmMap } from '../data/sampleFarmMap.ts';
 import type { GisDataMode, ParcelMapData } from '../types/farmMap.ts';
 import type { ParcelFormData } from '../types/parcelMetadata.ts';
 import { parseParcelCollection } from '../utils/farmMapGeometry.ts';
-import { buildParcelCreatePayload } from '../utils/parcelMetadataPolicy.ts';
+import { buildParcelCreatePayload, findCrop, findSoil } from '../utils/parcelMetadataPolicy.ts';
+
+export const PARCELS_WRITE_PATH = '/api/v1/parcels';
 
 class AvailabilityError extends Error {}
 
@@ -29,22 +31,44 @@ function buildOptimisticFeature<G extends GeoJSON.Polygon | GeoJSON.MultiPolygon
   areaHa: number,
   fieldId?: string | null
 ): GeoJSON.Feature<G> {
-  const payload = buildParcelCreatePayload(parcel, geometry, areaHa);
+  const matchedCrop = findCrop(
+    parcel.cropName,
+    (parcel as any)?.crop_name,
+    parcel.crop,
+    parcel.cropId,
+    (parcel as any)?.crop_id,
+  );
+  const matchedSoil = findSoil(
+    parcel.soilProfileName,
+    (parcel as any)?.soil_profile_name,
+    parcel.soil,
+    parcel.soilProfileId,
+    (parcel as any)?.soil_profile_id,
+  );
+
+  const cropName = matchedCrop?.name || parcel.cropName || (parcel as any)?.crop_name || parcel.crop || null;
+  const cropId = matchedCrop?.id || parcel.cropId || (parcel as any)?.crop_id || null;
+  const soilProfileName = matchedSoil?.name || parcel.soilProfileName || (parcel as any)?.soil_profile_name || parcel.soil || null;
+  const soilProfileId = matchedSoil?.id || parcel.soilProfileId || (parcel as any)?.soil_profile_id || null;
+  const resolvedFieldId = parcel.fieldId ?? (parcel as any)?.field_id ?? fieldId ?? null;
+  const plantingDate = parcel.plantingDate || (parcel as any)?.planting_date || null;
+  const name = parcel.name || 'Unnamed parcel';
+
   return {
     type: 'Feature',
     id,
     geometry,
     properties: {
       id,
-      name: payload.name || 'Unnamed parcel',
-      field_id: payload.field_id ?? fieldId ?? null,
+      name,
+      field_id: resolvedFieldId,
       field_name: null,
-      crop_id: payload.crop_id || null,
-      crop_name: payload.crop_name || null,
-      soil_profile_id: payload.soil_profile_id || null,
-      soil_profile_name: payload.soil_profile_name || null,
+      crop_id: cropId,
+      crop_name: cropName,
+      soil_profile_id: soilProfileId,
+      soil_profile_name: soilProfileName,
       area_hectares: areaHa,
-      planting_date: payload.planting_date || null,
+      planting_date: plantingDate,
     },
   };
 }
@@ -108,7 +132,6 @@ export async function loadParcelMapData(options: {
 
 export async function saveParcel(options: {
   apiBaseUrl: string;
-  parcelsPath: string;
   mode: GisDataMode;
   parcel: ParcelFormData;
   geometry: GeoJSON.Polygon;
@@ -119,7 +142,6 @@ export async function saveParcel(options: {
 }): Promise<GeoJSON.Feature<GeoJSON.Polygon>> {
   const {
     apiBaseUrl,
-    parcelsPath,
     mode,
     parcel,
     geometry,
@@ -150,8 +172,8 @@ export async function saveParcel(options: {
   try {
     const request = async (): Promise<GeoJSON.Feature<GeoJSON.Polygon>> => {
       let response: Response;
-      const url = `${apiBaseUrl.replace(/\/$/, '')}/${parcelsPath.replace(/^\//, '')}`;
-      const payload = buildParcelCreatePayload(effectiveParcel, geometry, areaHa);
+      const url = `${apiBaseUrl.replace(/\/$/, '')}${PARCELS_WRITE_PATH}`;
+      const payload = buildParcelCreatePayload(effectiveParcel, geometry);
 
       try {
         response = await fetchImpl(url, {
@@ -193,9 +215,6 @@ export async function saveParcel(options: {
     return await Promise.race([request(), cancelled]);
   } catch (error) {
     if (signal?.aborted) throw callerAbort();
-    if (mode === 'auto' && error instanceof AvailabilityError) {
-      return buildOptimisticFeature(generateParcelId(), effectiveParcel, geometry, areaHa, effectiveParcel.fieldId);
-    }
     throw error;
   } finally {
     clearTimeout(timeout);
@@ -206,7 +225,6 @@ export async function saveParcel(options: {
 
 export async function updateParcelMetadata(options: {
   apiBaseUrl: string;
-  parcelsPath: string;
   mode: GisDataMode;
   parcelId: string;
   data: ParcelFormData;
@@ -217,7 +235,6 @@ export async function updateParcelMetadata(options: {
 }): Promise<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> {
   const {
     apiBaseUrl,
-    parcelsPath,
     mode,
     parcelId,
     data,
@@ -250,8 +267,8 @@ export async function updateParcelMetadata(options: {
   try {
     const request = async (): Promise<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> => {
       let response: Response;
-      const url = `${apiBaseUrl.replace(/\/$/, '')}/${parcelsPath.replace(/^\//, '')}/${encodeURIComponent(parcelId)}`;
-      const payload = buildParcelCreatePayload(data, effectiveGeom, effectiveArea);
+      const url = `${apiBaseUrl.replace(/\/$/, '')}${PARCELS_WRITE_PATH}/${encodeURIComponent(parcelId)}`;
+      const payload = buildParcelCreatePayload(data, effectiveGeom);
 
       try {
         response = await fetchImpl(url, {
@@ -292,9 +309,6 @@ export async function updateParcelMetadata(options: {
     return await Promise.race([request(), cancelled]);
   } catch (error) {
     if (signal?.aborted) throw callerAbort();
-    if (mode === 'auto' && error instanceof AvailabilityError) {
-      return buildOptimisticFeature(parcelId, data, effectiveGeom, effectiveArea, data.fieldId);
-    }
     throw error;
   } finally {
     clearTimeout(timeout);
@@ -305,7 +319,6 @@ export async function updateParcelMetadata(options: {
 
 export async function deleteParcelBoundary(options: {
   apiBaseUrl: string;
-  parcelsPath: string;
   mode: GisDataMode;
   parcelId: string;
   signal?: AbortSignal;
@@ -313,7 +326,6 @@ export async function deleteParcelBoundary(options: {
 }): Promise<{ success: boolean; id: string }> {
   const {
     apiBaseUrl,
-    parcelsPath,
     mode,
     parcelId,
     signal,
@@ -340,7 +352,7 @@ export async function deleteParcelBoundary(options: {
   try {
     const request = async (): Promise<{ success: boolean; id: string }> => {
       let response: Response;
-      const url = `${apiBaseUrl.replace(/\/$/, '')}/${parcelsPath.replace(/^\//, '')}/${encodeURIComponent(parcelId)}`;
+      const url = `${apiBaseUrl.replace(/\/$/, '')}${PARCELS_WRITE_PATH}/${encodeURIComponent(parcelId)}`;
 
       try {
         response = await fetchImpl(url, {
@@ -369,9 +381,6 @@ export async function deleteParcelBoundary(options: {
     return await Promise.race([request(), cancelled]);
   } catch (error) {
     if (signal?.aborted) throw callerAbort();
-    if (mode === 'auto' && error instanceof AvailabilityError) {
-      return { success: true, id: parcelId };
-    }
     throw error;
   } finally {
     clearTimeout(timeout);

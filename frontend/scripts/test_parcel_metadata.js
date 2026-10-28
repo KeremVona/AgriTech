@@ -371,18 +371,22 @@ test('buildParcelCreatePayload produces RFC 7946 compliant parcel creation DTO',
       ],
     ],
   };
-  const areaHa = 2.45;
 
-  const payload = buildParcelCreatePayload(formData, geometry, areaHa);
+  const payload = buildParcelCreatePayload(formData, geometry);
 
+  assert.deepEqual(Object.keys(payload).sort(), [
+    'crop_type',
+    'field_id',
+    'geometry',
+    'name',
+    'planting_date',
+    'soil_type',
+  ]);
   assert.equal(payload.field_id, 'field-1234');
   assert.equal(payload.name, 'P-04 - North Field Potato');
-  assert.equal(payload.crop_id, 'crop-potato');
-  assert.equal(payload.crop_name, 'Potato');
-  assert.equal(payload.soil_profile_id, 'sandy_loam');
-  assert.equal(payload.soil_profile_name, 'Sandy Loam');
+  assert.equal(payload.crop_type, 'Potato');
+  assert.equal(payload.soil_type, 'Sandy Loam');
   assert.equal(payload.planting_date, '2026-04-15');
-  assert.equal(payload.area_hectares, 2.45);
   assert.deepEqual(payload.geometry, geometry);
 });
 
@@ -392,6 +396,7 @@ test('buildParcelCreatePayload resolves shorthand crop and soil fields', () => {
     crop: 'Tomato',
     soil: 'Sandy Loam',
     plantingDate: '2026-05-01',
+    fieldId: 'field-5678',
   };
   const geometry = {
     type: 'Polygon',
@@ -405,13 +410,18 @@ test('buildParcelCreatePayload resolves shorthand crop and soil fields', () => {
       ],
     ],
   };
-  const payload = buildParcelCreatePayload(shorthandData, geometry, 1.5);
+  const payload = buildParcelCreatePayload(shorthandData, geometry);
+  assert.deepEqual(Object.keys(payload).sort(), [
+    'crop_type',
+    'field_id',
+    'geometry',
+    'name',
+    'planting_date',
+    'soil_type',
+  ]);
   assert.equal(payload.name, 'Shorthand Parcel');
-  assert.equal(payload.crop_id, 'crop-tomato');
-  assert.equal(payload.crop_name, 'Tomato');
-  assert.equal(payload.soil_profile_id, 'sandy_loam');
-  assert.equal(payload.soil_profile_name, 'Sandy Loam');
-  assert.equal(payload.area_hectares, 1.5);
+  assert.equal(payload.crop_type, 'Tomato');
+  assert.equal(payload.soil_type, 'Sandy Loam');
 });
 
 // -----------------------------------------------------------------------------

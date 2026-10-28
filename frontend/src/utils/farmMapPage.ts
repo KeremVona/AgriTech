@@ -1,3 +1,4 @@
+import { calculateParcelMetrics } from './parcelTopology.ts';
 import type { GisDataMode, ParcelFeatureCollection } from '../types/farmMap.ts';
 import type { ParcelMetrics } from '../types/farmMapDrawing.ts';
 import type { ParcelFormData } from '../types/parcelMetadata.ts';
@@ -160,22 +161,86 @@ export function updateParcelInCollection(
 }
 
 /**
+ * Pure helper that calculates the area in hectares for a Polygon or MultiPolygon.
+ */
+export function geometryAreaHa(geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon): number {
+  if (!geometry || !geometry.coordinates) return 0;
+  if (geometry.type === 'Polygon') {
+    const ring = geometry.coordinates[0];
+    if (!ring || !Array.isArray(ring)) return 0;
+    return calculateParcelMetrics(ring as [number, number][]).areaHa;
+  }
+  if (geometry.type === 'MultiPolygon') {
+    let total = 0;
+    for (const poly of geometry.coordinates) {
+      const ring = poly?.[0];
+      if (ring && Array.isArray(ring)) {
+        total += calculateParcelMetrics(ring as [number, number][]).areaHa;
+      }
+    }
+    return Math.round(total * 10000) / 10000;
+  }
+  return 0;
+}
+
+/**
+ * Immutably applies geometry overrides to matching features in a FeatureCollection.
+ * Matches across string, numeric, or properties.id identifiers.
+ */
+export function applyGeometryOverrides(
+  collection: ParcelFeatureCollection,
+  overrides: Record<string, GeoJSON.Polygon | GeoJSON.MultiPolygon>
+): ParcelFeatureCollection {
+  if (!collection || !collection.features || !overrides || Object.keys(overrides).length === 0) {
+    return collection;
+  }
+  const updatedFeatures = collection.features.map((feature) => {
+    const featId = feature.id !== undefined && feature.id !== null ? String(feature.id) : null;
+    const propId = feature.properties?.id !== undefined && feature.properties?.id !== null ? String(feature.properties.id) : null;
+    const matchingKey = (featId && overrides[featId]) ? featId : (propId && overrides[propId]) ? propId : null;
+    if (!matchingKey) {
+      return feature;
+    }
+    const newGeometry = overrides[matchingKey];
+    return {
+      ...feature,
+      geometry: newGeometry,
+      properties: {
+        ...feature.properties,
+        area_hectares: geometryAreaHa(newGeometry),
+      },
+    };
+  });
+  return {
+    ...collection,
+    features: updatedFeatures,
+  };
+}
+
+/**
  * Formats toast and banner feedback messages for parcel completion and removal events.
  */
 export function formatParcelFeedback(
   type: 'complete' | 'delete' | 'register' | 'update',
-  metrics?: ParcelMetrics
+  metrics?: ParcelMetrics,
+  options?: { localOnly?: boolean },
 ): { type: 'success' | 'info'; message: string } {
+  const localOnly = Boolean(options?.localOnly);
+
   if (type === 'register') {
     return {
       type: 'success',
-      message: 'Parcel successfully registered.',
+      message: localOnly
+        ? 'Parcel saved to sample data (not sent to the server).'
+        : 'Parcel successfully registered.',
     };
   }
   if (type === 'update') {
     return {
       type: 'success',
-      message: 'Parcel metadata updated.',
+      message: localOnly
+        ? 'Parcel metadata updated in sample data (not sent to the server).'
+        : 'Parcel metadata updated.',
     };
   }
   if (type === 'complete' && metrics) {
@@ -186,6 +251,8 @@ export function formatParcelFeedback(
   }
   return {
     type: 'info',
-    message: 'Parcel boundary removed.',
+    message: localOnly
+      ? 'Parcel boundary removed from sample data (not sent to the server).'
+      : 'Parcel boundary removed.',
   };
 }
