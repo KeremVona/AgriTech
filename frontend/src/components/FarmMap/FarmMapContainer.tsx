@@ -63,8 +63,9 @@ function ParcelLayer({
   const onEachFeature = (feature: any, featureLayer: L.Layer) => {
     featureLayer.on({
       click: (e) => {
+        if (!onParcelSelectRef.current) return;
         L.DomEvent.stopPropagation(e);
-        onParcelSelectRef.current?.(feature);
+        onParcelSelectRef.current(feature);
       },
       'pm:edit': () => {
         const id = String(feature.id ?? feature.properties?.id);
@@ -154,6 +155,7 @@ export function FarmMapContainer({
   const effectiveActiveMode: DrawingMode = editable ? activeMode : 'idle';
   const effectiveMetrics = effectiveActiveMode === 'idle' ? null : metrics;
   const effectiveKinks = effectiveActiveMode === 'idle' ? [] : kinks;
+  const parcelSelectHandler = effectiveActiveMode === 'idle' ? onParcelSelect : undefined;
 
   const handleModeChange = (mode: DrawingMode) => {
     setActiveMode(mode);
@@ -241,14 +243,14 @@ export function FarmMapContainer({
         <ParcelLayer
           collection={collection}
           selectedParcelId={selectedParcelId}
-          onParcelSelect={onParcelSelect}
+          onParcelSelect={parcelSelectHandler}
           onParcelGeometryChange={onParcelGeometryChange}
           renderVersion={renderVersion}
         />
         <ParcelCentroidLabelsLayer
           collection={collection}
           selectedParcelId={selectedParcelId}
-          onParcelSelect={onParcelSelect}
+          onParcelSelect={parcelSelectHandler}
         />
         <FarmMapViewport bounds={bounds} fitRequest={fitRequest} />
         <FarmMapControls
