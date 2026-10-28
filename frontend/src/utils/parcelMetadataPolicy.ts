@@ -132,6 +132,50 @@ export const SOILS: SoilDefinition[] = [
 ];
 
 /**
+ * Searches the canonical crops catalog for a match against candidate strings.
+ * Candidates are evaluated in order; the first matching catalog definition is returned.
+ */
+export function findCrop(...candidates: unknown[]): CropDefinition | undefined {
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') continue;
+    const trimmed = candidate.trim().toLowerCase();
+    if (!trimmed) continue;
+    const match = CROPS.find(
+      (c) =>
+        c.id.toLowerCase() === trimmed ||
+        c.name.toLowerCase() === trimmed ||
+        c.commonName.toLowerCase() === trimmed ||
+        c.category.toLowerCase() === trimmed ||
+        c.scientificName.toLowerCase() === trimmed
+    );
+    if (match) return match;
+  }
+  return undefined;
+}
+
+/**
+ * Searches the canonical soil catalog for a match against candidate strings.
+ * Candidates are evaluated in order; the first matching catalog definition is returned.
+ */
+export function findSoil(...candidates: unknown[]): SoilDefinition | undefined {
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') continue;
+    const trimmed = candidate.trim().toLowerCase();
+    if (!trimmed) continue;
+    const match = SOILS.find(
+      (s) =>
+        s.id.toLowerCase() === trimmed ||
+        s.name.toLowerCase() === trimmed ||
+        s.type.toLowerCase() === trimmed
+    );
+    if (match) return match;
+  }
+  return undefined;
+}
+
+
+
+/**
  * Calculates Days After Planting (DAP) and determines the physiological growth stage.
  *
  * Growth Stages:
@@ -277,18 +321,14 @@ export function validateParcelForm(
     errors.name = 'Parcel name is required';
   }
 
-  const cropValue = data.cropId || data.cropName || data.crop;
-  const hasValidCrop = Boolean(
-    cropValue &&
-      CROPS.some(
-        (c) =>
-          c.id.toLowerCase() === cropValue.trim().toLowerCase() ||
-          c.name.toLowerCase() === cropValue.trim().toLowerCase() ||
-          c.commonName.toLowerCase() === cropValue.trim().toLowerCase() ||
-          c.category.toLowerCase() === cropValue.trim().toLowerCase() ||
-          c.scientificName.toLowerCase() === cropValue.trim().toLowerCase(),
-      ),
+  const matchedCrop = findCrop(
+    data.cropName,
+    (data as any)?.crop_name,
+    data.crop,
+    data.cropId,
+    (data as any)?.crop_id,
   );
+  const hasValidCrop = Boolean(matchedCrop);
 
   if (!hasValidCrop) {
     errors.cropId = 'Please select a valid crop';
@@ -296,16 +336,14 @@ export function validateParcelForm(
     errors.crop = 'Please select a valid crop';
   }
 
-  const soilValue = data.soilProfileId || data.soilProfileName || data.soil;
-  const hasValidSoil = Boolean(
-    soilValue &&
-      SOILS.some(
-        (s) =>
-          s.id.toLowerCase() === soilValue.trim().toLowerCase() ||
-          s.name.toLowerCase() === soilValue.trim().toLowerCase() ||
-          s.type.toLowerCase() === soilValue.trim().toLowerCase(),
-      ),
+  const matchedSoil = findSoil(
+    data.soilProfileName,
+    (data as any)?.soil_profile_name,
+    data.soil,
+    data.soilProfileId,
+    (data as any)?.soil_profile_id,
   );
+  const hasValidSoil = Boolean(matchedSoil);
 
   if (!hasValidSoil) {
     errors.soilProfileId = 'Please select a valid soil profile';
