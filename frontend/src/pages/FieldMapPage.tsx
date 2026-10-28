@@ -253,7 +253,7 @@ function FieldMapView({
         }
       }
 
-      setFeedbackNotice(formatParcelFeedback('delete', { localOnly: isLocalOnly }));
+      setFeedbackNotice(formatParcelFeedback('delete', undefined, { localOnly: isLocalOnly }));
     } catch (err: any) {
       setRenderVersion((v) => v + 1);
       setFeedbackNotice({
@@ -395,7 +395,7 @@ function FieldMapView({
         setPendingParcel(null);
         setSelectedParcel(null);
         setIsDrawerOpen(false);
-        setFeedbackNotice(formatParcelFeedback('register', { localOnly: isLocalOnly }));
+        setFeedbackNotice(formatParcelFeedback('register', undefined, { localOnly: isLocalOnly }));
       } else if (drawerMode === 'edit' && selectedParcel) {
         const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
         const currentParcel = activeCollection.features.find((f) => {
@@ -430,7 +430,7 @@ function FieldMapView({
 
         setSelectedParcel(null);
         setIsDrawerOpen(false);
-        setFeedbackNotice(formatParcelFeedback('update', { localOnly: isLocalOnly }));
+        setFeedbackNotice(formatParcelFeedback('update', undefined, { localOnly: isLocalOnly }));
       }
     } catch (err: any) {
       setFeedbackNotice({

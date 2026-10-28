@@ -619,15 +619,15 @@ test('formatParcelFeedback formats register, update and delete messages accurate
   assert.equal(deleteNotice.type, 'info');
   assert.equal(deleteNotice.message, 'Parcel boundary removed.');
 
-  const registerSampleNotice = formatParcelFeedback('register', { localOnly: true });
+  const registerSampleNotice = formatParcelFeedback('register', undefined, { localOnly: true });
   assert.equal(registerSampleNotice.type, 'success');
   assert.match(registerSampleNotice.message, /sample data/i);
 
-  const updateSampleNotice = formatParcelFeedback('update', { localOnly: true });
+  const updateSampleNotice = formatParcelFeedback('update', undefined, { localOnly: true });
   assert.equal(updateSampleNotice.type, 'success');
   assert.match(updateSampleNotice.message, /sample data/i);
 
-  const deleteSampleNotice = formatParcelFeedback('delete', { localOnly: true });
+  const deleteSampleNotice = formatParcelFeedback('delete', undefined, { localOnly: true });
   assert.equal(deleteSampleNotice.type, 'info');
   assert.match(deleteSampleNotice.message, /sample data/i);
 });
