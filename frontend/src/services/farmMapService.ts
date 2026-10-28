@@ -193,9 +193,6 @@ export async function saveParcel(options: {
     return await Promise.race([request(), cancelled]);
   } catch (error) {
     if (signal?.aborted) throw callerAbort();
-    if (mode === 'auto' && error instanceof AvailabilityError) {
-      return buildOptimisticFeature(generateParcelId(), effectiveParcel, geometry, areaHa, effectiveParcel.fieldId);
-    }
     throw error;
   } finally {
     clearTimeout(timeout);
@@ -292,9 +289,6 @@ export async function updateParcelMetadata(options: {
     return await Promise.race([request(), cancelled]);
   } catch (error) {
     if (signal?.aborted) throw callerAbort();
-    if (mode === 'auto' && error instanceof AvailabilityError) {
-      return buildOptimisticFeature(parcelId, data, effectiveGeom, effectiveArea, data.fieldId);
-    }
     throw error;
   } finally {
     clearTimeout(timeout);
@@ -369,9 +363,6 @@ export async function deleteParcelBoundary(options: {
     return await Promise.race([request(), cancelled]);
   } catch (error) {
     if (signal?.aborted) throw callerAbort();
-    if (mode === 'auto' && error instanceof AvailabilityError) {
-      return { success: true, id: parcelId };
-    }
     throw error;
   } finally {
     clearTimeout(timeout);

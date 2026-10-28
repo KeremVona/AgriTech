@@ -141,41 +141,49 @@ test('saveParcel in api mode throws on 404, 5xx and network errors', async () =>
   );
 });
 
-test('saveParcel in auto mode falls back cleanly to client optimistic Feature on 404, 5xx or network error', async () => {
+test('saveParcel in auto mode rejects on 404, 5xx or network error without fallback', async () => {
   const mock503 = async () => new Response(null, { status: 503 });
-  const feature503 = await saveParcel({
-    ...baseOptions,
-    mode: 'auto',
-    parcel: sampleParcelData,
-    geometry: sampleGeometry,
-    areaHa: 2.5,
-    fieldId: 'field-101',
-    fetchImpl: mock503,
-  });
+  await assert.rejects(
+    saveParcel({
+      ...baseOptions,
+      mode: 'auto',
+      parcel: sampleParcelData,
+      geometry: sampleGeometry,
+      areaHa: 2.5,
+      fieldId: 'field-101',
+      fetchImpl: mock503,
+    }),
+    /503/
+  );
 
-  assert.equal(feature503.type, 'Feature');
-  assert.ok(feature503.id);
-  assert.equal(feature503.properties?.name, 'North Tomato Plot');
-  assert.equal(feature503.properties?.crop_name, 'Tomato');
-  assert.equal(feature503.properties?.soil_profile_name, 'Sandy Loam');
-  assert.equal(feature503.properties?.area_hectares, 2.5);
-  assert.deepEqual(feature503.geometry, sampleGeometry);
+  const mock404 = async () => new Response(null, { status: 404 });
+  await assert.rejects(
+    saveParcel({
+      ...baseOptions,
+      mode: 'auto',
+      parcel: sampleParcelData,
+      geometry: sampleGeometry,
+      areaHa: 2.5,
+      fieldId: 'field-101',
+      fetchImpl: mock404,
+    }),
+    /404/
+  );
 
   const mockOffline = async () => {
     throw new TypeError('Failed to fetch');
   };
-  const featureOffline = await saveParcel({
-    ...baseOptions,
-    mode: 'auto',
-    parcel: sampleParcelData,
-    geometry: sampleGeometry,
-    areaHa: 2.5,
-    fetchImpl: mockOffline,
-  });
-
-  assert.equal(featureOffline.type, 'Feature');
-  assert.equal(featureOffline.properties?.name, 'North Tomato Plot');
-  assert.equal(featureOffline.properties?.crop_name, 'Tomato');
+  await assert.rejects(
+    saveParcel({
+      ...baseOptions,
+      mode: 'auto',
+      parcel: sampleParcelData,
+      geometry: sampleGeometry,
+      areaHa: 2.5,
+      fetchImpl: mockOffline,
+    }),
+    /unreachable|network|fetch/i
+  );
 });
 
 test('saveParcel in auto mode rejects hard 4xx client errors without fallback', async () => {
@@ -275,7 +283,7 @@ test('updateParcelMetadata in api mode sends PUT and returns updated feature', a
   assert.equal(feature.properties?.crop_name, 'Corn (Maize)');
 });
 
-test('updateParcelMetadata in auto mode falls back to optimistic update on 5xx or offline', async () => {
+test('updateParcelMetadata in auto mode rejects on 5xx or offline', async () => {
   const updatedData = {
     name: 'Offline Updated Plot',
     cropId: 'crop-apple',
@@ -287,25 +295,36 @@ test('updateParcelMetadata in auto mode falls back to optimistic update on 5xx o
     plantingDate: '2026-03-20',
   };
 
+  const mock500 = async () => new Response(null, { status: 500 });
+  await assert.rejects(
+    updateParcelMetadata({
+      ...baseOptions,
+      mode: 'auto',
+      parcelId: 'parcel-200',
+      data: updatedData,
+      geometry: sampleGeometry,
+      areaHa: 1.8,
+      fetchImpl: mock500,
+    }),
+    /500/
+  );
+
   const mockOffline = async () => {
     throw new TypeError('Failed to fetch');
   };
 
-  const feature = await updateParcelMetadata({
-    ...baseOptions,
-    mode: 'auto',
-    parcelId: 'parcel-200',
-    data: updatedData,
-    geometry: sampleGeometry,
-    areaHa: 1.8,
-    fetchImpl: mockOffline,
-  });
-
-  assert.equal(feature.id, 'parcel-200');
-  assert.equal(feature.properties?.name, 'Offline Updated Plot');
-  assert.equal(feature.properties?.crop_name, 'Apple');
-  assert.equal(feature.properties?.soil_profile_name, 'Silt');
-  assert.equal(feature.properties?.planting_date, '2026-03-20');
+  await assert.rejects(
+    updateParcelMetadata({
+      ...baseOptions,
+      mode: 'auto',
+      parcelId: 'parcel-200',
+      data: updatedData,
+      geometry: sampleGeometry,
+      areaHa: 1.8,
+      fetchImpl: mockOffline,
+    }),
+    /unreachable|network|fetch/i
+  );
 });
 
 test('updateParcelMetadata in sample mode updates locally without network call', async () => {
@@ -373,20 +392,31 @@ test('deleteParcelBoundary in api mode throws on 500 error', async () => {
   );
 });
 
-test('deleteParcelBoundary in auto mode falls back cleanly on network failure', async () => {
+test('deleteParcelBoundary in auto mode rejects on network failure or 5xx', async () => {
+  const mock500 = async () => new Response(null, { status: 500 });
+  await assert.rejects(
+    deleteParcelBoundary({
+      ...baseOptions,
+      mode: 'auto',
+      parcelId: 'parcel-del-err',
+      fetchImpl: mock500,
+    }),
+    /500/
+  );
+
   const mockOffline = async () => {
     throw new TypeError('Failed to fetch');
   };
 
-  const result = await deleteParcelBoundary({
-    ...baseOptions,
-    mode: 'auto',
-    parcelId: 'parcel-del-offline',
-    fetchImpl: mockOffline,
-  });
-
-  assert.equal(result.success, true);
-  assert.equal(result.id, 'parcel-del-offline');
+  await assert.rejects(
+    deleteParcelBoundary({
+      ...baseOptions,
+      mode: 'auto',
+      parcelId: 'parcel-del-offline',
+      fetchImpl: mockOffline,
+    }),
+    /unreachable|network|fetch/i
+  );
 });
 
 test('deleteParcelBoundary in sample mode returns success without network call', async () => {
@@ -522,6 +552,18 @@ test('formatParcelFeedback formats register, update and delete messages accurate
   const deleteNotice = formatParcelFeedback('delete');
   assert.equal(deleteNotice.type, 'info');
   assert.equal(deleteNotice.message, 'Parcel boundary removed.');
+
+  const registerSampleNotice = formatParcelFeedback('register', { localOnly: true });
+  assert.equal(registerSampleNotice.type, 'success');
+  assert.match(registerSampleNotice.message, /sample data/i);
+
+  const updateSampleNotice = formatParcelFeedback('update', { localOnly: true });
+  assert.equal(updateSampleNotice.type, 'success');
+  assert.match(updateSampleNotice.message, /sample data/i);
+
+  const deleteSampleNotice = formatParcelFeedback('delete', { localOnly: true });
+  assert.equal(deleteSampleNotice.type, 'info');
+  assert.match(deleteSampleNotice.message, /sample data/i);
 });
 
 // 6. Edge cases and reconciliation

@@ -164,18 +164,30 @@ export function updateParcelInCollection(
  */
 export function formatParcelFeedback(
   type: 'complete' | 'delete' | 'register' | 'update',
-  metrics?: ParcelMetrics
+  optionsOrMetrics?: ParcelMetrics | { localOnly?: boolean },
+  options?: { localOnly?: boolean }
 ): { type: 'success' | 'info'; message: string } {
+  const localOnly = Boolean(
+    (optionsOrMetrics && 'localOnly' in optionsOrMetrics && optionsOrMetrics.localOnly) ||
+    options?.localOnly
+  );
+  const metrics =
+    optionsOrMetrics && 'areaHa' in optionsOrMetrics ? (optionsOrMetrics as ParcelMetrics) : undefined;
+
   if (type === 'register') {
     return {
       type: 'success',
-      message: 'Parcel successfully registered.',
+      message: localOnly
+        ? 'Parcel saved to sample data (not sent to the server).'
+        : 'Parcel successfully registered.',
     };
   }
   if (type === 'update') {
     return {
       type: 'success',
-      message: 'Parcel metadata updated.',
+      message: localOnly
+        ? 'Parcel metadata updated in sample data (not sent to the server).'
+        : 'Parcel metadata updated.',
     };
   }
   if (type === 'complete' && metrics) {
@@ -186,6 +198,8 @@ export function formatParcelFeedback(
   }
   return {
     type: 'info',
-    message: 'Parcel boundary removed.',
+    message: localOnly
+      ? 'Parcel boundary removed from sample data (not sent to the server).'
+      : 'Parcel boundary removed.',
   };
 }
