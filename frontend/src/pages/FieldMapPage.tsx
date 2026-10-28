@@ -20,6 +20,7 @@ import {
   removeDrawnParcel,
   resolveFarmMapConfig,
   applyGeometryOverrides,
+  geometryAreaHa,
   updateParcelInCollection,
 } from '../utils/farmMapPage.ts';
 import type { FarmMapConfig } from '../utils/farmMapPage.ts';
@@ -306,13 +307,23 @@ function FieldMapView({
       const updatedFeature: GeoJSON.Feature<GeoJSON.Polygon> = {
         ...pendingParcel.feature,
         geometry: geometry as GeoJSON.Polygon,
+        properties: {
+          ...pendingParcel.feature.properties,
+          area_hectares: metrics.areaHa,
+        },
       };
       setPendingParcel({ feature: updatedFeature, metrics });
       setSelectedParcel(updatedFeature);
       setDrawnParcels((prev) =>
         prev.map((p) => {
           const pId = String(p.id ?? p.properties?.id);
-          return pId === id ? { ...p, geometry: geometry as GeoJSON.Polygon } : p;
+          return pId === id
+            ? {
+                ...p,
+                geometry: geometry as GeoJSON.Polygon,
+                properties: { ...p.properties, area_hectares: metrics.areaHa },
+              }
+            : p;
         })
       );
       return;
@@ -325,7 +336,13 @@ function FieldMapView({
     setDrawnParcels((prev) =>
       prev.map((p) => {
         const pId = String(p.id ?? p.properties?.id);
-        return pId === id ? { ...p, geometry: geometry as GeoJSON.Polygon } : p;
+        return pId === id
+          ? {
+              ...p,
+              geometry: geometry as GeoJSON.Polygon,
+              properties: { ...p.properties, area_hectares: geometryAreaHa(geometry) },
+            }
+          : p;
       })
     );
   };

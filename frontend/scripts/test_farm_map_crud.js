@@ -10,7 +10,9 @@ import {
   formatParcelFeedback,
   mergeDrawnParcels,
   applyGeometryOverrides,
+  geometryAreaHa,
 } from '../src/utils/farmMapPage.ts';
+import { calculateParcelMetrics } from '../src/utils/parcelTopology.ts';
 
 const sampleGeometry = {
   type: 'Polygon',
@@ -546,6 +548,23 @@ test('updateParcelInCollection matches target parcel by properties.id or numeric
   assert.equal(updatedByProp.features[0].properties?.name, 'Matched by prop id');
 });
 
+test('geometryAreaHa calculates hectare area for Polygon and MultiPolygon', () => {
+  const polyArea = geometryAreaHa(sampleGeometry);
+  const expectedArea = calculateParcelMetrics(sampleGeometry.coordinates[0]).areaHa;
+  assert.equal(polyArea, expectedArea);
+  assert.ok(polyArea > 0);
+
+  const multiPoly = {
+    type: 'MultiPolygon',
+    coordinates: [
+      sampleGeometry.coordinates,
+      sampleGeometry.coordinates,
+    ],
+  };
+  const multiArea = geometryAreaHa(multiPoly);
+  assert.equal(multiArea, expectedArea * 2);
+});
+
 test('applyGeometryOverrides updates matching parcel geometries by id and properties.id', () => {
   const collection = {
     type: 'FeatureCollection',
@@ -581,6 +600,8 @@ test('applyGeometryOverrides updates matching parcel geometries by id and proper
 
   assert.deepEqual(updated.features[0].geometry, newGeom1);
   assert.deepEqual(updated.features[1].geometry, newGeom2);
+  assert.equal(updated.features[0].properties?.area_hectares, geometryAreaHa(newGeom1));
+  assert.equal(updated.features[1].properties?.area_hectares, geometryAreaHa(newGeom2));
   assert.deepEqual(collection.features[0].geometry, sampleGeometry, 'Must be immutable');
 });
 
