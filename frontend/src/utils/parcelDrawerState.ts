@@ -6,6 +6,8 @@ import type { ParcelMetrics } from '../types/farmMapDrawing.ts';
 import {
   CROPS,
   SOILS,
+  findCrop,
+  findSoil,
   validateParcelForm,
 } from './parcelMetadataPolicy.ts';
 
@@ -34,21 +36,12 @@ export function getInitialDrawerFormData(
   const name = typeof raw.name === 'string' ? raw.name : '';
 
   // Extract crop
-  const rawCropVal =
-    raw.cropId ??
-    raw.crop_id ??
-    raw.cropName ??
-    raw.crop_name ??
-    raw.crop ??
-    '';
-
-  const matchedCrop = CROPS.find(
-    (c) =>
-      c.id.toLowerCase() === String(rawCropVal).trim().toLowerCase() ||
-      c.name.toLowerCase() === String(rawCropVal).trim().toLowerCase() ||
-      c.commonName.toLowerCase() === String(rawCropVal).trim().toLowerCase() ||
-      c.category.toLowerCase() === String(rawCropVal).trim().toLowerCase() ||
-      c.scientificName.toLowerCase() === String(rawCropVal).trim().toLowerCase(),
+  const matchedCrop = findCrop(
+    raw.cropName,
+    raw.crop_name,
+    raw.crop,
+    raw.cropId,
+    raw.crop_id,
   );
 
   let cropId = matchedCrop ? matchedCrop.id : (raw.cropId ?? raw.crop_id ?? '');
@@ -63,19 +56,12 @@ export function getInitialDrawerFormData(
   }
 
   // Extract soil
-  const rawSoilVal =
-    raw.soilProfileId ??
-    raw.soil_profile_id ??
-    raw.soilProfileName ??
-    raw.soil_profile_name ??
-    raw.soil ??
-    '';
-
-  const matchedSoil = SOILS.find(
-    (s) =>
-      s.id.toLowerCase() === String(rawSoilVal).trim().toLowerCase() ||
-      s.name.toLowerCase() === String(rawSoilVal).trim().toLowerCase() ||
-      s.type.toLowerCase() === String(rawSoilVal).trim().toLowerCase(),
+  const matchedSoil = findSoil(
+    raw.soilProfileName,
+    raw.soil_profile_name,
+    raw.soil,
+    raw.soilProfileId,
+    raw.soil_profile_id,
   );
 
   let soilProfileId = matchedSoil ? matchedSoil.id : (raw.soilProfileId ?? raw.soil_profile_id ?? '');
@@ -162,26 +148,24 @@ export function formatAreaSummary(metrics?: ParcelMetrics | null): AreaSummarySt
  */
 export function buildDrawerSubmitData(data: Partial<ParcelFormData>): ParcelFormData {
   const name = (data.name ?? '').trim();
-  const rawCrop = data.cropId || data.cropName || data.crop || '';
-  const matchedCrop = CROPS.find(
-    (c) =>
-      c.id.toLowerCase() === rawCrop.trim().toLowerCase() ||
-      c.name.toLowerCase() === rawCrop.trim().toLowerCase() ||
-      c.commonName.toLowerCase() === rawCrop.trim().toLowerCase() ||
-      c.category.toLowerCase() === rawCrop.trim().toLowerCase() ||
-      c.scientificName.toLowerCase() === rawCrop.trim().toLowerCase(),
+  const matchedCrop = findCrop(
+    data.cropName,
+    (data as any)?.crop_name,
+    data.crop,
+    data.cropId,
+    (data as any)?.crop_id,
   );
 
   const cropId = matchedCrop ? matchedCrop.id : (data.cropId || '');
   const cropName = matchedCrop ? matchedCrop.name : (data.cropName || data.crop || '');
   const crop = matchedCrop ? matchedCrop.name : (data.crop || cropName);
 
-  const rawSoil = data.soilProfileId || data.soilProfileName || data.soil || '';
-  const matchedSoil = SOILS.find(
-    (s) =>
-      s.id.toLowerCase() === rawSoil.trim().toLowerCase() ||
-      s.name.toLowerCase() === rawSoil.trim().toLowerCase() ||
-      s.type.toLowerCase() === rawSoil.trim().toLowerCase(),
+  const matchedSoil = findSoil(
+    data.soilProfileName,
+    (data as any)?.soil_profile_name,
+    data.soil,
+    data.soilProfileId,
+    (data as any)?.soil_profile_id,
   );
 
   const soilProfileId = matchedSoil ? matchedSoil.id : (data.soilProfileId || '');
