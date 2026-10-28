@@ -108,6 +108,11 @@ function FieldMapView({
   const fields = useMemo(() => getLoadedFields(collection), [collection]);
   const scopedCollection = useMemo(() => filterParcelsByField(collection, fieldId), [collection, fieldId]);
 
+  const fitCollection = useMemo(
+    () => filterParcelsByField(data?.collection ?? emptyCollection, fieldId),
+    [data?.collection, fieldId],
+  );
+
   const activeCollection = useMemo(() => {
     return mergeDrawnParcels(scopedCollection, drawnParcels, fieldId);
   }, [scopedCollection, drawnParcels, fieldId]);
@@ -499,6 +504,7 @@ function FieldMapView({
       <main className="ag-field-map-workspace">
         <FarmMapContainer
           collection={activeCollection}
+          fitCollection={fitCollection}
           editable={Boolean(fieldId)}
           renderVersion={renderVersion}
           selectedParcelId={selectedParcelId}
