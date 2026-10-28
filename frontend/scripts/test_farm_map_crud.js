@@ -83,7 +83,7 @@ test('saveParcel in api mode sends POST with JSON payload and returns response f
     fetchImpl: mockFetch,
   });
 
-  assert.equal(calledUrl, 'http://localhost:5051/api/v1/spatial/geojson/parcels');
+  assert.equal(calledUrl, 'http://localhost:5051/api/v1/parcels');
   assert.equal(calledMethod, 'POST');
   assert.equal(calledHeaders['Content-Type'], 'application/json');
   assert.match(calledHeaders['Accept'], /application\/geo\+json/);
@@ -271,7 +271,7 @@ test('updateParcelMetadata in api mode sends PUT and returns updated feature', a
     fetchImpl: mockFetch,
   });
 
-  assert.equal(calledUrl, 'http://localhost:5051/api/v1/spatial/geojson/parcels/parcel-100');
+  assert.equal(calledUrl, 'http://localhost:5051/api/v1/parcels/parcel-100');
   assert.equal(calledMethod, 'PUT');
   assert.equal(calledBody.name, 'Updated Corn Plot');
   assert.equal(calledBody.crop_name, 'Corn (Maize)');
@@ -373,7 +373,7 @@ test('deleteParcelBoundary in api mode sends DELETE and handles success', async 
     fetchImpl: mockFetch,
   });
 
-  assert.equal(calledUrl, 'http://localhost:5051/api/v1/spatial/geojson/parcels/parcel-del-1');
+  assert.equal(calledUrl, 'http://localhost:5051/api/v1/parcels/parcel-del-1');
   assert.equal(calledMethod, 'DELETE');
   assert.equal(result.success, true);
   assert.equal(result.id, 'parcel-del-1');
