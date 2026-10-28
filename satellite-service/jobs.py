@@ -61,6 +61,20 @@ class _Job:
                 error=self.error,
             )
 
+    @classmethod
+    def from_status(cls, status: JobStatus) -> "_Job":
+        return cls(
+            job_id=status.job_id,
+            parcel_id=status.parcel_id,
+            status=status.status,
+            window=status.window,
+            bounds=status.bounds,
+            progress=status.progress,
+            frames=list(status.frames),
+            skipped=list(status.skipped),
+            error=status.error,
+        )
+
 
 class JobRegistry:
     """In-memory and disk-backed NDVI job registry and orchestrator."""
@@ -107,28 +121,13 @@ class JobRegistry:
                 # If status == "failed", fall through to restart
 
             # 2. Check on-disk cache if not in memory (or restarted)
-            manifest_file = self.cache_dir / job_id / "manifest.json"
-            if job_id not in self._jobs and manifest_file.is_file():
-                try:
-                    data = json.loads(manifest_file.read_text(encoding="utf-8"))
-                    cached_status = JobStatus.model_validate(data)
+            if job_id not in self._jobs:
+                cached_status = self._load_manifest(job_id)
+                if cached_status is not None:
                     if parcel_id is not None:
                         cached_status.parcel_id = parcel_id
-                    job = _Job(
-                        job_id=cached_status.job_id,
-                        parcel_id=cached_status.parcel_id,
-                        status=cached_status.status,
-                        window=cached_status.window,
-                        bounds=cached_status.bounds,
-                        progress=cached_status.progress,
-                        frames=list(cached_status.frames),
-                        skipped=list(cached_status.skipped),
-                        error=cached_status.error,
-                    )
-                    self._jobs[job_id] = job
+                    self._jobs[job_id] = _Job.from_status(cached_status)
                     return (cached_status, False)
-                except Exception as exc:
-                    logger.warning("Corrupt manifest for job %s: %s", job_id, exc)
 
             # 3. New run or restart of failed/interrupted run
             frames_dir = self.cache_dir / job_id / "frames"
@@ -233,6 +232,18 @@ class JobRegistry:
         tmp_path.write_text(status.model_dump_json(indent=2), encoding="utf-8")
         tmp_path.replace(final_path)
 
+    def _load_manifest(self, job_id: str) -> JobStatus | None:
+        """Read and validate manifest.json from disk if present."""
+        manifest_file = self.cache_dir / job_id / "manifest.json"
+        if not manifest_file.is_file():
+            return None
+        try:
+            data = json.loads(manifest_file.read_text(encoding="utf-8"))
+            return JobStatus.model_validate(data)
+        except Exception as exc:
+            logger.warning("Corrupt manifest for job %s: %s", job_id, exc)
+            return None
+
     def get(self, job_id: str) -> JobStatus | None:
         """Retrieve JobStatus from memory or disk cache."""
         if not JOB_ID_RE.match(job_id):
@@ -241,28 +252,12 @@ class JobRegistry:
             if job_id in self._jobs:
                 return self._jobs[job_id].to_status()
 
-        manifest_file = self.cache_dir / job_id / "manifest.json"
-        if manifest_file.is_file():
-            try:
-                data = json.loads(manifest_file.read_text(encoding="utf-8"))
-                status = JobStatus.model_validate(data)
-                with self._lock:
-                    if job_id not in self._jobs:
-                        self._jobs[job_id] = _Job(
-                            job_id=status.job_id,
-                            parcel_id=status.parcel_id,
-                            status=status.status,
-                            window=status.window,
-                            bounds=status.bounds,
-                            progress=status.progress,
-                            frames=list(status.frames),
-                            skipped=list(status.skipped),
-                            error=status.error,
-                        )
-                return status
-            except Exception as exc:
-                logger.warning("Corrupt manifest for job %s: %s", job_id, exc)
-                return None
+        status = self._load_manifest(job_id)
+        if status is not None:
+            with self._lock:
+                if job_id not in self._jobs:
+                    self._jobs[job_id] = _Job.from_status(status)
+            return status
 
         return None
 
