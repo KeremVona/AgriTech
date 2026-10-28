@@ -222,15 +222,10 @@ export function applyGeometryOverrides(
  */
 export function formatParcelFeedback(
   type: 'complete' | 'delete' | 'register' | 'update',
-  optionsOrMetrics?: ParcelMetrics | { localOnly?: boolean },
-  options?: { localOnly?: boolean }
+  metrics?: ParcelMetrics,
+  options?: { localOnly?: boolean },
 ): { type: 'success' | 'info'; message: string } {
-  const localOnly = Boolean(
-    (optionsOrMetrics && 'localOnly' in optionsOrMetrics && optionsOrMetrics.localOnly) ||
-    options?.localOnly
-  );
-  const metrics =
-    optionsOrMetrics && 'areaHa' in optionsOrMetrics ? (optionsOrMetrics as ParcelMetrics) : undefined;
+  const localOnly = Boolean(options?.localOnly);
 
   if (type === 'register') {
     return {

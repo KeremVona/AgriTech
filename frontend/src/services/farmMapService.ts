@@ -1,10 +1,10 @@
-export const PARCELS_WRITE_PATH = '/api/v1/parcels';
-
 import { sampleFarmMap } from '../data/sampleFarmMap.ts';
 import type { GisDataMode, ParcelMapData } from '../types/farmMap.ts';
 import type { ParcelFormData } from '../types/parcelMetadata.ts';
 import { parseParcelCollection } from '../utils/farmMapGeometry.ts';
 import { buildParcelCreatePayload, findCrop, findSoil } from '../utils/parcelMetadataPolicy.ts';
+
+export const PARCELS_WRITE_PATH = '/api/v1/parcels';
 
 class AvailabilityError extends Error {}
 
