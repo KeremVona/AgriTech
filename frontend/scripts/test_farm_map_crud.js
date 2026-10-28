@@ -9,6 +9,7 @@ import {
   updateParcelInCollection,
   formatParcelFeedback,
   mergeDrawnParcels,
+  applyGeometryOverrides,
 } from '../src/utils/farmMapPage.ts';
 
 const sampleGeometry = {
@@ -537,6 +538,44 @@ test('updateParcelInCollection matches target parcel by properties.id or numeric
   // Match by properties.id "prop-uuid-99"
   const updatedByProp = updateParcelInCollection(collection, 'prop-uuid-99', { name: 'Matched by prop id' });
   assert.equal(updatedByProp.features[0].properties?.name, 'Matched by prop id');
+});
+
+test('applyGeometryOverrides updates matching parcel geometries by id and properties.id', () => {
+  const collection = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        id: 'parcel-1',
+        geometry: sampleGeometry,
+        properties: { id: 'parcel-1', name: 'Parcel 1' },
+      },
+      {
+        type: 'Feature',
+        id: 'feat-2',
+        geometry: sampleGeometry,
+        properties: { id: 'prop-2', name: 'Parcel 2' },
+      },
+    ],
+  };
+
+  const newGeom1 = {
+    type: 'Polygon',
+    coordinates: [[[30, 40], [31, 40], [31, 41], [30, 41], [30, 40]]],
+  };
+  const newGeom2 = {
+    type: 'Polygon',
+    coordinates: [[[35, 42], [36, 42], [36, 43], [35, 43], [35, 42]]],
+  };
+
+  const updated = applyGeometryOverrides(collection, {
+    'parcel-1': newGeom1,
+    'prop-2': newGeom2,
+  });
+
+  assert.deepEqual(updated.features[0].geometry, newGeom1);
+  assert.deepEqual(updated.features[1].geometry, newGeom2);
+  assert.deepEqual(collection.features[0].geometry, sampleGeometry, 'Must be immutable');
 });
 
 // 5. formatParcelFeedback tests

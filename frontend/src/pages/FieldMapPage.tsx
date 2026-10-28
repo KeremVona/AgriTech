@@ -19,6 +19,7 @@ import {
   mergeDrawnParcels,
   removeDrawnParcel,
   resolveFarmMapConfig,
+  applyGeometryOverrides,
   updateParcelInCollection,
 } from '../utils/farmMapPage.ts';
 import type { FarmMapConfig } from '../utils/farmMapPage.ts';
@@ -59,6 +60,7 @@ function FieldMapView({
   // Vector drawing & spatial CRUD state machine for TODO-208 and TODO-209
   const [drawnParcels, setDrawnParcels] = useState<GeoJSON.Feature<GeoJSON.Polygon>[]>([]);
   const [parcelOverrides, setParcelOverrides] = useState<Record<string, Partial<ParcelFormData>>>({});
+  const [geometryOverrides, setGeometryOverrides] = useState<Record<string, GeoJSON.Polygon | GeoJSON.MultiPolygon>>({});
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [feedbackNotice, setFeedbackNotice] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -79,7 +81,7 @@ function FieldMapView({
 
   const collection = useMemo(() => {
     const base = data?.collection ?? emptyCollection;
-    if (Object.keys(parcelOverrides).length === 0 && deletedIds.size === 0) {
+    if (Object.keys(parcelOverrides).length === 0 && Object.keys(geometryOverrides).length === 0 && deletedIds.size === 0) {
       return base;
     }
     let current = base;
@@ -96,8 +98,11 @@ function FieldMapView({
     for (const [id, overrides] of Object.entries(parcelOverrides)) {
       current = updateParcelInCollection(current, id, overrides);
     }
+    if (Object.keys(geometryOverrides).length > 0) {
+      current = applyGeometryOverrides(current, geometryOverrides);
+    }
     return current;
-  }, [data?.collection, parcelOverrides, deletedIds]);
+  }, [data?.collection, parcelOverrides, geometryOverrides, deletedIds]);
 
   const fields = useMemo(() => getLoadedFields(collection), [collection]);
   const scopedCollection = useMemo(() => filterParcelsByField(collection, fieldId), [collection, fieldId]);
@@ -115,29 +120,38 @@ function FieldMapView({
     if (drawerMode === 'create') {
       return pendingParcel?.metrics ?? null;
     }
-    if (drawerMode === 'edit' && selectedParcel?.geometry) {
-      let coords: [number, number][] | null = null;
-      if (selectedParcel.geometry.type === 'Polygon') {
-        coords = selectedParcel.geometry.coordinates?.[0] as [number, number][];
-      } else if (selectedParcel.geometry.type === 'MultiPolygon') {
-        coords = selectedParcel.geometry.coordinates?.[0]?.[0] as [number, number][];
-      }
-      if (Array.isArray(coords) && coords.length >= 3) {
-        return calculateParcelMetrics(coords);
-      }
-      if (typeof selectedParcel.properties?.area_hectares === 'number') {
-        const areaHa = selectedParcel.properties.area_hectares;
-        return {
-          areaM2: areaHa * 10000,
-          areaHa,
-          acres: areaHa * 2.47105,
-          perimeterM: 0,
-          vertexCount: 0,
-        };
+    if (drawerMode === 'edit' && selectedParcel) {
+      const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
+      const currentParcel = activeCollection.features.find((f) => {
+        const fId = f.id !== undefined && f.id !== null ? String(f.id) : null;
+        const pId = f.properties?.id !== undefined && f.properties?.id !== null ? String(f.properties.id) : null;
+        return fId === targetId || pId === targetId;
+      }) ?? selectedParcel;
+
+      if (currentParcel?.geometry) {
+        let coords: [number, number][] | null = null;
+        if (currentParcel.geometry.type === 'Polygon') {
+          coords = currentParcel.geometry.coordinates?.[0] as [number, number][];
+        } else if (currentParcel.geometry.type === 'MultiPolygon') {
+          coords = currentParcel.geometry.coordinates?.[0]?.[0] as [number, number][];
+        }
+        if (Array.isArray(coords) && coords.length >= 3) {
+          return calculateParcelMetrics(coords);
+        }
+        if (typeof currentParcel.properties?.area_hectares === 'number') {
+          const areaHa = currentParcel.properties.area_hectares;
+          return {
+            areaM2: areaHa * 10000,
+            areaHa,
+            acres: areaHa * 2.47105,
+            perimeterM: 0,
+            vertexCount: 0,
+          };
+        }
       }
     }
     return null;
-  }, [drawerMode, pendingParcel, selectedParcel]);
+  }, [drawerMode, pendingParcel, selectedParcel, activeCollection]);
 
   const drawerInitialData = useMemo(() => {
     if (drawerMode === 'create') {
@@ -224,6 +238,38 @@ function FieldMapView({
     }
   };
 
+  const handleParcelGeometryChange = (id: string, geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon) => {
+    const pendingId = pendingParcel ? String(pendingParcel.feature.id ?? pendingParcel.feature.properties?.id) : null;
+    if (pendingParcel && pendingId === id) {
+      const coords = geometry.type === 'Polygon' ? (geometry.coordinates[0] as [number, number][]) : (geometry.coordinates[0]?.[0] as [number, number][]);
+      const metrics = calculateParcelMetrics(coords);
+      const updatedFeature: GeoJSON.Feature<GeoJSON.Polygon> = {
+        ...pendingParcel.feature,
+        geometry: geometry as GeoJSON.Polygon,
+      };
+      setPendingParcel({ feature: updatedFeature, metrics });
+      setSelectedParcel(updatedFeature);
+      setDrawnParcels((prev) =>
+        prev.map((p) => {
+          const pId = String(p.id ?? p.properties?.id);
+          return pId === id ? { ...p, geometry: geometry as GeoJSON.Polygon } : p;
+        })
+      );
+      return;
+    }
+
+    setGeometryOverrides((prev) => ({
+      ...prev,
+      [id]: geometry,
+    }));
+    setDrawnParcels((prev) =>
+      prev.map((p) => {
+        const pId = String(p.id ?? p.properties?.id);
+        return pId === id ? { ...p, geometry: geometry as GeoJSON.Polygon } : p;
+      })
+    );
+  };
+
   const handleDrawerDiscard = () => {
     if (drawerMode === 'create' && pendingParcel) {
       const pendingId = pendingParcel.feature.id ?? pendingParcel.feature.properties?.id;
@@ -272,14 +318,20 @@ function FieldMapView({
         setFeedbackNotice(formatParcelFeedback('register', { localOnly: isLocalOnly }));
       } else if (drawerMode === 'edit' && selectedParcel) {
         const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
-        const areaHa = selectedParcel.properties?.area_hectares ?? drawerMetrics?.areaHa ?? 0;
+        const currentParcel = activeCollection.features.find((f) => {
+          const fId = f.id !== undefined && f.id !== null ? String(f.id) : null;
+          const pId = f.properties?.id !== undefined && f.properties?.id !== null ? String(f.properties.id) : null;
+          return fId === targetId || pId === targetId;
+        }) ?? selectedParcel;
+        const currentGeometry = currentParcel.geometry;
+        const areaHa = drawerMetrics?.areaHa ?? currentParcel.properties?.area_hectares ?? 0;
 
         await updateParcelMetadata({
           apiBaseUrl: effectiveConfig.apiBaseUrl,
           mode: writeMode,
           parcelId: targetId,
           data: formData,
-          geometry: selectedParcel.geometry,
+          geometry: currentGeometry,
           areaHa,
         });
 
@@ -336,6 +388,11 @@ function FieldMapView({
         return next;
       });
       setParcelOverrides((prev) => {
+        const next = { ...prev };
+        delete next[targetId];
+        return next;
+      });
+      setGeometryOverrides((prev) => {
         const next = { ...prev };
         delete next[targetId];
         return next;
@@ -433,6 +490,7 @@ function FieldMapView({
           editable
           selectedParcelId={selectedParcelId}
           onParcelSelect={handleParcelSelect}
+          onParcelGeometryChange={handleParcelGeometryChange}
           onPolygonComplete={handlePolygonComplete}
           onPolygonDelete={handlePolygonDelete}
         />

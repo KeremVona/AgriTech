@@ -34,17 +34,24 @@ function ParcelLayer({
   collection,
   selectedParcelId,
   onParcelSelect,
+  onParcelGeometryChange,
 }: {
   collection: ParcelFeatureCollection;
   selectedParcelId?: string | number | null;
   onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>) => void;
+  onParcelGeometryChange?: (id: string, geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon) => void;
 }) {
   const layer = useRef<L.GeoJSON>(null);
   const onParcelSelectRef = useRef(onParcelSelect);
+  const onParcelGeometryChangeRef = useRef(onParcelGeometryChange);
 
   useEffect(() => {
     onParcelSelectRef.current = onParcelSelect;
   }, [onParcelSelect]);
+
+  useEffect(() => {
+    onParcelGeometryChangeRef.current = onParcelGeometryChange;
+  }, [onParcelGeometryChange]);
 
   const styleFunction = useCallback(
     (feature: any) => resolveParcelFeatureStyle(feature, selectedParcelId),
@@ -56,6 +63,16 @@ function ParcelLayer({
       click: (e) => {
         L.DomEvent.stopPropagation(e);
         onParcelSelectRef.current?.(feature);
+      },
+      'pm:edit': () => {
+        const id = String(feature.id ?? feature.properties?.id);
+        const geom = (featureLayer as L.Polygon).toGeoJSON().geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon;
+        onParcelGeometryChangeRef.current?.(id, geom);
+      },
+      'pm:dragend': () => {
+        const id = String(feature.id ?? feature.properties?.id);
+        const geom = (featureLayer as L.Polygon).toGeoJSON().geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon;
+        onParcelGeometryChangeRef.current?.(id, geom);
       },
     });
   };
@@ -105,6 +122,7 @@ export interface FarmMapContainerProps {
   editable?: boolean;
   selectedParcelId?: string | number | null;
   onParcelSelect?: (feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>) => void;
+  onParcelGeometryChange?: (id: string, geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon) => void;
   onPolygonComplete?: (feature: GeoJSON.Feature<GeoJSON.Polygon>, metrics: ParcelMetrics) => void;
   onPolygonDelete?: (parcelId: string | number) => void;
 }
@@ -114,6 +132,7 @@ export function FarmMapContainer({
   editable = true,
   selectedParcelId,
   onParcelSelect,
+  onParcelGeometryChange,
   onPolygonComplete,
   onPolygonDelete,
 }: FarmMapContainerProps): React.JSX.Element {
@@ -212,6 +231,7 @@ export function FarmMapContainer({
           collection={collection}
           selectedParcelId={selectedParcelId}
           onParcelSelect={onParcelSelect}
+          onParcelGeometryChange={onParcelGeometryChange}
         />
         <ParcelCentroidLabelsLayer
           collection={collection}
