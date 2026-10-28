@@ -89,9 +89,13 @@ test('saveParcel in api mode sends POST with JSON payload and returns response f
   assert.equal(calledHeaders['Content-Type'], 'application/json');
   assert.match(calledHeaders['Accept'], /application\/geo\+json/);
   assert.equal(calledBody.name, 'North Tomato Plot');
-  assert.equal(calledBody.crop_name, 'Tomato');
-  assert.equal(calledBody.area_hectares, 2.5);
+  assert.equal(calledBody.crop_type, 'Tomato');
+  assert.equal(calledBody.soil_type, 'Sandy Loam');
+  assert.equal(calledBody.planting_date, '2026-04-15');
+  assert.equal(calledBody.field_id, 'field-101');
   assert.deepEqual(calledBody.geometry, sampleGeometry);
+  assert.equal(calledBody.crop_name, undefined);
+  assert.equal(calledBody.area_hectares, undefined);
 
   assert.equal(feature.type, 'Feature');
   assert.equal(feature.id, 'parcel-api-1');
@@ -275,9 +279,11 @@ test('updateParcelMetadata in api mode sends PUT and returns updated feature', a
   assert.equal(calledUrl, 'http://localhost:5051/api/v1/parcels/parcel-100');
   assert.equal(calledMethod, 'PUT');
   assert.equal(calledBody.name, 'Updated Corn Plot');
-  assert.equal(calledBody.crop_name, 'Corn (Maize)');
-  assert.equal(calledBody.soil_profile_name, 'Clay');
+  assert.equal(calledBody.crop_type, 'Corn');
+  assert.equal(calledBody.soil_type, 'Clay');
   assert.equal(calledBody.planting_date, '2026-05-01');
+  assert.equal(calledBody.crop_name, undefined);
+  assert.equal(calledBody.area_hectares, undefined);
 
   assert.equal(feature.id, 'parcel-100');
   assert.equal(feature.properties?.name, 'Updated Corn Plot');

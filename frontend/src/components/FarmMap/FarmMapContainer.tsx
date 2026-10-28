@@ -196,12 +196,19 @@ export function FarmMapContainer({
       role="region"
       aria-label="Interactive farm parcel map"
     >
-      {editable && (
+      {editable ? (
         <DrawingToolbar
           activeMode={effectiveActiveMode}
           onModeChange={handleModeChange}
           onCancel={handleCancel}
         />
+      ) : (
+        <div
+          className="ag-drawing-hint ag-map-control-card absolute top-4 left-4 z-[1000] px-3 py-2 text-xs font-medium text-slate-600 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-lg shadow-sm"
+          role="note"
+        >
+          Select a field to draw parcels
+        </div>
       )}
       {editable && effectiveActiveMode !== 'idle' && (
         <DrawingLiveAreaBadge

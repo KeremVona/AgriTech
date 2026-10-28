@@ -376,43 +376,28 @@ export function validateParcelForm(
 export function buildParcelCreatePayload(
   data: ParcelFormData,
   geometry: any,
-  areaHa: number,
 ): Record<string, any> {
-  const cropValue = (data.cropId || data.cropName || data.crop || '').trim().toLowerCase();
-  const matchedCrop = CROPS.find(
-    (c) =>
-      c.id.toLowerCase() === cropValue ||
-      c.name.toLowerCase() === cropValue ||
-      c.commonName.toLowerCase() === cropValue ||
-      c.category.toLowerCase() === cropValue ||
-      c.scientificName.toLowerCase() === cropValue,
+  const matchedCrop = findCrop(
+    data.cropName,
+    (data as any)?.crop_name,
+    data.crop,
+    data.cropId,
+    (data as any)?.crop_id,
   );
-
-  const soilValue = (data.soilProfileId || data.soilProfileName || data.soil || '').trim().toLowerCase();
-  const matchedSoil = SOILS.find(
-    (s) =>
-      s.id.toLowerCase() === soilValue ||
-      s.name.toLowerCase() === soilValue ||
-      s.type.toLowerCase() === soilValue,
+  const matchedSoil = findSoil(
+    data.soilProfileName,
+    (data as any)?.soil_profile_name,
+    data.soil,
+    data.soilProfileId,
+    (data as any)?.soil_profile_id,
   );
-
-  const cropId = data.cropId || matchedCrop?.id || data.crop || '';
-  const cropName = data.cropName || matchedCrop?.name || matchedCrop?.commonName || data.crop || '';
-  const soilProfileId = data.soilProfileId || matchedSoil?.id || data.soil || '';
-  const soilProfileName = data.soilProfileName || matchedSoil?.name || matchedSoil?.type || data.soil || '';
 
   return {
-    field_id: data.fieldId ?? null,
-    name: data.name,
-    crop_id: cropId,
-    crop_name: cropName,
-    soil_profile_id: soilProfileId,
-    soil_profile_name: soilProfileName,
-    planting_date: data.plantingDate,
-    area_hectares: areaHa,
-    irrigation_method: 'DRIP',
-    system_flow_rate_lpm: 100.0,
-    irrigation_efficiency: 0.88,
+    field_id: data.fieldId ?? (data as any)?.field_id ?? null,
+    name: data.name ?? '',
+    crop_type: matchedCrop ? matchedCrop.category : ((data as any)?.crop_type || data.crop || ''),
+    soil_type: matchedSoil ? matchedSoil.type : ((data as any)?.soil_type || data.soil || ''),
+    planting_date: data.plantingDate ?? (data as any)?.planting_date ?? '',
     geometry,
   };
 }

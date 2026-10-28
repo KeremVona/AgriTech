@@ -499,7 +499,7 @@ function FieldMapView({
       <main className="ag-field-map-workspace">
         <FarmMapContainer
           collection={activeCollection}
-          editable
+          editable={Boolean(fieldId)}
           renderVersion={renderVersion}
           selectedParcelId={selectedParcelId}
           onParcelSelect={handleParcelSelect}
