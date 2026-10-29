@@ -91,6 +91,12 @@ export function Navbar() {
           >
             Field GIS
           </Link>
+          <Link
+            to="/satellite"
+            className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+          >
+            Satellite NDVI
+          </Link>
         </nav>
 
         {/* Right: Actions */}
@@ -168,6 +174,13 @@ export function Navbar() {
             className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800/70"
           >
             Field GIS
+          </Link>
+          <Link
+            to="/satellite"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800/70"
+          >
+            Satellite NDVI
           </Link>
         </div>
       )}
