@@ -19,6 +19,7 @@
     "test:assembly": "node --experimental-strip-types scripts/test_production_assembly.js",
     "test:diagnostics": "node --experimental-strip-types scripts/test_diagnostics_validation.js",
     "test:map": "node --experimental-strip-types scripts/test_farm_map_data.js && node --experimental-strip-types scripts/test_farm_map_viewport.js && node --experimental-strip-types scripts/test_farm_map_page.js && node --experimental-strip-types scripts/test_farm_map_drawing.js && node --experimental-strip-types scripts/test_parcel_metadata.js && node --experimental-strip-types scripts/test_parcel_styling.js && node --experimental-strip-types scripts/test_parcel_drawer.js && node --experimental-strip-types scripts/test_farm_map_crud.js",
+    "test:satellite": "node --experimental-strip-types scripts/test_satellite_timeline.js",
     "preview": "vite preview"
   },
   "dependencies": {

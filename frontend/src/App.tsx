@@ -6,6 +6,8 @@ import { LeafDiagnosticsPage } from './pages/LeafDiagnosticsPage';
 
 const FieldMapPage = lazy(() => import('./pages/FieldMapPage').then((module) => ({ default: module.FieldMapPage })));
 const fieldMapRoute = <Suspense fallback={<div className="p-6 text-ag-ink" role="status">Loading field map…</div>}><FieldMapPage /></Suspense>;
+const SatellitePage = lazy(() => import('./pages/SatellitePage').then((module) => ({ default: module.SatellitePage })));
+const satelliteRoute = <Suspense fallback={<div className="p-6 text-ag-ink" role="status">Loading satellite timeline…</div>}><SatellitePage /></Suspense>;
 
 function App() {
   return (
@@ -27,6 +29,7 @@ function App() {
         <Route path="/map" element={fieldMapRoute} />
         <Route path="/fields/:fieldId/parcels" element={fieldMapRoute} />
         <Route path="/field-map" element={<Navigate to="/map" replace />} />
+        <Route path="/satellite" element={satelliteRoute} />
 
         {/* Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />
