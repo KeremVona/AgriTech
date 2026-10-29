@@ -87,4 +87,36 @@ public static class SpatialMappingExtensions
             PlantingDate = parcel.PlantingDate
         };
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CropScan mappings (BACK-206)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Projects a CropScan entity to a CropScanResponseDto, extracting WGS 84 latitude
+    /// and longitude directly from the NetTopologySuite Point geometry (GeomPoint).
+    /// Enriches response with resolved parcel, field, and crop metadata when available.
+    /// </summary>
+    public static CropScanResponseDto ToResponseDto(this CropScan scan)
+    {
+        return new CropScanResponseDto
+        {
+            Id                 = scan.Id,
+            ParcelId           = scan.ParcelId,
+            ParcelName         = scan.Parcel?.Name,
+            FieldId            = scan.Parcel?.FieldId,
+            FieldName          = scan.Parcel?.Field?.Name,
+            CropId             = scan.Parcel?.CropId,
+            CropName           = scan.Parcel?.Crop?.CommonName,
+            InferenceId        = scan.InferenceId,
+            UploadedByUserId   = scan.UploadedByUserId,
+            ImageUrl           = scan.ImageUrl,
+            Latitude           = scan.GeomPoint != null ? scan.GeomPoint.Y : 0.0,
+            Longitude          = scan.GeomPoint != null ? scan.GeomPoint.X : 0.0,
+            GpsAccuracyMeters  = scan.GpsAccuracyMeters,
+            DetectionSource    = scan.DetectionSource,
+            FieldNotes         = scan.FieldNotes,
+            ScannedAt          = scan.ScannedAt
+        };
+    }
 }
