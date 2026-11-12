@@ -86,6 +86,16 @@ ENV/
 env.bak/
 venv.bak/
 
+# Model weights and checkpoints (Licence rule: non-redistributable model data)
+*.safetensors
+*.onnx
+*.bin
+# plant-ml training and evaluation runs (Licence rule: model weights and runs must not be tracked)
+**/runs/
+# plant-ml local system configuration files (Licence rule: do not commit local configs)
+final_system.yaml
+inference.yaml
+
 # ML Datasets & Large Binary Weights
 # (Store datasets and model checkpoints locally or on cloud storage / DVC)
 datasets/
