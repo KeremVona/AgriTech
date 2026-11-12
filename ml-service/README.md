@@ -5,7 +5,7 @@ The computer vision and disease diagnostics microservice for the **Precision Agr
 ## Overview
 
 - **Leaf Disease Classification**: Multi-crop plant leaf diagnostics powered by the `plant-ml` model (33 classes across Tomato, Potato, Corn, Apple, Grape, Rice, Cassava).
-- **Agronomic Advisory Engine**: Returns chemical treatments, cultural controls, biological agents, and microclimate risk data per detected condition.
+- **Agronomic Advisory Engine**: Returns chemical treatments, cultural controls, biological agents, and microclimate risk data per detected condition across all 33 supported classes.
 - **Local Venv Execution**: Runs locally in a Python 3.12 virtual environment with `plantml` package support (Docker ML container removed per Decision D2).
 
 ## Project Structure
@@ -13,26 +13,22 @@ The computer vision and disease diagnostics microservice for the **Precision Agr
 ```
 ml-service/
 ├── main.py                 # FastAPI app with lifespan loader & health checks
-├── inference.py            # Dual-head InferenceEngine + preprocessing
 ├── plantml_engine.py       # plant-ml model inference engine adapter
 ├── schemas.py              # Pydantic request/response models
-├── advisory.py             # Agronomic advisory lookup engine (TODO-105)
+├── advisory.py             # Agronomic advisory lookup engine
 ├── config.py               # pydantic-settings (.env support)
-├── predict.py              # CLI single-image prediction tool
 ├── pyproject.toml          # uv / PEP 517 dependencies
-├── requirements.txt        # Full dev/train requirements
 ├── requirements-prod.txt   # Production requirements for plant-ml venv
 ├── pytest.ini              # pytest async config
 ├── data/
-│   └── disease_advisories.json  # Agronomic knowledge base
-├── models/                 # Model artifacts directory
+│   └── disease_advisories.json  # 33-class agronomic knowledge base
 ├── scripts/
-│   ├── prepare_dataset.py        # Dataset ingestion scripts
-│   └── p2p/                      # Prompt-to-Prompt Disease Progression scripts
+│   └── p2p/                # Prompt-to-Prompt Disease Progression scripts
 └── tests/
     ├── test_classify_leaf.py     # Endpoint tests
     ├── test_plantml_engine.py    # plant-ml engine tests (fake predictor)
-    └── test_advisory_engine.py   # Advisory engine tests
+    ├── test_advisory_engine.py   # Advisory engine tests
+    └── test_p2p_cli.py           # Disease progression CLI tests
 ```
 
 ## Prerequisites
@@ -59,7 +55,6 @@ To run with the real `plant-ml` model:
    ```
 3. Configure environment variables in `ml-service/.env` (git-ignored):
    ```env
-   MODEL_BACKEND=plantml
    PLANTML_SYSTEM=<path>/configs/final_system.yaml
    PLANTML_RUNS_DIR=<path>/runs
    PLANTML_THRESHOLDS=<path>/configs/inference.yaml
@@ -79,7 +74,7 @@ python -m uvicorn main:app --host 0.0.0.0 --port 8000
 Verify service status:
 ```bash
 curl http://localhost:8000/health/live    # → {"status":"alive"}
-curl http://localhost:8000/health/ready   # → reports model readiness
+curl http://localhost:8000/health/ready   # → reports model readiness ("backend": "plantml")
 ```
 
 | Endpoint | Description |
