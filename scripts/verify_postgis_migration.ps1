@@ -13,6 +13,7 @@ function Invoke-PgSql {
 
 Write-Host "`n=======================================================" -ForegroundColor Cyan
 Write-Host " AgriTech BACK-201: PostGIS & Migration Verification" -ForegroundColor Cyan
+Write-Host " Database: agritech_db (read-only verification)" -ForegroundColor Gray
 Write-Host "=======================================================`n" -ForegroundColor Cyan
 
 # 1. Check Docker PostgreSQL container liveness
