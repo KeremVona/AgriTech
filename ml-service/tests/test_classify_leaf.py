@@ -71,20 +71,33 @@ async def test_health_live(client):
 
 
 @pytest.mark.anyio
-async def test_health_ready_stub_mode(client):
-    """In test environment no ONNX model is present → stub mode → still 200.
+async def test_health_ready_unloaded(client):
+    """When model is unloaded, /health/ready returns 503 not_ready.
     TODO-105: advisory_kb field must be present and loaded."""
+    response = await client.get("/health/ready")
+    assert response.status_code == 503
+    data = response.json()
+    assert data["status"] == "not_ready"
+    assert data["model_loaded"] is False
+    assert "mode" in data
+    assert "advisory_kb" in data
+    assert data["advisory_kb"]["loaded"] is True
+    assert data["advisory_kb"]["class_count"] == 12
+    assert "note" in data
+
+
+@pytest.mark.anyio
+async def test_health_ready_loaded(client, monkeypatch):
+    """When model is loaded, /health/ready returns 200 ready."""
+    from config import settings
+    from plantml_engine import plantml_engine
+    monkeypatch.setattr(plantml_engine, "is_loaded", lambda: True)
+    monkeypatch.setattr(settings, "model_backend", "plantml")
     response = await client.get("/health/ready")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ready"
-    # model_loaded may be True or False depending on environment
-    assert "model_loaded" in data
-    assert "mode" in data
-    # TODO-105: advisory_kb status must be included
-    assert "advisory_kb" in data
-    assert data["advisory_kb"]["loaded"] is True
-    assert data["advisory_kb"]["class_count"] == 12
+    assert data["model_loaded"] is True
 
 
 

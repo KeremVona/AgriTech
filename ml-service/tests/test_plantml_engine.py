@@ -109,8 +109,11 @@ async def test_default_backend_unchanged():
     r = await _post()
     assert r.status_code == 200
     assert "status" not in r.json()
-    h = (await _get("/health/ready")).json()
+    h_resp = await _get("/health/ready")
+    assert h_resp.status_code == 503
+    h = h_resp.json()
     assert h["backend"] == "onnx"
+    assert h["status"] == "not_ready"
 
 
 async def test_unloaded_plantml_returns_503_and_health_reports_error(plantml):
@@ -122,6 +125,9 @@ async def test_unloaded_plantml_returns_503_and_health_reports_error(plantml):
     assert r.status_code == 503
     assert r.json()["error"] == "model_unavailable"
     assert "system.yaml missing" in r.json()["message"]
-    h = (await _get("/health/ready")).json()
+    h_resp = await _get("/health/ready")
+    assert h_resp.status_code == 503
+    h = h_resp.json()
+    assert h["status"] == "not_ready"
     assert h["backend"] == "plantml" and h["model_loaded"] is False and h["mode"] == "UNAVAILABLE"
     assert "plant-ml failed to load" in h["note"] and "ONNX" not in h["note"]
