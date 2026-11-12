@@ -305,12 +305,13 @@ async def classify_leaf(
 
     loop = asyncio.get_running_loop()
     engine = _engine()
-    if settings.model_backend == "plantml" and not engine.is_loaded():
+    if not engine.is_loaded():
+        load_err = getattr(engine, "load_error", None) or "no model weights or system configuration loaded"
         return JSONResponse(
             status_code=503,
             content={
                 "error": "model_unavailable",
-                "message": f"plant-ml engine is not loaded: {plantml_engine.load_error}",
+                "message": f"Model engine is not loaded: {load_err}",
             },
         )
     try:

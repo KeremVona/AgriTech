@@ -107,8 +107,8 @@ async def test_default_backend_unchanged():
     assert settings.model_backend == "onnx"
     assert main._engine() is main.inference_engine
     r = await _post()
-    assert r.status_code == 200
-    assert "status" not in r.json()
+    assert r.status_code == 503  # Unconditional 503 when model is not loaded (Finding 2)
+    assert r.json()["error"] == "model_unavailable"
     h_resp = await _get("/health/ready")
     assert h_resp.status_code == 503
     h = h_resp.json()
