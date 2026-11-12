@@ -166,6 +166,34 @@ async def test_classify_leaf_file_too_large(client):
     assert body["error"] == "file_too_large"
 
 
+@pytest.mark.anyio
+async def test_classify_leaf_file_too_large_bounded_read(client, monkeypatch):
+    """Verify that file size check rejects early or reads at most max_upload_bytes + 1 bytes."""
+    from fastapi import UploadFile
+    from config import settings
+
+    max_bytes = settings.max_upload_bytes
+    requested_sizes = []
+    original_read = UploadFile.read
+
+    async def spy_read(self, size=-1):
+        requested_sizes.append(size)
+        return await original_read(self, size)
+
+    monkeypatch.setattr(UploadFile, "read", spy_read)
+
+    payload = b"x" * (max_bytes + 1)
+    response = await client.post(
+        "/api/v1/classify-leaf",
+        files={"file": ("toobig.jpg", payload, "image/jpeg")},
+    )
+    assert response.status_code == 413
+    assert response.json()["error"] == "file_too_large"
+    for sz in requested_sizes:
+        assert sz != -1, "UploadFile.read was called with unbounded size=-1"
+        assert sz <= max_bytes + 1
+
+
 # ---------------------------------------------------------------------------
 # classify-leaf: valid image (stub mode)
 # ---------------------------------------------------------------------------
