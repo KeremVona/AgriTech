@@ -86,7 +86,7 @@ class LowConfidenceAdvisory(BaseModel):
 
     requires_rescan: bool = True
     confidence_score: float = Field(..., ge=0.0, le=1.0)
-    threshold: float = Field(..., ge=0.0, le=1.0)
+    threshold: Optional[float] = Field(None, ge=0.0, le=1.0)
     message: str
     rescan_instructions: list[str]
 

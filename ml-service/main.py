@@ -346,10 +346,11 @@ async def classify_leaf(
     if status == "unsupported":
         top_probs = []  # near-uniform classes for a non-plant image would mislead
     if status != "ok":
+        applied_threshold = result.get("threshold")
         low_conf = LowConfidenceAdvisory(
             requires_rescan=True,
             confidence_score=round(confidence, 4),
-            threshold=0.0,
+            threshold=float(applied_threshold) if applied_threshold is not None else None,
             message=_UNSUPPORTED_MESSAGE if status == "unsupported" else _RETAKE_MESSAGE,
             rescan_instructions=_RESCAN_INSTRUCTIONS,
         )

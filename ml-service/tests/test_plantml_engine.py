@@ -163,3 +163,27 @@ async def test_startup_check_flags_missing_kb_classes(plantml):
     h = (await _get("/health/ready")).json()
     assert "missing_classes" in h["advisory_kb"]
     assert "fictional_crop/mystery_disease" in h["advisory_kb"]["missing_classes"]
+
+
+async def test_retake_unsupported_reports_null_or_applied_threshold(plantml):
+    """Retake and unsupported responses should return predictor applied threshold or null, not 0.0."""
+    class PredictorWithThreshold:
+        def predict(self, image_bytes, crop_hint=None):
+            return SimpleNamespace(
+                crop="tomato", disease="late_blight", class_name="tomato/late_blight",
+                confidence=0.45, plant_score=0.9, top_k=[("tomato/late_blight", 0.45)],
+                status="retake", mode="light", elapsed_ms=10.0, threshold=0.65,
+            )
+
+    plantml_engine.load(lambda: PredictorWithThreshold())
+    r = await _post()
+    assert r.status_code == 200
+    body = r.json()
+    assert body["low_confidence_advisory"]["threshold"] == 0.65
+
+    # Without threshold exposed by predictor, should return None (null in JSON)
+    fake_no_th = FakePredictor(confidence=0.5, status="retake")
+    plantml_engine.load(lambda: fake_no_th)
+    r2 = await _post()
+    assert r2.status_code == 200
+    assert r2.json()["low_confidence_advisory"]["threshold"] is None
