@@ -168,13 +168,15 @@ async def health_live():
 @app.get("/health/ready", tags=["Health"])
 async def health_ready():
     """
-    Readiness probe — reports ONNX model and advisory knowledge base status.
-    Returns 200 in both LIVE and STUB modes; clients should inspect model_loaded.
+    Readiness probe — reports model and advisory knowledge base status.
+    Returns 200 when model is loaded, 503 when not ready.
     """
-    return {
-        "status": "ready",
-        "model_loaded": _engine().is_loaded(),
-        "mode": "LIVE" if _engine().is_loaded() else ("UNAVAILABLE" if settings.model_backend == "plantml" else "STUB"),
+    engine = _engine()
+    loaded = engine.is_loaded()
+    content = {
+        "status": "ready" if loaded else "not_ready",
+        "model_loaded": loaded,
+        "mode": "LIVE" if loaded else ("UNAVAILABLE" if settings.model_backend == "plantml" else "STUB"),
         "backend": settings.model_backend,
         **({"plantml_mode": settings.plantml_mode} if settings.model_backend == "plantml" else {}),
         "advisory_kb": {
@@ -184,12 +186,13 @@ async def health_ready():
         },
         "note": (
             f"plant-ml failed to load: {plantml_engine.load_error}"
-            if settings.model_backend == "plantml" and not plantml_engine.is_loaded()
+            if settings.model_backend == "plantml" and not loaded
             else None
-            if _engine().is_loaded()
-            else "Running in stub mode — ML-102 (training) and ML-103 (ONNX export) are pending."
+            if loaded
+            else getattr(engine, "load_error", None) or "Model is not loaded."
         ),
     }
+    return JSONResponse(status_code=200 if loaded else 503, content=content)
 
 
 # Backwards-compatible alias
