@@ -162,6 +162,10 @@ namespace AgriTech.Api.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            // WARNING (Finding 9): Destructive irreversible reset!
+            // Rolling back this migration drops shared reference tables ('users', 'crops', 'soil_profiles', 'model_inferences')
+            // with CASCADE, destroying all user accounts and master reference records, and silently dropping foreign keys
+            // from RemainingSchemaTables tables pointing to them. DO NOT execute this on any database containing production or real user data.
             migrationBuilder.Sql(@"
                 DROP TRIGGER IF EXISTS trg_calculate_parcel_area ON parcels;
                 DROP TRIGGER IF EXISTS trg_calculate_field_area ON fields;
