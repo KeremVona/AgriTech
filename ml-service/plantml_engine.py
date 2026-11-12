@@ -107,6 +107,7 @@ class PlantmlEngine:
             "model_loaded": True,
             "status": pred.status,
             "plant_score": float(pred.plant_score),
+            "threshold": getattr(pred, "threshold", None),
         }
 
     def meta(self, label: str) -> dict:
