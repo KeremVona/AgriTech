@@ -28,6 +28,11 @@ from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from PIL import Image
+
+# Cap maximum decompressed image pixels to 40M to prevent memory exhaustion from image bombs (Finding 6)
+Image.MAX_IMAGE_PIXELS = 40_000_000
+
 from advisory import _RESCAN_INSTRUCTIONS, get_advisory, get_kb_version, get_kb_class_count, is_kb_loaded
 from config import settings
 from inference import get_class_meta, inference_engine
