@@ -11,7 +11,7 @@ namespace AgriTech.Api.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Finding 4: Remake check_parcel_integrity() with transactional advisory lock per parent field
-            // to serialize concurrent parcel inserts/updates within the same field.
+            // Finding 5: Delegate Section C collision detection directly to fn_check_parcel_overlap() as single source of truth
             migrationBuilder.Sql(@"
                 CREATE OR REPLACE FUNCTION check_parcel_integrity()
                 RETURNS TRIGGER AS $$
@@ -35,18 +35,10 @@ namespace AgriTech.Api.Data.Migrations
                         RAISE EXCEPTION 'Spatial containment violation: Parcel boundary is not completely contained within parent field %', NEW.field_id;
                     END IF;
 
-                    -- C. Topological collision prevention (Reject overlapping candidate parcels)
-                    SELECT 
-                        p.id, 
-                        p.name, 
-                        ROUND(ST_Area(ST_Intersection(p.boundary_geom, NEW.boundary_geom)::geography)::numeric, 2)
+                    -- C. Topological collision prevention (Finding 5: delegate to fn_check_parcel_overlap single source of truth)
+                    SELECT conflicting_parcel_id, conflicting_parcel_name, overlap_area_sqm
                     INTO v_conflict_id, v_conflict_name, v_overlap_sqm
-                    FROM parcels p
-                    WHERE p.field_id = NEW.field_id
-                      AND (NEW.id IS NULL OR p.id != NEW.id)
-                      AND ST_Intersects(p.boundary_geom, NEW.boundary_geom)
-                      AND NOT ST_Touches(p.boundary_geom, NEW.boundary_geom)
-                      AND ST_Area(ST_Intersection(p.boundary_geom, NEW.boundary_geom)::geography) > 0.05
+                    FROM fn_check_parcel_overlap(NEW.field_id, NEW.boundary_geom, NEW.id)
                     LIMIT 1;
 
                     IF v_conflict_id IS NOT NULL THEN
@@ -62,7 +54,7 @@ namespace AgriTech.Api.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Restore previous trigger definition without advisory lock
+            // Restore previous trigger definition without advisory lock and with duplicated WHERE query
             migrationBuilder.Sql(@"
                 CREATE OR REPLACE FUNCTION check_parcel_integrity()
                 RETURNS TRIGGER AS $$
