@@ -82,7 +82,7 @@ async def test_health_ready_unloaded(client):
     assert "mode" in data
     assert "advisory_kb" in data
     assert data["advisory_kb"]["loaded"] is True
-    assert data["advisory_kb"]["class_count"] == 12
+    assert data["advisory_kb"]["class_count"] == 33
     assert "note" in data
 
 

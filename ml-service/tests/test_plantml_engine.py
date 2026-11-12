@@ -9,7 +9,7 @@ from PIL import Image
 
 import main
 from config import settings
-from inference import get_class_meta
+from advisory import get_class_meta
 from plantml_engine import AGRITECH_LABELS, PlantmlEngine, agritech_label, plantml_engine
 from schemas import ClassifyLeafLowConfidenceResponse, ClassifyLeafResponse
 
@@ -144,3 +144,22 @@ async def test_decompression_bomb_returns_400(plantml):
     assert r.status_code == 400
     assert r.json()["error"] == "image_decode_failure"
     assert "Decompression bomb detected" in r.json()["message"]
+
+
+async def test_startup_check_flags_missing_kb_classes(plantml):
+    """When predictor exposes active.class_names(), any missing KB classes are logged and reported in /health/ready."""
+    class PredictorWithActive:
+        class Active:
+            def class_names(self):
+                return ["tomato/late_blight", "fictional_crop/mystery_disease"]
+
+        active = Active()
+
+        def predict(self, image_bytes, crop_hint=None):
+            pass
+
+    plantml_engine.load(lambda: PredictorWithActive())
+    assert "fictional_crop/mystery_disease" in plantml_engine.kb_missing_classes
+    h = (await _get("/health/ready")).json()
+    assert "missing_classes" in h["advisory_kb"]
+    assert "fictional_crop/mystery_disease" in h["advisory_kb"]["missing_classes"]

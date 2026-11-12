@@ -1,25 +1,21 @@
 """
-Precision AgriTech - Agronomic Advisory Engine (TODO-105)
+Precision AgriTech - Agronomic Advisory Engine (TODO-105 & plant-ml update)
 
 Loads the disease_advisories.json knowledge base at module import time and
-exposes a single public function: get_advisory(class_label, confidence_score).
+exposes typed advisory lookups and canonical class metadata.
 
 Design decisions:
-- The JSON file is loaded once at import time (not per-request) into an
-  in-memory dict, making lookups O(1) with zero I/O per call.
-- All 12 target class labels are covered; an unknown label falls back to a
-  safe generic advisory rather than crashing.
-- When confidence_score < LOW_CONFIDENCE_THRESHOLD (0.60), the engine returns
-  a LowConfidenceAdvisory prompting the field operator to re-scan instead of
-  acting on an unreliable prediction (Phase 1 acceptance criterion).
-- The engine converts raw JSON dicts into the typed Pydantic models defined in
-  schemas.py so callers never need to handle raw dicts.
+- The JSON file is loaded once at import time into an in-memory dict, making lookups O(1).
+- Keyed by plant-ml class names (crop/disease), with alias resolution for AgriTech labels.
+- Covers all 33 plant-ml classes across tomato, potato, corn, apple, grape, rice, and cassava.
+- Provides canonical get_class_meta() replacing duplicate metadata tables.
+- When confidence_score < LOW_CONFIDENCE_THRESHOLD (0.60), returns LowConfidenceAdvisory.
 """
 
 import json
 import logging
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from schemas import (
     AgronomicAdvisory,
@@ -50,6 +46,59 @@ _RESCAN_INSTRUCTIONS: list[str] = [
     "Submit images as JPEG or PNG with minimum 224 × 224 pixel resolution.",
     "If symptoms are very early-stage, monitor for 24–48 hours and re-scan when lesions are more defined.",
 ]
+
+# Canonical list of 33 plant-ml model output classes
+SUPPORTED_CLASSES: list[str] = [
+    # Tomato (4)
+    "tomato/healthy",
+    "tomato/early_blight",
+    "tomato/late_blight",
+    "tomato/septoria_leaf_spot",
+    # Potato (3)
+    "potato/healthy",
+    "potato/early_blight",
+    "potato/late_blight",
+    # Corn (7)
+    "corn/healthy",
+    "corn/northern_leaf_blight",
+    "corn/gray_leaf_spot",
+    "corn/common_rust",
+    "corn/northern_leaf_spot",
+    "corn/maize_streak_virus",
+    "corn/maize_lethal_necrosis",
+    # Apple (5)
+    "apple/healthy",
+    "apple/scab",
+    "apple/cedar_apple_rust",
+    "apple/frog_eye_leaf_spot",
+    "apple/powdery_mildew",
+    # Grape (3)
+    "grape/healthy",
+    "grape/esca",
+    "grape/downy_mildew",
+    # Rice (6)
+    "rice/healthy",
+    "rice/blast",
+    "rice/brown_spot",
+    "rice/bacterial_leaf_blight",
+    "rice/tungro",
+    "rice/hispa",
+    # Cassava (5)
+    "cassava/healthy",
+    "cassava/mosaic",
+    "cassava/brown_streak",
+    "cassava/green_mite",
+    "cassava/bacterial_blight",
+]
+
+
+def _to_agritech_label(class_name: str) -> str:
+    """Map plant-ml crop/disease format to AgriTech label format."""
+    crop, _, disease = class_name.partition("/")
+    if not disease:
+        return class_name
+    return f"{crop.capitalize()}___{disease.capitalize()}"
+
 
 # ---------------------------------------------------------------------------
 # Knowledge base loader
@@ -86,6 +135,60 @@ except FileNotFoundError as _exc:
     _CLASSES = {}
     _KB_VERSION = "missing"
 
+# Build alias map resolving both crop/disease and Crop___Disease formats
+_ALIAS_TO_KEY: dict[str, str] = {}
+for _k, _v in _CLASSES.items():
+    _ALIAS_TO_KEY[_k] = _k
+    if "class_label" in _v:
+        _ALIAS_TO_KEY[_v["class_label"]] = _k
+    _ALIAS_TO_KEY[_to_agritech_label(_k)] = _k
+# Known legacy overrides
+_ALIAS_TO_KEY["Corn_(maize)___Common_rust_"] = "corn/common_rust"
+_ALIAS_TO_KEY["Corn_(maize)___Northern_Leaf_Blight"] = "corn/northern_leaf_blight"
+_ALIAS_TO_KEY["Corn_(maize)___healthy"] = "corn/healthy"
+
+
+def _normalize_key(label_or_key: str) -> str:
+    """Map an incoming label or class key to canonical plant-ml key."""
+    return _ALIAS_TO_KEY.get(label_or_key, label_or_key)
+
+
+def has_kb_entry(label_or_key: str) -> bool:
+    """Returns True if the class has a corresponding knowledge base entry."""
+    return _normalize_key(label_or_key) in _CLASSES
+
+
+def get_class_meta(label_or_key: str) -> dict:
+    """
+    Returns canonical metadata (crop, condition, scientific_name, severity, pathogen)
+    derived directly from the knowledge base, avoiding duplicated tables.
+    """
+    key = _normalize_key(label_or_key)
+    entry = _CLASSES.get(key)
+    if entry is not None:
+        return {
+            "crop": entry["crop"],
+            "condition": entry["condition"],
+            "scientific_name": entry.get("scientific_name"),
+            "severity": entry.get("severity", "None" if "healthy" in key else "Medium"),
+            "pathogen": entry.get("pathogen") or entry.get("pathogen_type", "UNKNOWN"),
+        }
+    crop, _, disease = label_or_key.replace("/", "___").partition("___")
+    d_lower = disease.lower()
+    healthy = d_lower == "healthy"
+    hints = {
+        "rust": "FUNGAL", "blight": "FUNGAL", "mildew": "FUNGAL", "rot": "FUNGAL",
+        "scab": "FUNGAL", "mold": "FUNGAL", "bacterial": "BACTERIAL", "virus": "VIRAL",
+    }
+    pathogen = "HEALTHY" if healthy else next((v for k, v in hints.items() if k in d_lower), "UNKNOWN")
+    return {
+        "crop": crop.capitalize(),
+        "condition": "Healthy" if healthy else disease.replace("_", " ").title() if disease else "Unknown",
+        "scientific_name": None,
+        "severity": "None" if healthy else "Medium",
+        "pathogen": pathogen,
+    }
+
 
 # ---------------------------------------------------------------------------
 # Internal converters: raw dict → typed Pydantic models
@@ -112,7 +215,6 @@ def _build_advisory_from_entry(entry: dict) -> tuple[AgronomicAdvisory, Telemetr
     """Converts a raw knowledge base class entry into typed advisory objects."""
     microclimate = _build_microclimate_risk(entry["microclimate_risks"])
 
-    # Derive the human-readable environmental_risk_factors string
     risk_parts: list[str] = []
     if microclimate.optimal_humidity_pct_max:
         risk_parts.append(
@@ -148,8 +250,6 @@ def _build_advisory_from_entry(entry: dict) -> tuple[AgronomicAdvisory, Telemetr
 def _generic_fallback_advisory(label: str) -> tuple[AgronomicAdvisory, TelemetryLinkageHints]:
     """
     Returns a safe generic advisory when the class label is not found in the KB.
-    This should never happen in production (all 12 classes are present) but
-    guards against future label additions during model updates.
     """
     logger.warning("Advisory KB: no entry found for label '%s'; using generic fallback.", label)
     advisory = AgronomicAdvisory(
@@ -198,11 +298,7 @@ def get_advisory(
 
     When confidence_score < LOW_CONFIDENCE_THRESHOLD:
         Returns (None, None, LowConfidenceAdvisory)
-        — The caller must use LowConfidenceAdvisory to prompt operator re-scan.
     """
-    # ----------------------------------------------------------------
-    # Low-confidence fallback (acceptance criterion)
-    # ----------------------------------------------------------------
     if confidence_score < LOW_CONFIDENCE_THRESHOLD:
         low_conf = LowConfidenceAdvisory(
             requires_rescan=True,
@@ -218,10 +314,8 @@ def get_advisory(
         )
         return None, None, low_conf
 
-    # ----------------------------------------------------------------
-    # Normal path: look up class in knowledge base
-    # ----------------------------------------------------------------
-    entry = _CLASSES.get(class_label)
+    key = _normalize_key(class_label)
+    entry = _CLASSES.get(key)
     if entry is None:
         advisory, telemetry = _generic_fallback_advisory(class_label)
         return advisory, telemetry, None

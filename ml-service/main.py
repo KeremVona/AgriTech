@@ -33,9 +33,9 @@ from PIL import Image
 # Cap maximum decompressed image pixels to 40M to prevent memory exhaustion from image bombs (Finding 6)
 Image.MAX_IMAGE_PIXELS = 40_000_000
 
-from advisory import _RESCAN_INSTRUCTIONS, get_advisory, get_kb_version, get_kb_class_count, is_kb_loaded
+from advisory import _RESCAN_INSTRUCTIONS, get_advisory, get_kb_version, get_kb_class_count, is_kb_loaded, get_class_meta
 from config import settings
-from inference import get_class_meta, inference_engine
+from inference import inference_engine
 from plantml_engine import plantml_engine
 from schemas import (
     LowConfidenceAdvisory,
@@ -188,6 +188,7 @@ async def health_ready():
             "loaded": is_kb_loaded(),
             "version": get_kb_version(),
             "class_count": get_kb_class_count(),
+            **({"missing_classes": plantml_engine.kb_missing_classes} if plantml_engine.kb_missing_classes else {}),
         },
         "note": (
             f"plant-ml failed to load: {plantml_engine.load_error}"
