@@ -171,6 +171,16 @@ Maintains physical and hydrological reference parameters per soil texture class.
 | `hydraulic_conductivity`| `NUMERIC(6, 2)` | Not Null | Saturated hydraulic conductivity / drainage rate (mm/hr) |
 | `mad_threshold_pct` | `NUMERIC(3, 2)` | Not Null, Default `0.50` | Management Allowed Depletion fraction $p \in [0.3, 0.6]$ |
 
+##### Seeded Reference Soil Profiles
+Four foundational soil texture profiles calibrated to FAO-56 Table 19 and USDA NRCS National Engineering Handbook Part 652:
+
+| ID | Name | $\theta_{FC}$ | $\theta_{WP}$ | $\theta_S$ | $K_{sat}$ (mm/h) | MAD ($p$) | Sourced Reference |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `sand` | Sand | 0.120 | 0.050 | 0.380 | 50.00 | 0.50 | FAO-56 Table 19 / USDA NRCS Table 2-4 |
+| `sandy_loam` | Sandy Loam | 0.220 | 0.100 | 0.430 | 25.00 | 0.50 | FAO-56 Table 19 / USDA NRCS Table 2-4 |
+| `silt` | Silt | 0.310 | 0.140 | 0.480 | 12.50 | 0.50 | FAO-56 Table 19 / USDA NRCS Table 2-4 |
+| `clay` | Clay | 0.380 | 0.220 | 0.500 | 2.50 | 0.50 | FAO-56 Table 19 / USDA NRCS Table 2-4 |
+
 #### 2.2 `crops`
 Catalog of crop varieties supported by the platform, vision models, and irrigation schedules.
 
@@ -182,6 +192,16 @@ Catalog of crop varieties supported by the platform, vision models, and irrigati
 | `family` | `VARCHAR(80)` | Nullable | Plant family (e.g., *Solanaceae*, *Poaceae*) |
 | `default_root_depth_max_m`| `NUMERIC(3, 2)` | Not Null, Default `0.60` | Maximum effective rooting depth $Z_r$ at maturity (meters) |
 | `made_at` | `TIMESTAMPTZ` | Not Null, Default `NOW()` | making timestamp |
+
+##### Seeded Reference Crops (Fixed Documented UUIDs)
+The platform seeds four foundational agronomic crops with fixed, permanent UUIDs for cross-tier API, ML model inference, and frontend integration:
+
+| UUID | Common Name | Scientific Name | Family | Default Root Depth |
+| :--- | :--- | :--- | :--- | :--- |
+| `c0000000-0000-0000-0000-000000000001` | **Tomato** | *Solanum lycopersicum* | Solanaceae | 0.60 m |
+| `c0000000-0000-0000-0000-000000000002` | **Corn** | *Zea mays* | Poaceae | 1.00 m |
+| `c0000000-0000-0000-0000-000000000003` | **Potato** | *Solanum tuberosum* | Solanaceae | 0.60 m |
+| `c0000000-0000-0000-0000-000000000004` | **Apple** | *Malus domestica* | Rosaceae | 1.50 m |
 
 #### 2.3 `crop_growth_stages`
 Configures phenological development stage durations and $K_c$ coefficients for FAO-56 calculations.

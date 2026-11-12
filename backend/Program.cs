@@ -43,6 +43,24 @@ if (app.Environment.IsDevelopment())
         logger.LogInformation("Applying EF Core migrations at start-up (Development environment)...");
         db.Database.Migrate();
         logger.LogInformation("EF Core migrations applied successfully.");
+
+        // Finding 2: Seed development farm owner with fixed UUID in Development only (never in production)
+        var devOwnerId = Guid.Parse("a0000000-0000-0000-0000-000000000001");
+        if (!db.Users.Any(u => u.Id == devOwnerId))
+        {
+            logger.LogInformation("Seeding development owner user ({UserId})...", devOwnerId);
+            db.Users.Add(new AgriTech.Api.Models.User
+            {
+                Id = devOwnerId,
+                Email = "dev-owner@agritech.local",
+                FullName = "Development Farm Owner",
+                Role = "FARM_OWNER",
+                PhoneNumber = "+905550000001",
+                IsActive = true
+            });
+            db.SaveChanges();
+            logger.LogInformation("Development owner user seeded successfully.");
+        }
     }
 }
 // NOTE (Production Deployment): In Production environments, do NOT execute automatic runtime migrations.

@@ -8,9 +8,10 @@ $port    = 5190
 $base    = "http://127.0.0.1:$port/api/v1"
 $process = $null
 
-$ownerId       = "b3000000-0000-0000-0000-000000000001"
-$cropId        = "b3000000-0000-0000-0000-000000000002"
-$soilProfileId = "back203_loam"
+# Seeded Reference IDs (Finding 2)
+$ownerId       = "a0000000-0000-0000-0000-000000000001"
+$cropId        = "c0000000-0000-0000-0000-000000000001" # Seeded Tomato
+$soilProfileId = "sandy_loam"                          # Seeded Sandy Loam
 $testFieldId   = $null
 $testParcelId  = $null
 
@@ -48,6 +49,7 @@ function Send-Request {
 Write-Host ""
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host " AgriTech BACK-205: Field & Parcel CRUD Endpoint Verification" -ForegroundColor Cyan
+Write-Host " Database: agritech_db (dev seeded references)" -ForegroundColor Gray
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -178,6 +180,7 @@ try {
     }
     if ($testFieldId) {
         try { $null = Send-Request "DELETE" "$base/fields/$testFieldId" } catch {}
+        try { docker exec -i agritech_postgres psql -U postgres -d agritech_db -c "DELETE FROM fields WHERE id = '$testFieldId';" -q } catch {}
     }
     if ($process -and -not $process.HasExited) {
         try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
