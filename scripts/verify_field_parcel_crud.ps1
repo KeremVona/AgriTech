@@ -68,8 +68,12 @@ try {
     $ready = $false
     for ($i = 0; $i -lt 30; $i++) {
         Start-Sleep -Seconds 1
-        $ping = Send-Request "GET" "$base/fields"
-        if ($ping.Code -lt 500) { $ready = $true; break }
+        try {
+            $ping = Send-Request "GET" "$base/fields"
+            if ($ping.Code -lt 500) { $ready = $true; break }
+        } catch {
+            # Still booting
+        }
     }
     if (-not $ready) { throw "API did not become ready within 30 s" }
     Write-Host " [OK]" -ForegroundColor Green
