@@ -34,7 +34,20 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    // D2: Automatically apply pending EF Core migrations at backend start-up in Development
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AgriTechDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Applying EF Core migrations at start-up (Development environment)...");
+        db.Database.Migrate();
+        logger.LogInformation("EF Core migrations applied successfully.");
+    }
 }
+// NOTE (Production Deployment): In Production environments, do NOT execute automatic runtime migrations.
+// Instead, apply migrations out-of-band as an automated CI/CD deployment step:
+// `dotnet ef database update --connection "<ProductionConnectionString>"`
 
 // Global exception handling: translates NetTopologySuite geometry/deserialization exceptions to 400 Bad Request
 app.Use(async (context, next) =>
