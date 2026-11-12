@@ -287,3 +287,42 @@ JSON
     - Scrubbing dynamically updates the text status without hitching.
         
     - Meets accessibility standards with full keyboard arrow navigation support.
+
+---
+
+### Addendum: plant-ml Model Migration (2026-10-29)
+
+> [!IMPORTANT]
+> **Status: DRAFT — Pending Project Lead Approval**
+> Following architectural review on 2026-10-29, the Phase 1 vision pipeline transitioned from the initial single-model MobileNetV3 ONNX baseline to the production `plant-ml` engine. This addendum documents updated specifications across classification scope, runtime architecture, latency expectations, and service deployment.
+
+#### 1. Scope & Taxonomy Expansion (33 Classes across 7 Crops)
+- **Original Spec:** 12 classes across 4 staple crops (Tomato, Potato, Corn, Apple).
+- **Updated Spec:** 33 classes across 7 target crops:
+  - **Tomato (10):** Bacterial spot, Early blight, Late blight, Leaf Mold, Septoria leaf spot, Spider mites (Two-spotted spider mite), Target Spot, Yellow Leaf Curl Virus, Mosaic virus, Healthy.
+  - **Potato (3):** Early blight, Late blight, Healthy.
+  - **Corn / Maize (4):** Cercospora leaf spot (Gray leaf spot), Common rust, Northern Leaf Blight, Healthy.
+  - **Apple (4):** Apple scab, Black rot, Cedar apple rust, Healthy.
+  - **Grape (4):** Black rot, Esca (Black Measles), Leaf blight (Isariopsis Leaf Spot), Healthy.
+  - **Rice (4):** Brown Spot, Bacterial Leaf Blight, Leaf Blast, Healthy.
+  - **Cassava (4):** Bacterial Blight, Brown Streak Disease, Green Mottle, Healthy.
+- **Knowledge Base Coverage:** The agronomic advisory database (`ml-service/data/disease_advisories.json`) is expanded to provide 100% factual coverage for all 33 classes, including cultural management, chemical interventions, pathogen classification, severity rating, and scientific citations from agricultural extension services (UC IPM, Cornell, USDA, FAO).
+
+#### 2. Model Backend & Architecture
+- **Original Spec:** Single MobileNetV3-Small INT8 quantized ONNX graph ($\le 25\text{ MB}$).
+- **Updated Spec:** High-accuracy `plant-ml` dual-backbone vision pipeline (supporting `light` and `best` modes) with dynamic confidence calibration, active out-of-distribution detection, and retake/unsupported guidance.
+
+#### 3. Inference Latency Targets
+- **Original Spec:** Request turnaround $\le 150\text{ ms}$ under concurrent load of 5 requests on CPU.
+- **Updated Target:**
+  - `light` mode latency (physical target hardware): `TBD [lead]`
+  - `best` mode latency (physical target hardware): `TBD [lead]`
+  *(Note: plant-ml `best` mode achieves sub-second inference with GPU acceleration but requires several seconds on CPU. Physical hardware latency benchmarks are to be finalized by the project lead).*
+
+#### 4. Packaging & Deployment (Decision D2)
+- **Original Spec:** Docker container ($\le 450\text{ MB}$, `python:3.11-slim`) in `docker-compose.yml`.
+- **Updated Decision:** Option B adopted — ml-service Docker container removed from `docker-compose.yml`. The microservice runs directly within a Python $\ge 3.11$ (target 3.12) virtual environment where the heavy PyTorch runtime and multi-gigabyte licensed model weights reside locally.
+- **Health Instrumentation:**
+  - `GET /health/live`: Returns `200 OK` (`{"status": "alive"}`) when the Uvicorn/FastAPI process is responsive.
+  - `GET /health/ready`: Returns `200 OK` (`{"status": "ready", "backend": "plantml"}`) when model weights and knowledge base are loaded and validated; returns `503 Service Unavailable` (`{"status": "not_ready"}`) when uninitialized or when model classes lack KB entries.
+
