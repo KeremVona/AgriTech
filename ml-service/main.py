@@ -255,7 +255,21 @@ async def classify_leaf(
     # ------------------------------------------------------------------
     # Layer 2: File size validation
     # ------------------------------------------------------------------
-    image_bytes = await file.read()
+    if getattr(file, "size", None) is not None and file.size > settings.max_upload_bytes:
+        size_mb = file.size / (1024 * 1024)
+        return JSONResponse(
+            status_code=413,
+            content={
+                "error": "file_too_large",
+                "message": (
+                    f"Uploaded file is {size_mb:.1f} MB. "
+                    f"Maximum allowed size is {settings.max_upload_bytes // (1024 * 1024)} MB."
+                ),
+                "field": "file",
+            },
+        )
+
+    image_bytes = await file.read(settings.max_upload_bytes + 1)
     if len(image_bytes) > settings.max_upload_bytes:
         size_mb = len(image_bytes) / (1024 * 1024)
         return JSONResponse(
