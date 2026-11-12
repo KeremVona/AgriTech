@@ -131,3 +131,16 @@ async def test_unloaded_plantml_returns_503_and_health_reports_error(plantml):
     assert h["status"] == "not_ready"
     assert h["backend"] == "plantml" and h["model_loaded"] is False and h["mode"] == "UNAVAILABLE"
     assert "plant-ml failed to load" in h["note"] and "ONNX" not in h["note"]
+
+
+async def test_decompression_bomb_returns_400(plantml):
+    """Image decompression bomb raises DecompressionBombError, converted to 400 image_decode_failure."""
+    class BombPredictor:
+        def predict(self, image_bytes, crop_hint=None):
+            raise Image.DecompressionBombError("Decompression bomb detected: image exceeds pixel cap")
+
+    plantml_engine.load(lambda: BombPredictor())
+    r = await _post()
+    assert r.status_code == 400
+    assert r.json()["error"] == "image_decode_failure"
+    assert "Decompression bomb detected" in r.json()["message"]

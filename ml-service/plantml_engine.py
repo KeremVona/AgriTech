@@ -10,6 +10,8 @@ import threading
 from pathlib import Path
 from typing import Callable, Optional
 
+from PIL import Image
+
 from config import settings
 from inference import _CLASS_META
 
@@ -84,7 +86,7 @@ class PlantmlEngine:
         with self._lock:  # torch inference is not guaranteed thread-safe
             try:
                 pred = self._predictor.predict(image_bytes, crop_hint=hint)
-            except OSError as exc:  # PIL decode failures
+            except (OSError, Image.DecompressionBombError) as exc:  # PIL decode failures & decompression bombs
                 raise ValueError(f"Cannot decode image: {exc}") from exc
         top = [{"label": agritech_label(n), "probability": float(p)} for n, p in pred.top_k]
         return {
