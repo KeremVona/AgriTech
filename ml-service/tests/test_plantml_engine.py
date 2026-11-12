@@ -36,8 +36,7 @@ class FakePredictor:
 
 
 @pytest.fixture
-def plantml(monkeypatch):
-    monkeypatch.setattr(settings, "model_backend", "plantml")
+def plantml():
     yield
     plantml_engine._predictor = None
 
@@ -103,17 +102,7 @@ async def test_crop_hint_unknown_is_ignored(plantml):
     assert fake.hints == ["tomato", "banana", None]
 
 
-async def test_default_backend_unchanged():
-    assert settings.model_backend == "onnx"
-    assert main._engine() is main.inference_engine
-    r = await _post()
-    assert r.status_code == 503  # Unconditional 503 when model is not loaded (Finding 2)
-    assert r.json()["error"] == "model_unavailable"
-    h_resp = await _get("/health/ready")
-    assert h_resp.status_code == 503
-    h = h_resp.json()
-    assert h["backend"] == "onnx"
-    assert h["status"] == "not_ready"
+
 
 
 async def test_unloaded_plantml_returns_503_and_health_reports_error(plantml):
@@ -130,7 +119,7 @@ async def test_unloaded_plantml_returns_503_and_health_reports_error(plantml):
     h = h_resp.json()
     assert h["status"] == "not_ready"
     assert h["backend"] == "plantml" and h["model_loaded"] is False and h["mode"] == "UNAVAILABLE"
-    assert "plant-ml failed to load" in h["note"] and "ONNX" not in h["note"]
+    assert "plant-ml failed to load" in h["note"]
 
 
 async def test_decompression_bomb_returns_400(plantml):

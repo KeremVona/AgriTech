@@ -89,9 +89,8 @@ async def client():
 
 
 @pytest.fixture(autouse=True)
-def setup_fake_predictor(monkeypatch):
-    """Default fixture configuring plantml backend and injecting a loaded fake predictor."""
-    monkeypatch.setattr(settings, "model_backend", "plantml")
+def setup_fake_predictor():
+    """Default fixture injecting a loaded fake predictor."""
     fake = FakePredictor()
     plantml_engine.load(lambda: fake)
     yield fake
@@ -231,7 +230,7 @@ async def test_classify_leaf_file_too_large_bounded_read(client, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Finding 2: Unloaded engine returns 503 (no fabricated stub diagnoses)
+# Finding 2: Unloaded engine returns 503 (no fabricated diagnoses)
 # ---------------------------------------------------------------------------
 
 @pytest.mark.anyio

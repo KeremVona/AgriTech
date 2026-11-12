@@ -1,8 +1,8 @@
 """
-Optional plant-ml engine (local use only). Selected with MODEL_BACKEND=plantml.
+plant-ml inference engine adapter.
 
 ``plantml`` is imported lazily, only inside ``load`` when no predictor factory
-is injected, so the default ONNX backend never needs torch.
+is injected, allowing tests to run with fake predictors without requiring torch.
 """
 
 import logging
