@@ -84,6 +84,10 @@ public class AgriTechDbContext : DbContext
                 t.HasCheckConstraint("chk_fields_boundary_valid", "ST_IsValid(boundary_geom)");
             });
 
+            // TODO (Finding 8): When field update endpoints (PUT/PATCH /api/v1/fields/{id}) are introduced,
+            // attach a BEFORE UPDATE OF boundary_geom ON fields trigger that validates spatial containment:
+            // reject boundary modifications if any existing child parcel is not completely covered (ST_Covers(NEW.boundary_geom, p.boundary_geom)).
+
             entity.HasKey(f => f.Id);
             entity.Property(f => f.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
             entity.Property(f => f.OwnerId).HasColumnName("owner_id").IsRequired();

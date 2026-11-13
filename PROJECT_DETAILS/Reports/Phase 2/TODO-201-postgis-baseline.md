@@ -10,31 +10,33 @@
 
 ## Summary
 
-Successfully initialized PostgreSQL with PostGIS and UUID extensions and established an automated, reproducible database migration baseline using ASP.NET Core (.NET 10) Entity Framework Core Migrations (`Npgsql.EntityFrameworkCore.PostgreSQL` and `NetTopologySuite`).
+Successfully initialized PostgreSQL with PostGIS and UUID extensions and established an automated, reproducible database migration pipeline using ASP.NET Core (.NET 10) Entity Framework Core Migrations (`Npgsql.EntityFrameworkCore.PostgreSQL` and `NetTopologySuite`).
 
-The initial migration baseline (`InitialPostGisBaseline`) creates the core PostgreSQL extensions (`postgis` 3.4+ and `uuid-ossp` 1.1) required for spatial geometry storage (`Polygon`, `Point`), geodetic calculations (`ST_Area`, `ST_Contains`), and UUID primary key generation. The migration executes cleanly on empty database instances and exports an idempotent SQL script (`01-ef-baseline-extensions.sql`) for Docker and CI/CD pipelines.
+EF Core migrations serve as the single source of truth for all database tables and schema components. PostgreSQL container initialization via Docker Compose is restricted strictly to enabling spatial and system extensions (`postgis` 3.4+ and `uuid-ossp` 1.1) via `init-extensions.sql`. In Development environments, `Program.cs` applies migrations automatically at application startup. For Production deployments, migrations are executed as a dedicated CI/CD deployment step via `dotnet ef database update`.
 
 ---
 
 ## Changes Made
 
-### Made
+### Added
 
 - `backend/Data/AgriTechDbContext.cs` — EF Core `DbContext` configuration enabling `postgis` and `uuid-ossp` PostgreSQL extensions in `OnModelCreating`.
 - `backend/Data/Migrations/20261014135342_InitialPostGisBaseline.cs` — Initial baseline migration file defining extension annotations.
 - `backend/Data/Migrations/20261014135342_InitialPostGisBaseline.Designer.cs` — EF Core migration designer metadata.
+- `backend/Data/Migrations/RemainingSchemaTables.cs` — Raw SQL migration creating the remaining 15 relational and spatial tables from `COMPLETE_DATABASE_SCHEMA.md` with GiST/B-Tree indexes and foreign key alignments.
 - `backend/Data/Migrations/AgriTechDbContextModelSnapshot.cs` — EF Core snapshot tracking active database extensions.
-- `docker/postgres/01-ef-baseline-extensions.sql` — Idempotent SQL script generated via `dotnet ef migrations script -i` tracking execution in `__EFMigrationsHistory`.
 - `scripts/verify_postgis_migration.ps1` — Automated test harness script verifying container connectivity, migration application, extension status, and spatial point generation.
 - `PROJECT_DETAILS/Reports/Phase 2/TODO-201-postgis-baseline.md` — Formal completion report and verification documentation.
 
 ### Modified
 
+- `docker-compose.yml` — Mounted only `init-extensions.sql` in container entrypoint; eliminated duplicate table creation scripts to establish EF Core migrations as the sole schema authority.
+- `docker/postgres/` — Removed obsolete and drifted SQL duplicates (`02-make-tables.sql`, `01-ef-baseline-extensions.sql`, `02-spatial-tables-gist.sql`, `03-spatial-functions.sql`).
 - `backend/AgriTech.Api.csproj` — Added NuGet dependencies:
   - `Npgsql.EntityFrameworkCore.PostgreSQL` (v10.0.3)
   - `Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite` (v10.0.3)
   - `Microsoft.EntityFrameworkCore.Design` (v10.0.13)
-- `backend/Program.cs` — Registered `AgriTechDbContext` in the DI container with Npgsql and NetTopologySuite spatial provider (`UseNetTopologySuite()`).
+- `backend/Program.cs` — Registered `AgriTechDbContext` in the DI container with Npgsql and NetTopologySuite spatial provider (`UseNetTopologySuite()`). Added startup migration execution in Development (`Database.Migrate()`) and documented production deployment procedures.
 - `backend/appsettings.json` — Added `ConnectionStrings:DefaultConnection` for PostgreSQL (`Host=localhost;Port=5432;Database=agritech_db;Username=postgres;Password=postgres`).
 - `backend/appsettings.Development.json` — Aligned development connection string with docker-compose settings.
 - `tasks/todo.md` — Updated active tracking for Phase 2 / TODO-201.
@@ -47,17 +49,27 @@ The initial migration baseline (`InitialPostGisBaseline`) creates the core Postg
   - PostgreSQL 16 (`postgis/postgis:16-3.4` container).
   - PostGIS version: `3.4.3 e365945`.
   - Extension `uuid-ossp` (v1.1) enabled for `uuid_generate_v4()` primary keys.
-- **EF Core Migration Pipeline:**
+- **EF Core Migration Pipeline as Single Source of Truth:**
   - Registered `AgriTechDbContext` using `options.UseNpgsql(connStr, o => o.UseNetTopologySuite())`.
   - Configured model annotations:
     ```csharp
     modelBuilder.HasPostgresExtension("postgis");
     modelBuilder.HasPostgresExtension("uuid-ossp");
     ```
-  - Generated baseline migration: `20261014135342_InitialPostGisBaseline`.
-- **Empty Instance Idempotence:**
-  - Tested on a clean database volume with zero pre-existing schema.
-  - Successfully applies migration table `__EFMigrationsHistory` and records migration version `10.0.13`.
+  - Docker container only executes `init-extensions.sql` on first boot.
+  - Startup migration flow in Development:
+    ```csharp
+    if (app.Environment.IsDevelopment())
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AgriTechDbContext>();
+        db.Database.Migrate();
+    }
+    ```
+  - Production deployments apply migrations out-of-band:
+    ```bash
+    dotnet ef database update --connection "$PRODUCTION_DB_CONNECTION_STRING"
+    ```
 
 ---
 
@@ -70,9 +82,9 @@ The initial migration baseline (`InitialPostGisBaseline`) creates the core Postg
 docker compose down -v
 docker compose up -d postgres
 
-# 2. Apply EF Core migration to empty instance
+# 2. Start backend to apply migrations automatically in Development
 cd backend
-dotnet ef database update
+dotnet run
 
 # 3. Execute automated verification test harness
 cd ..
@@ -107,6 +119,6 @@ powershell -ExecutionPolicy Bypass -File ./scripts/verify_postgis_migration.ps1
 
 ## Acceptance Criteria
 
-- [x] **Clean execution of migration scripts on empty database instances:** Verified via `dotnet ef database update` on freshly initialized PostgreSQL container with empty volume.
+- [x] **Clean execution of migration pipeline on empty database instances:** Docker container enables extensions; backend applies EF Core migrations creating the unified 23-table schema.
 - [x] **Verified spatial type support via `SELECT PostGIS_Full_Version();`:** Verified returning `POSTGIS="3.4.3 e365945"` and GEOS/PROJ spatial libraries.
-- [x] **Migration scripts enabling extensions:** `CREATE EXTENSION IF NOT EXISTS postgis;` and `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";` recorded and tracked.
+- [x] **Single source of truth established:** Removed duplicate DDL scripts; migrations track all tables and indexes.
