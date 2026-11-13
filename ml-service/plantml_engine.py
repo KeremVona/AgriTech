@@ -1,8 +1,8 @@
 """
-Optional plant-ml engine (local use only). Selected with MODEL_BACKEND=plantml.
+plant-ml inference engine adapter.
 
 ``plantml`` is imported lazily, only inside ``load`` when no predictor factory
-is injected, so the default ONNX backend never needs torch.
+is injected, allowing tests to run with fake predictors without requiring torch.
 """
 
 import logging
@@ -10,8 +10,9 @@ import threading
 from pathlib import Path
 from typing import Callable, Optional
 
+from PIL import Image
+
 from config import settings
-from inference import _CLASS_META
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +31,7 @@ AGRITECH_LABELS: dict[str, str] = {
     "apple/cedar_apple_rust": "Apple___Cedar_apple_rust",
 }
 
-_PATHOGEN_HINTS = {"rust": "FUNGAL", "blight": "FUNGAL", "mildew": "FUNGAL", "rot": "FUNGAL",
-                   "scab": "FUNGAL", "mold": "FUNGAL", "bacterial": "BACTERIAL", "virus": "VIRAL"}
+
 
 
 def agritech_label(class_name: str) -> str:
@@ -47,16 +47,26 @@ class PlantmlEngine:
         self._predictor = None
         self._lock = threading.Lock()
         self.load_error: Optional[str] = None
+        self.kb_missing_classes: list[str] = []
 
     def load(self, predictor_factory: Optional[Callable[[], object]] = None) -> None:
         """Build the predictor once. Failures leave the engine unloaded (logged)."""
         try:
             self._predictor = (predictor_factory or self._default_factory)()
             self.load_error = None
+            self.kb_missing_classes = []
+            active = getattr(self._predictor, "active", None)
+            if active is not None and hasattr(active, "class_names"):
+                from advisory import has_kb_entry
+                missing = [n for n in active.class_names() if not has_kb_entry(n)]
+                if missing:
+                    logger.error("Classes from loaded model missing from advisory KB: %s", missing)
+                    self.kb_missing_classes = missing
         except Exception as exc:  # noqa: BLE001
             logger.error("plant-ml engine failed to load: %s", exc)
             self._predictor = None
             self.load_error = f"{type(exc).__name__}: {exc}"
+            self.kb_missing_classes = []
 
     @staticmethod
     def _default_factory():
@@ -84,7 +94,7 @@ class PlantmlEngine:
         with self._lock:  # torch inference is not guaranteed thread-safe
             try:
                 pred = self._predictor.predict(image_bytes, crop_hint=hint)
-            except OSError as exc:  # PIL decode failures
+            except (OSError, Image.DecompressionBombError) as exc:  # PIL decode failures & decompression bombs
                 raise ValueError(f"Cannot decode image: {exc}") from exc
         top = [{"label": agritech_label(n), "probability": float(p)} for n, p in pred.top_k]
         return {
@@ -97,23 +107,13 @@ class PlantmlEngine:
             "model_loaded": True,
             "status": pred.status,
             "plant_score": float(pred.plant_score),
+            "threshold": getattr(pred, "threshold", None),
         }
 
     def meta(self, label: str) -> dict:
-        """Metadata for any label this engine returns (shared labels reuse AgriTech's table)."""
-        if label in _CLASS_META:
-            return _CLASS_META[label]
-        crop, _, disease = label.partition("___")
-        healthy = disease.lower() == "healthy"
-        pathogen = "HEALTHY" if healthy else next(
-            (v for k, v in _PATHOGEN_HINTS.items() if k in disease.lower()), "UNKNOWN")
-        return {
-            "crop": crop.replace("_", " "),
-            "condition": "Healthy" if healthy else disease.replace("_", " ").title(),
-            "scientific_name": None,
-            "severity": "None" if healthy else "Medium",
-            "pathogen": pathogen,
-        }
+        """Metadata for any label this engine returns (canonical source: advisory KB)."""
+        from advisory import get_class_meta
+        return get_class_meta(label)
 
 
 plantml_engine = PlantmlEngine()

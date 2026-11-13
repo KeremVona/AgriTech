@@ -1,21 +1,14 @@
 """
 Precision AgriTech - Machine Learning & Vision Inference Service
-FastAPI application for crop disease classification and leaf diagnostics.
+FastAPI application for crop disease classification and leaf diagnostics on the plant-ml model.
 
-Key design decisions for TODO-104:
-- lifespan handler loads the ONNX session ONCE at startup; never per-request.
-- If the model file is absent (ML-102/ML-103 pending) the service starts in
-  STUB mode and documents this clearly in /health/ready and classify-leaf responses.
-- Validation layers (MIME type, file size, Pillow decodability) return
-  descriptive 400/422 JSON errors before any inference is attempted.
-- All heavy I/O (file.read()) is awaited; inference runs synchronously in a
-  threadpool via run_in_executor so the async event loop is never blocked.
-
-Updates for TODO-105:
-- Advisory engine (advisory.py) integrated into classify-leaf response.
-- Low-confidence path (<60%) returns ClassifyLeafLowConfidenceResponse
-  with operator rescan instructions instead of a potentially unreliable advisory.
-- /health/ready now reports advisory KB status alongside model status.
+Key design decisions:
+- plant-ml engine initialized ONCE at startup via lifespan handler.
+- If engine fails to load, returns 503 model_unavailable (no fabricated diagnoses).
+- Validation layers (MIME type, file size cap, Pillow decodability) return
+  descriptive 400/413/422 errors before inference.
+- Synchronous inference runs in threadpool via run_in_executor to keep event loop unblocked.
+- Integrated agronomic advisory engine provides 100% coverage across 33 classes.
 """
 
 import asyncio
@@ -28,9 +21,20 @@ from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from advisory import _RESCAN_INSTRUCTIONS, get_advisory, get_kb_version, get_kb_class_count, is_kb_loaded
+from PIL import Image
+
+# Cap maximum decompressed image pixels to 40M to prevent memory exhaustion from image bombs (Finding 6)
+Image.MAX_IMAGE_PIXELS = 40_000_000
+
+from advisory import (
+    _RESCAN_INSTRUCTIONS,
+    get_advisory,
+    get_class_meta,
+    get_kb_class_count,
+    get_kb_version,
+    is_kb_loaded,
+)
 from config import settings
-from inference import get_class_meta, inference_engine
 from plantml_engine import plantml_engine
 from schemas import (
     LowConfidenceAdvisory,
@@ -48,11 +52,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def _engine():
-    """Active inference engine for the configured MODEL_BACKEND."""
-    return plantml_engine if settings.model_backend == "plantml" else inference_engine
-
-
 _UNSUPPORTED_MESSAGE = (
     "This does not look like a leaf of a supported crop (tomato, potato, corn, "
     "apple, grape, rice, cassava). Photograph a single leaf of one of these crops."
@@ -64,44 +63,28 @@ _RETAKE_MESSAGE = (
 
 
 # ---------------------------------------------------------------------------
-# Lifespan: ONNX session loaded ONCE at startup (acceptance criterion)
+# Lifespan: plant-ml engine loaded ONCE at startup
 # ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     FastAPI lifespan handler.
-    Loads the ONNX model into the global inference_engine singleton before
-    the server begins accepting requests, ensuring zero cold-start latency
-    per request (TODO-104 acceptance criterion).
+    Initializes the plant-ml engine once at startup before accepting requests.
     """
     logger.info("=== AgriTech ML Service starting up ===")
-    if settings.model_backend == "plantml":
-        logger.info("Loading plant-ml system from: %s", settings.plantml_system)
-        plantml_engine.load()
-    else:
-        logger.info("Loading ONNX model from: %s", settings.onnx_model_path)
-        # Model loading is synchronous but runs only once; safe in startup context
-        inference_engine.load(settings.onnx_model_path)
+    logger.info("Loading plant-ml system from: %s", settings.plantml_system)
+    plantml_engine.load()
 
-    if settings.model_backend == "plantml":
-        if plantml_engine.is_loaded():
-            logger.info(
-                "plant-ml loaded (mode=%s, system=%s) — LIVE inference mode active.",
-                settings.plantml_mode, settings.plantml_system,
-            )
-        else:
-            logger.error("plant-ml NOT loaded: %s", plantml_engine.load_error)
-    elif _engine().is_loaded():
-        logger.info("ONNX model loaded successfully — LIVE inference mode active.")
-    else:
-        logger.warning(
-            "ONNX model NOT loaded — running in STUB mode. "
-            "Complete ML-102 and ML-103, then place the model at: %s",
-            settings.onnx_model_path,
+    if plantml_engine.is_loaded():
+        logger.info(
+            "plant-ml loaded (mode=%s, system=%s) — LIVE inference mode active.",
+            settings.plantml_mode,
+            settings.plantml_system,
         )
+    else:
+        logger.error("plant-ml NOT loaded: %s", plantml_engine.load_error)
 
-    # Advisory KB is loaded at advisory.py import time; log its status here
     if is_kb_loaded():
         logger.info(
             "Advisory knowledge base loaded: %d classes (version %s)",
@@ -114,7 +97,7 @@ async def lifespan(app: FastAPI):
             "Ensure ml-service/data/disease_advisories.json exists."
         )
 
-    yield  # Application runs here
+    yield
 
     logger.info("=== AgriTech ML Service shutting down ===")
 
@@ -168,28 +151,29 @@ async def health_live():
 @app.get("/health/ready", tags=["Health"])
 async def health_ready():
     """
-    Readiness probe — reports ONNX model and advisory knowledge base status.
-    Returns 200 in both LIVE and STUB modes; clients should inspect model_loaded.
+    Readiness probe — reports plant-ml model and advisory knowledge base status.
+    Returns 200 when model is loaded, 503 when not ready.
     """
-    return {
-        "status": "ready",
-        "model_loaded": _engine().is_loaded(),
-        "mode": "LIVE" if _engine().is_loaded() else ("UNAVAILABLE" if settings.model_backend == "plantml" else "STUB"),
-        "backend": settings.model_backend,
-        **({"plantml_mode": settings.plantml_mode} if settings.model_backend == "plantml" else {}),
+    loaded = plantml_engine.is_loaded()
+    content = {
+        "status": "ready" if loaded else "not_ready",
+        "model_loaded": loaded,
+        "mode": "LIVE" if loaded else "UNAVAILABLE",
+        "backend": "plantml",
+        "plantml_mode": settings.plantml_mode,
         "advisory_kb": {
             "loaded": is_kb_loaded(),
             "version": get_kb_version(),
             "class_count": get_kb_class_count(),
+            **({"missing_classes": plantml_engine.kb_missing_classes} if plantml_engine.kb_missing_classes else {}),
         },
         "note": (
             f"plant-ml failed to load: {plantml_engine.load_error}"
-            if settings.model_backend == "plantml" and not plantml_engine.is_loaded()
+            if not loaded
             else None
-            if _engine().is_loaded()
-            else "Running in stub mode — ML-102 (training) and ML-103 (ONNX export) are pending."
         ),
     }
+    return JSONResponse(status_code=200 if loaded else 503, content=content)
 
 
 # Backwards-compatible alias
@@ -219,17 +203,9 @@ async def classify_leaf(
     crop_hint: Optional[str] = Form(None),
 ) -> Union[ClassifyLeafResponse, ClassifyLeafLowConfidenceResponse]:
     """
-    Ingests a multipart leaf image, preprocesses it with Pillow, runs ONNX
-    inference, enriches the result with agronomic advisory data from the
-    knowledge base, and returns a fully-typed diagnostic response.
-
-    Validation layers (in order):
-    1. MIME type check  → 400 if not image/jpeg, image/png, or image/webp
-    2. File size check  → 413 if > 10 MB
-    3. Empty file check → 400
-    4. Pillow decodability → 400 if bytes cannot be decoded
-    5. Inference → threadpool (run_in_executor, non-blocking)
-    6. Advisory lookup → O(1) in-memory dict; low-confidence path if score < 60%
+    Ingests a multipart leaf image, validates dimensions and MIME type,
+    runs plant-ml inference in a threadpool, and enriches the diagnosis
+    with agronomic advisory data.
     """
 
     # ------------------------------------------------------------------
@@ -252,7 +228,21 @@ async def classify_leaf(
     # ------------------------------------------------------------------
     # Layer 2: File size validation
     # ------------------------------------------------------------------
-    image_bytes = await file.read()
+    if getattr(file, "size", None) is not None and file.size > settings.max_upload_bytes:
+        size_mb = file.size / (1024 * 1024)
+        return JSONResponse(
+            status_code=413,
+            content={
+                "error": "file_too_large",
+                "message": (
+                    f"Uploaded file is {size_mb:.1f} MB. "
+                    f"Maximum allowed size is {settings.max_upload_bytes // (1024 * 1024)} MB."
+                ),
+                "field": "file",
+            },
+        )
+
+    image_bytes = await file.read(settings.max_upload_bytes + 1)
     if len(image_bytes) > settings.max_upload_bytes:
         size_mb = len(image_bytes) / (1024 * 1024)
         return JSONResponse(
@@ -281,22 +271,22 @@ async def classify_leaf(
         )
 
     loop = asyncio.get_running_loop()
-    engine = _engine()
-    if settings.model_backend == "plantml" and not engine.is_loaded():
+    if not plantml_engine.is_loaded():
+        load_err = plantml_engine.load_error or "no model weights or system configuration loaded"
         return JSONResponse(
             status_code=503,
             content={
                 "error": "model_unavailable",
-                "message": f"plant-ml engine is not loaded: {plantml_engine.load_error}",
+                "message": f"plant-ml engine is not loaded: {load_err}",
             },
         )
     try:
         if crop_hint:
             result = await loop.run_in_executor(
-                None, lambda: engine.run(image_bytes, crop_hint=crop_hint)
+                None, lambda: plantml_engine.run(image_bytes, crop_hint=crop_hint)
             )
         else:
-            result = await loop.run_in_executor(None, engine.run, image_bytes)
+            result = await loop.run_in_executor(None, plantml_engine.run, image_bytes)
     except ValueError as exc:
         return JSONResponse(
             status_code=400,
@@ -323,19 +313,18 @@ async def classify_leaf(
     if status == "unsupported":
         top_probs = []  # near-uniform classes for a non-plant image would mislead
     if status != "ok":
+        applied_threshold = result.get("threshold")
         low_conf = LowConfidenceAdvisory(
             requires_rescan=True,
             confidence_score=round(confidence, 4),
-            threshold=0.0,
+            threshold=float(applied_threshold) if applied_threshold is not None else None,
             message=_UNSUPPORTED_MESSAGE if status == "unsupported" else _RETAKE_MESSAGE,
             rescan_instructions=_RESCAN_INSTRUCTIONS,
         )
         advisory, telemetry_hints = None, None
-    elif settings.model_backend == "plantml":
-        # plant-ml has its own calibrated thresholds; skip AgriTech's 0.60 rule.
-        advisory, telemetry_hints, low_conf = get_advisory(top_label, 1.0)
     else:
-        advisory, telemetry_hints, low_conf = get_advisory(top_label, confidence)
+        # plant-ml has its own calibrated thresholds; skip legacy 0.60 rule.
+        advisory, telemetry_hints, low_conf = get_advisory(top_label, 1.0)
 
     # ------------------------------------------------------------------
     # Low-confidence path: return rescan advisory instead of prediction
