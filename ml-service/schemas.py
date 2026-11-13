@@ -86,7 +86,7 @@ class LowConfidenceAdvisory(BaseModel):
 
     requires_rescan: bool = True
     confidence_score: float = Field(..., ge=0.0, le=1.0)
-    threshold: float = Field(..., ge=0.0, le=1.0)
+    threshold: Optional[float] = Field(None, ge=0.0, le=1.0)
     message: str
     rescan_instructions: list[str]
 
@@ -97,7 +97,7 @@ class LowConfidenceAdvisory(BaseModel):
 
 
 class PredictionDetail(BaseModel):
-    """Core classification result from the ONNX inference engine."""
+    """Core classification result from the inference engine."""
 
     crop: str = Field(..., examples=["Tomato"])
     condition: str = Field(..., examples=["Late Blight"])
@@ -131,12 +131,11 @@ class ClassifyLeafResponse(BaseModel):
     telemetry_linkage_hints: TelemetryLinkageHints
     execution_time_ms: float = Field(..., ge=0, examples=[64.2])
 
-    # Indicates whether live ONNX model was used or the stub fallback
-    model_version: str = Field(..., examples=["mobilenetv3_small_v1.0.0"])
+    # Indicates whether model was loaded
+    model_version: str = Field(..., examples=["plantml-best"])
     model_loaded: bool = Field(
         ...,
-        description="True when a real ONNX model is resident in memory; "
-        "False when running in stub mode (ML-102/ML-103 pending).",
+        description="True when the model is resident in memory; False otherwise.",
     )
 
     # Low-confidence flag (None when confidence >= threshold)

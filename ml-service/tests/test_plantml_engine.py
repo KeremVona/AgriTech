@@ -9,7 +9,7 @@ from PIL import Image
 
 import main
 from config import settings
-from inference import get_class_meta
+from advisory import get_class_meta
 from plantml_engine import AGRITECH_LABELS, PlantmlEngine, agritech_label, plantml_engine
 from schemas import ClassifyLeafLowConfidenceResponse, ClassifyLeafResponse
 
@@ -36,8 +36,7 @@ class FakePredictor:
 
 
 @pytest.fixture
-def plantml(monkeypatch):
-    monkeypatch.setattr(settings, "model_backend", "plantml")
+def plantml():
     yield
     plantml_engine._predictor = None
 
@@ -103,14 +102,7 @@ async def test_crop_hint_unknown_is_ignored(plantml):
     assert fake.hints == ["tomato", "banana", None]
 
 
-async def test_default_backend_unchanged():
-    assert settings.model_backend == "onnx"
-    assert main._engine() is main.inference_engine
-    r = await _post()
-    assert r.status_code == 200
-    assert "status" not in r.json()
-    h = (await _get("/health/ready")).json()
-    assert h["backend"] == "onnx"
+
 
 
 async def test_unloaded_plantml_returns_503_and_health_reports_error(plantml):
@@ -122,6 +114,65 @@ async def test_unloaded_plantml_returns_503_and_health_reports_error(plantml):
     assert r.status_code == 503
     assert r.json()["error"] == "model_unavailable"
     assert "system.yaml missing" in r.json()["message"]
-    h = (await _get("/health/ready")).json()
+    h_resp = await _get("/health/ready")
+    assert h_resp.status_code == 503
+    h = h_resp.json()
+    assert h["status"] == "not_ready"
     assert h["backend"] == "plantml" and h["model_loaded"] is False and h["mode"] == "UNAVAILABLE"
-    assert "plant-ml failed to load" in h["note"] and "ONNX" not in h["note"]
+    assert "plant-ml failed to load" in h["note"]
+
+
+async def test_decompression_bomb_returns_400(plantml):
+    """Image decompression bomb raises DecompressionBombError, converted to 400 image_decode_failure."""
+    class BombPredictor:
+        def predict(self, image_bytes, crop_hint=None):
+            raise Image.DecompressionBombError("Decompression bomb detected: image exceeds pixel cap")
+
+    plantml_engine.load(lambda: BombPredictor())
+    r = await _post()
+    assert r.status_code == 400
+    assert r.json()["error"] == "image_decode_failure"
+    assert "Decompression bomb detected" in r.json()["message"]
+
+
+async def test_startup_check_flags_missing_kb_classes(plantml):
+    """When predictor exposes active.class_names(), any missing KB classes are logged and reported in /health/ready."""
+    class PredictorWithActive:
+        class Active:
+            def class_names(self):
+                return ["tomato/late_blight", "fictional_crop/mystery_disease"]
+
+        active = Active()
+
+        def predict(self, image_bytes, crop_hint=None):
+            pass
+
+    plantml_engine.load(lambda: PredictorWithActive())
+    assert "fictional_crop/mystery_disease" in plantml_engine.kb_missing_classes
+    h = (await _get("/health/ready")).json()
+    assert "missing_classes" in h["advisory_kb"]
+    assert "fictional_crop/mystery_disease" in h["advisory_kb"]["missing_classes"]
+
+
+async def test_retake_unsupported_reports_null_or_applied_threshold(plantml):
+    """Retake and unsupported responses should return predictor applied threshold or null, not 0.0."""
+    class PredictorWithThreshold:
+        def predict(self, image_bytes, crop_hint=None):
+            return SimpleNamespace(
+                crop="tomato", disease="late_blight", class_name="tomato/late_blight",
+                confidence=0.45, plant_score=0.9, top_k=[("tomato/late_blight", 0.45)],
+                status="retake", mode="light", elapsed_ms=10.0, threshold=0.65,
+            )
+
+    plantml_engine.load(lambda: PredictorWithThreshold())
+    r = await _post()
+    assert r.status_code == 200
+    body = r.json()
+    assert body["low_confidence_advisory"]["threshold"] == 0.65
+
+    # Without threshold exposed by predictor, should return None (null in JSON)
+    fake_no_th = FakePredictor(confidence=0.5, status="retake")
+    plantml_engine.load(lambda: fake_no_th)
+    r2 = await _post()
+    assert r2.status_code == 200
+    assert r2.json()["low_confidence_advisory"]["threshold"] is None

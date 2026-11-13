@@ -26,7 +26,7 @@ from p2p_generator import (
 
 def test_crop_specs_completeness():
     """Verify that all 4 target crops are defined with calibrated prompts and seeds."""
-    required_crops = {"tomato", "potato", "corn", "apple"}
+    required_crops = {"tomato", "potato", "corn", "apple", "grape", "pepper", "peach", "squash"}
     assert set(DEFAULT_CROP_SPECS.keys()) == required_crops
 
     for crop_id, spec in DEFAULT_CROP_SPECS.items():

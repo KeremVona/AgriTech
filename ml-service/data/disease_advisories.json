@@ -1,10 +1,9 @@
 {
-  "version": "1.0.0",
-  "description": "Precision AgriTech - Agronomic Advisory Knowledge Base. Covers all 12 target crop-disease classes defined in Phase 1. Indexed by PlantVillage class labels.",
-  "low_confidence_threshold": 0.60,
+  "version": "2.0.0",
+  "description": "Precision AgriTech - Agronomic Advisory Knowledge Base. Covers all 33 plant-ml crop-disease classes across Tomato, Potato, Corn, Apple, Grape, Rice, and Cassava. Sourced from FAO, IRRI, IITA, CIAT, and University Extension services (Penn State, Cornell, Purdue, UC Davis, Iowa State).",
+  "low_confidence_threshold": 0.6,
   "classes": {
-
-    "Tomato___healthy": {
+    "tomato/healthy": {
       "class_label": "Tomato___healthy",
       "crop": "Tomato",
       "condition": "Healthy",
@@ -34,10 +33,12 @@
         "moisture_risk": false,
         "leaf_wetness_threshold_hours": 0,
         "recommended_irrigation_restriction": false
-      }
+      },
+      "class_key": "tomato/healthy",
+      "severity": "None",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
     },
-
-    "Tomato___Early_blight": {
+    "tomato/early_blight": {
       "class_label": "Tomato___Early_blight",
       "crop": "Tomato",
       "condition": "Early Blight",
@@ -119,10 +120,12 @@
         "moisture_risk": true,
         "leaf_wetness_threshold_hours": 6,
         "recommended_irrigation_restriction": true
-      }
+      },
+      "class_key": "tomato/early_blight",
+      "severity": "Medium",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
     },
-
-    "Tomato___Late_blight": {
+    "tomato/late_blight": {
       "class_label": "Tomato___Late_blight",
       "crop": "Tomato",
       "condition": "Late Blight",
@@ -199,80 +202,12 @@
         "moisture_risk": true,
         "leaf_wetness_threshold_hours": 6,
         "recommended_irrigation_restriction": true
-      }
-    },
-
-    "Tomato___Bacterial_spot": {
-      "class_label": "Tomato___Bacterial_spot",
-      "crop": "Tomato",
-      "condition": "Bacterial Spot",
-      "scientific_name": "Xanthomonas campestris pv. vesicatoria",
-      "pathogen_type": "BACTERIAL",
-      "risk_level": "MEDIUM",
-      "general_description": "Bacterial Spot is caused by Xanthomonas campestris pv. vesicatoria. Symptoms include small, water-soaked, angular lesions on leaves that turn dark brown with yellow halos. On fruit, sunken, dark, scab-like lesions reduce marketability. The disease spreads rapidly by rain splash and aerosols in warm, wet conditions.",
-      "favorable_conditions": "Warm temperatures (24–30°C), high relative humidity (>80%), rain events, overhead irrigation, and high nitrogen nutrition. Bacteria can survive in seed and crop debris.",
-      "chemical_treatments": [
-        {
-          "product": "Copper Hydroxide 77% WP",
-          "active_substance": "Copper Hydroxide",
-          "type": "BACTERICIDE",
-          "dosage": "2.5–3.5 kg/ha",
-          "application_timing": "Begin applications at transplanting; repeat every 7 days during wet periods.",
-          "pre_harvest_interval_days": 1,
-          "is_organic_certified": true
-        },
-        {
-          "product": "Copper Oxychloride 50% WP",
-          "active_substance": "Copper Oxychloride",
-          "type": "BACTERICIDE",
-          "dosage": "2.0–3.0 kg/ha",
-          "application_timing": "Apply preventatively before rain events; do not apply when temperatures exceed 32°C to avoid phytotoxicity.",
-          "pre_harvest_interval_days": 1,
-          "is_organic_certified": true
-        },
-        {
-          "product": "Copper + Mancozeb tank mix",
-          "active_substance": "Copper Hydroxide + Mancozeb",
-          "type": "COMBINATION_BACTERICIDE_FUNGICIDE",
-          "dosage": "2.0 kg + 2.0 kg per ha",
-          "application_timing": "Apply at first symptom or after each rain event above 10 mm.",
-          "pre_harvest_interval_days": 5,
-          "is_organic_certified": false
-        }
-      ],
-      "cultural_controls": [
-        "Use certified pathogen-free seed; treat seed with hot water (50°C for 25 minutes) before planting.",
-        "Eliminate overhead irrigation; use drip irrigation to minimize leaf wetness.",
-        "Remove and dispose of infected plant debris at season end; do not leave in field.",
-        "Disinfect pruning tools between plants with 10% bleach solution or 70% isopropyl alcohol.",
-        "Maintain adequate plant spacing to reduce canopy humidity.",
-        "Plant resistant or tolerant cultivars where available."
-      ],
-      "biological_controls": [
-        {
-          "agent": "Bacillus subtilis QST 713",
-          "product_example": "Serenade ASO",
-          "dosage": "2–4 L/ha",
-          "notes": "Apply as a preventative at 7–10 day intervals; may be tank-mixed with copper bactericides."
-        }
-      ],
-      "immediate_action": "Stop overhead irrigation immediately. Apply copper-based bactericide within 48 hours. Remove and destroy all heavily infected tissue. Disinfect all field equipment before movement to adjacent parcels.",
-      "microclimate_risks": {
-        "fungal_risk": "LOW",
-        "bacterial_risk": "HIGH",
-        "optimal_humidity_pct_max": 80,
-        "optimal_temp_c_min": 24,
-        "optimal_temp_c_max": 30,
-        "consecutive_wet_hours_threshold": 6
       },
-      "telemetry_linkage": {
-        "moisture_risk": true,
-        "leaf_wetness_threshold_hours": 6,
-        "recommended_irrigation_restriction": true
-      }
+      "class_key": "tomato/late_blight",
+      "severity": "High",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
     },
-
-    "Potato___healthy": {
+    "potato/healthy": {
       "class_label": "Potato___healthy",
       "crop": "Potato",
       "condition": "Healthy",
@@ -302,10 +237,12 @@
         "moisture_risk": false,
         "leaf_wetness_threshold_hours": 0,
         "recommended_irrigation_restriction": false
-      }
+      },
+      "class_key": "potato/healthy",
+      "severity": "None",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
     },
-
-    "Potato___Early_blight": {
+    "potato/early_blight": {
       "class_label": "Potato___Early_blight",
       "crop": "Potato",
       "condition": "Early Blight",
@@ -371,10 +308,12 @@
         "moisture_risk": true,
         "leaf_wetness_threshold_hours": 6,
         "recommended_irrigation_restriction": true
-      }
+      },
+      "class_key": "potato/early_blight",
+      "severity": "Medium",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
     },
-
-    "Potato___Late_blight": {
+    "potato/late_blight": {
       "class_label": "Potato___Late_blight",
       "crop": "Potato",
       "condition": "Late Blight",
@@ -441,10 +380,12 @@
         "moisture_risk": true,
         "leaf_wetness_threshold_hours": 6,
         "recommended_irrigation_restriction": true
-      }
+      },
+      "class_key": "potato/late_blight",
+      "severity": "High",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
     },
-
-    "Corn_(maize)___healthy": {
+    "corn/healthy": {
       "class_label": "Corn_(maize)___healthy",
       "crop": "Corn",
       "condition": "Healthy",
@@ -474,10 +415,12 @@
         "moisture_risk": false,
         "leaf_wetness_threshold_hours": 0,
         "recommended_irrigation_restriction": false
-      }
+      },
+      "class_key": "corn/healthy",
+      "severity": "None",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
     },
-
-    "Corn_(maize)___Common_rust_": {
+    "corn/common_rust": {
       "class_label": "Corn_(maize)___Common_rust_",
       "crop": "Corn",
       "condition": "Common Rust",
@@ -542,10 +485,12 @@
         "moisture_risk": true,
         "leaf_wetness_threshold_hours": 8,
         "recommended_irrigation_restriction": false
-      }
+      },
+      "class_key": "corn/common_rust",
+      "severity": "Medium",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
     },
-
-    "Corn_(maize)___Northern_Leaf_Blight": {
+    "corn/northern_leaf_blight": {
       "class_label": "Corn_(maize)___Northern_Leaf_Blight",
       "crop": "Corn",
       "condition": "Northern Leaf Blight",
@@ -611,10 +556,12 @@
         "moisture_risk": true,
         "leaf_wetness_threshold_hours": 6,
         "recommended_irrigation_restriction": false
-      }
+      },
+      "class_key": "corn/northern_leaf_blight",
+      "severity": "High",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
     },
-
-    "Apple___healthy": {
+    "apple/healthy": {
       "class_label": "Apple___healthy",
       "crop": "Apple",
       "condition": "Healthy",
@@ -645,10 +592,12 @@
         "moisture_risk": false,
         "leaf_wetness_threshold_hours": 0,
         "recommended_irrigation_restriction": false
-      }
+      },
+      "class_key": "apple/healthy",
+      "severity": "None",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
     },
-
-    "Apple___Cedar_apple_rust": {
+    "apple/cedar_apple_rust": {
       "class_label": "Apple___Cedar_apple_rust",
       "crop": "Apple",
       "condition": "Cedar Apple Rust",
@@ -723,8 +672,1132 @@
         "moisture_risk": true,
         "leaf_wetness_threshold_hours": 6,
         "recommended_irrigation_restriction": false
-      }
+      },
+      "class_key": "apple/cedar_apple_rust",
+      "severity": "Medium",
+      "sources": "USDA ARS, University Extension bulletins (Penn State, Cornell, Purdue, Iowa State)"
+    },
+    "tomato/septoria_leaf_spot": {
+      "class_key": "tomato/septoria_leaf_spot",
+      "class_label": "Tomato___Septoria_leaf_spot",
+      "crop": "Tomato",
+      "condition": "Septoria Leaf Spot",
+      "scientific_name": "Septoria lycopersici",
+      "severity": "Medium",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "MEDIUM",
+      "general_description": "Septoria leaf spot causes circular brown lesions with gray centers and black fruiting bodies (pycnidia) on lower leaves, leading to severe defoliation and sunscald.",
+      "favorable_conditions": "Warm temperatures (20–25°C), high humidity (>80%), and frequent rain or prolonged overhead irrigation.",
+      "immediate_action": "Prune severely diseased lower foliage; avoid overhead watering; apply protective fungicide.",
+      "chemical_treatments": [
+        {
+          "product": "Chlorothalonil 75% WP",
+          "active_substance": "Chlorothalonil",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "1.5–2.0 kg/ha",
+          "application_timing": "Apply at first sign of disease and repeat every 7–10 days under humid conditions.",
+          "pre_harvest_interval_days": 7,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Copper Hydroxide 77% WP",
+          "active_substance": "Copper Hydroxide",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "1.5–2.5 kg/ha",
+          "application_timing": "Apply protectively before rain events.",
+          "pre_harvest_interval_days": 0,
+          "is_organic_certified": true
+        }
+      ],
+      "cultural_controls": [
+        "Mulch heavily around tomato base to suppress spore splashing from soil.",
+        "Space plants 60 cm apart and stake or trellis to maximize airflow.",
+        "Remove and destroy infected plant debris at end of season.",
+        "Rotate away from solanaceous crops for at least 2–3 years."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade ASO",
+          "dosage": "4.0–8.0 L/ha",
+          "notes": "Preventative biofungicide foliar spray applied prior to severe lesion development."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "HIGH",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 20,
+        "optimal_temp_c_max": 25,
+        "consecutive_wet_hours_threshold": 8
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 8,
+        "recommended_irrigation_restriction": true
+      },
+      "sources": "University of Maryland Extension - Septoria Leaf Spot of Tomato; Purdue Extension BP-22-W"
+    },
+    "corn/gray_leaf_spot": {
+      "class_key": "corn/gray_leaf_spot",
+      "class_label": "Corn_(maize)___Gray_leaf_spot",
+      "crop": "Corn",
+      "condition": "Gray Leaf Spot",
+      "scientific_name": "Cercospora zeae-maydis",
+      "severity": "High",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "HIGH",
+      "general_description": "Gray leaf spot causes rectangular tan-to-gray lesions restricted by leaf veins, coalescing under high humidity to blight entire corn leaves.",
+      "favorable_conditions": "Prolonged high humidity (>90%), warm temperatures (24–30°C), and extended overcast conditions with dew.",
+      "immediate_action": "Scout around tasseling; evaluate hybrid resistance; apply foliar fungicide if lesions appear on third leaf below ear before tasseling.",
+      "chemical_treatments": [
+        {
+          "product": "Pyraclostrobin 20% + Fluxapyroxad 16% SC",
+          "active_substance": "Pyraclostrobin + Fluxapyroxad",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "0.3–0.5 L/ha",
+          "application_timing": "Apply at VT/R1 growth stages if disease is present on lower leaves.",
+          "pre_harvest_interval_days": 21,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Plant resistant maize hybrids.",
+        "Rotate with non-host crops (soybean, small grains) for 1–2 years.",
+        "Incorporate or manage corn residue to reduce overwintering fungal inoculum."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus amyloliquefaciens D747",
+          "product_example": "Double Nickel 55",
+          "dosage": "1.0–2.5 kg/ha",
+          "notes": "Foliar biofungicide for fungal pathogen suppression."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "HIGH",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 90,
+        "optimal_temp_c_min": 24,
+        "optimal_temp_c_max": 30,
+        "consecutive_wet_hours_threshold": 12
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 12,
+        "recommended_irrigation_restriction": true
+      },
+      "sources": "Iowa State University Extension - Gray Leaf Spot; Purdue Extension BP-056-W"
+    },
+    "corn/northern_leaf_spot": {
+      "class_key": "corn/northern_leaf_spot",
+      "class_label": "Corn_(maize)___Northern_leaf_spot",
+      "crop": "Corn",
+      "condition": "Northern Leaf Spot",
+      "scientific_name": "Bipolaris zeicola",
+      "severity": "Medium",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "MEDIUM",
+      "general_description": "Northern leaf spot (Helminthosporium carbonum) causes small circular or oblong tan lesions with concentric zones on corn leaves and ears.",
+      "favorable_conditions": "Moderate temperatures (18–27°C) and high humidity or frequent rainfall.",
+      "immediate_action": "Inspect inbred and hybrid stands; apply triazole or strobilurin fungicide if lesions progress rapidly.",
+      "chemical_treatments": [
+        {
+          "product": "Propiconazole 41.8% EC",
+          "active_substance": "Propiconazole",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "0.3–0.4 L/ha",
+          "application_timing": "Apply at onset of lesion development prior to reproductive stage.",
+          "pre_harvest_interval_days": 30,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Rotate out of corn for at least 1 year.",
+        "Till crop residue to facilitate decomposition in high-tillage systems.",
+        "Select certified resistant seed lines (Hm1 gene resistance)."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade ASO",
+          "dosage": "3.0–6.0 L/ha",
+          "notes": "Early foliar suppression."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "MEDIUM",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 85,
+        "optimal_temp_c_min": 18,
+        "optimal_temp_c_max": 27,
+        "consecutive_wet_hours_threshold": 8
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 8,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "University of Illinois Field Crop Diseases - Northern Leaf Spot; CIMMYT Maize Guide"
+    },
+    "corn/maize_streak_virus": {
+      "class_key": "corn/maize_streak_virus",
+      "class_label": "Corn_(maize)___Maize_streak_virus",
+      "crop": "Corn",
+      "condition": "Maize Streak Virus",
+      "scientific_name": "Maize streak virus (MSV)",
+      "severity": "High",
+      "pathogen_type": "VIRAL",
+      "risk_level": "HIGH",
+      "general_description": "Maize streak virus causes continuous narrow chlorotic stripes along leaf veins, stunted plant growth, and severe failure of cob formation.",
+      "favorable_conditions": "Warm climates (22–32°C) favoring populations of leafhopper vectors (Cicadulina mbila).",
+      "immediate_action": "Rogue out early-infected plants; spray leafhopper vectors; avoid overlapping staggered plantings.",
+      "chemical_treatments": [
+        {
+          "product": "Imidacloprid 600 FS",
+          "active_substance": "Imidacloprid",
+          "type": "INSECTICIDE_SEED_TREATMENT",
+          "dosage": "5.0–7.0 mL/kg seed",
+          "application_timing": "Seed dressing prior to sowing to protect seedlings against leafhoppers for 3–4 weeks.",
+          "pre_harvest_interval_days": 45,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Plant MSV-resistant hybrid varieties certified by regional seed agencies.",
+        "Establish a crop-free host period to disrupt leafhopper lifecycles.",
+        "Clear grass weeds around field perimeters that host vector leafhoppers."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Beauveria bassiana GHA",
+          "product_example": "Botanigard",
+          "dosage": "1.0–2.0 kg/ha",
+          "notes": "Entomopathogenic fungus targeting leafhopper vectors."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 75,
+        "optimal_temp_c_min": 22,
+        "optimal_temp_c_max": 32,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "CIMMYT / IITA Maize Streak Virus Monograph; FAO IPM Guidelines"
+    },
+    "corn/maize_lethal_necrosis": {
+      "class_key": "corn/maize_lethal_necrosis",
+      "class_label": "Corn_(maize)___Maize_lethal_necrosis",
+      "crop": "Corn",
+      "condition": "Maize Lethal Necrosis",
+      "scientific_name": "Maize chlorotic mottle virus + Potyviridae",
+      "severity": "Critical",
+      "pathogen_type": "VIRAL",
+      "risk_level": "CRITICAL",
+      "general_description": "Maize lethal necrosis (MLN) results from co-infection of MCMV and SCMV/MDMV, causing severe leaf chlorosis, deadheart, necrotic drying, and total ear failure.",
+      "favorable_conditions": "Continuous overlapping maize production in warm regions with presence of thrips and beetle vectors.",
+      "immediate_action": "Quarantine affected field; rogue and bury infected plants; enforce strict maize-free fallow period.",
+      "chemical_treatments": [
+        {
+          "product": "Thiamethoxam 350 FS",
+          "active_substance": "Thiamethoxam",
+          "type": "INSECTICIDE_SEED_TREATMENT",
+          "dosage": "4.0–6.0 mL/kg seed",
+          "application_timing": "Seed dressing to prevent vector transmission by corn thrips.",
+          "pre_harvest_interval_days": 60,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Enforce a mandatory maize-free break for at least 2 full months across the production zone.",
+        "Plant only certified virus-free commercial hybrid seed; do not replant saved grain.",
+        "Rotate with non-poaceous crops (legumes, cassava, sunflower) for at least 2 seasons."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Azadirachtin 1% EC",
+          "product_example": "NeemAzal",
+          "dosage": "1.5–2.0 L/ha",
+          "notes": "Botanical antifeedant to deter thrips and beetle vectors."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 70,
+        "optimal_temp_c_min": 20,
+        "optimal_temp_c_max": 30,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "CIMMYT - Maize Lethal Necrosis Management Manual; FAO / KALRO Technical Guidance"
+    },
+    "apple/scab": {
+      "class_key": "apple/scab",
+      "class_label": "Apple___Scab",
+      "crop": "Apple",
+      "condition": "Apple Scab",
+      "scientific_name": "Venturia inaequalis",
+      "severity": "High",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "HIGH",
+      "general_description": "Apple scab causes olive-green to black velvety spots on leaves and fruit, causing leaf distortion, premature leaf drop, and cracked scabby fruit.",
+      "favorable_conditions": "Cool, wet spring weather (15–24°C) with prolonged leaf wetness exceeding Mills infection periods (6–9 hours).",
+      "immediate_action": "Apply protective or kickback fungicide within the infection window; shred fallen orchard leaf litter.",
+      "chemical_treatments": [
+        {
+          "product": "Captan 80 WDG",
+          "active_substance": "Captan",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "1.8–2.5 kg/ha",
+          "application_timing": "Apply preventatively from green tip through petal fall prior to forecasted rain events.",
+          "pre_harvest_interval_days": 7,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Difenoconazole 250 EC",
+          "active_substance": "Difenoconazole",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "0.15–0.2 L/ha",
+          "application_timing": "Post-infection curative spray applied within 72 hours of rain infection event.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Mow and shred fallen autumn leaves or apply 5% urea spray to speed up leaf breakdown.",
+        "Prune tree canopy annually to facilitate rapid drying of foliage after dew and rain.",
+        "Plant scab-resistant cultivars (Liberty, GoldRush, Enterprise)."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus amyloliquefaciens D747",
+          "product_example": "Amylo-X WG",
+          "dosage": "1.5–2.5 kg/ha",
+          "notes": "Preventative biofungicide spray during pre-bloom and bloom periods."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "HIGH",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 85,
+        "optimal_temp_c_min": 15,
+        "optimal_temp_c_max": 24,
+        "consecutive_wet_hours_threshold": 6
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 6,
+        "recommended_irrigation_restriction": true
+      },
+      "sources": "Cornell Cooperative Extension - Apple Scab; Penn State Tree Fruit Production Guide"
+    },
+    "apple/frog_eye_leaf_spot": {
+      "class_key": "apple/frog_eye_leaf_spot",
+      "class_label": "Apple___Frog_eye_leaf_spot",
+      "crop": "Apple",
+      "condition": "Frog Eye Leaf Spot",
+      "scientific_name": "Botryosphaeria obtusa",
+      "severity": "Medium",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "MEDIUM",
+      "general_description": "Frog eye leaf spot causes small circular lesions with purple margins and tan/white centers, accompanied by black rot cankers on branches and mummified fruit.",
+      "favorable_conditions": "Warm, wet conditions (20–27°C) with rain splashes distributing fungal conidia from cankers.",
+      "immediate_action": "Prune dead wood and mummified fruit; apply protective broad-spectrum fungicide from tight cluster through cover sprays.",
+      "chemical_treatments": [
+        {
+          "product": "Captan 80% WDG",
+          "active_substance": "Captan",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "1.8–2.5 kg/ha",
+          "application_timing": "Apply at petal fall and cover sprays every 10–14 days.",
+          "pre_harvest_interval_days": 7,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Prune and burn dead twigs, cankered limbs, and mummified apples during winter.",
+        "Prune cankered wood at least 15 cm below infected margins.",
+        "Maintain tree health and avoid herbicide or winter injury that creates entry wounds."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade Opti",
+          "dosage": "1.5–3.0 kg/ha",
+          "notes": "Suppressive biological spray during early leaf expansion."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "HIGH",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 20,
+        "optimal_temp_c_max": 27,
+        "consecutive_wet_hours_threshold": 9
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 9,
+        "recommended_irrigation_restriction": true
+      },
+      "sources": "University of Kentucky Extension PPA-34 - Frog Eye Leaf Spot; Penn State Fruit Pathology"
+    },
+    "apple/powdery_mildew": {
+      "class_key": "apple/powdery_mildew",
+      "class_label": "Apple___Powdery_mildew",
+      "crop": "Apple",
+      "condition": "Powdery Mildew",
+      "scientific_name": "Podosphaera leucotricha",
+      "severity": "Medium",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "MEDIUM",
+      "general_description": "Powdery mildew produces white powdery felt on young shoots, leaves, and buds, causing leaf curling, stunted shoot growth, and fruit russeting.",
+      "favorable_conditions": "High relative humidity (70–95%) without rain, and moderate temperatures (18–25°C). Free water actually inhibits spore germination.",
+      "immediate_action": "Prune out white 'silver shoot' tips; apply sulfur or systemic triazole fungicide at tight cluster through petal fall.",
+      "chemical_treatments": [
+        {
+          "product": "Micronized Sulfur 80% WP",
+          "active_substance": "Sulfur",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "4.0–6.0 kg/ha",
+          "application_timing": "Apply every 7–10 days from pink bud; do not apply when temperatures exceed 28°C.",
+          "pre_harvest_interval_days": 0,
+          "is_organic_certified": true
+        },
+        {
+          "product": "Myclobutanil 20% EW",
+          "active_substance": "Myclobutanil",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "0.25–0.35 L/ha",
+          "application_timing": "Apply at bloom and petal fall for systemic kickback control.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Manually cut out infected silver shoot tips during dormant and spring pruning.",
+        "Avoid excess nitrogen applications that stimulate late vegetative flushes.",
+        "Select resistant varieties (e.g. Honeycrisp, Gala)."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus pumilus QST 2808",
+          "product_example": "Sonata",
+          "dosage": "3.0–6.0 L/ha",
+          "notes": "Biological preventative spray for powdery mildew suppression."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "HIGH",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 95,
+        "optimal_temp_c_min": 18,
+        "optimal_temp_c_max": 25,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "Washington State University Tree Fruit - Apple Powdery Mildew; UC IPM Apple Guidelines"
+    },
+    "grape/healthy": {
+      "class_key": "grape/healthy",
+      "class_label": "Grape___healthy",
+      "crop": "Grape",
+      "condition": "Healthy",
+      "scientific_name": null,
+      "severity": "None",
+      "pathogen_type": "HEALTHY",
+      "risk_level": "NONE",
+      "general_description": "Grapevine foliage displays uniform dark green color, healthy lobed margins, vigorous shoot tips, and no foliar lesions.",
+      "favorable_conditions": null,
+      "immediate_action": "No treatment required. Maintain canopy management and preventative fungicide schedule.",
+      "chemical_treatments": [],
+      "cultural_controls": [
+        "Manage shoot positioning and cluster zone airflow.",
+        "Maintain vineyard floor cover crop to control soil moisture."
+      ],
+      "biological_controls": [],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 75,
+        "optimal_temp_c_min": 15,
+        "optimal_temp_c_max": 30,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "UC Davis Viticulture & Enology; Cornell Grape Pathology"
+    },
+    "grape/esca": {
+      "class_key": "grape/esca",
+      "class_label": "Grape___Esca",
+      "crop": "Grape",
+      "condition": "Esca",
+      "scientific_name": "Phaeomoniella chlamydospora, Phaeoacremonium minimum",
+      "severity": "High",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "HIGH",
+      "general_description": "Esca (black measles) causes characteristic interveinal 'tiger-stripe' necrosis on leaves, spotted berries, and vascular dieback in mature vines.",
+      "favorable_conditions": "Fungal entry via winter pruning wounds; symptoms flare during high-temperature water stress in mid-summer.",
+      "immediate_action": "Tag symptomatic vines for delayed remedial pruning; protect pruning wounds with fungicide or sealant; avoid summer vine stress.",
+      "chemical_treatments": [
+        {
+          "product": "Thiophanate-methyl 500 SC",
+          "active_substance": "Thiophanate-methyl",
+          "type": "PROTECTIVE_FUNGICIDE",
+          "dosage": "1.5–2.0 L/ha",
+          "application_timing": "Spray or paint onto dormant pruning cuts within 24 hours of cutting.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Practice late winter delayed pruning when cuts heal rapidly.",
+        "Apply wound sealant to large cuts (>1.5 cm diameter).",
+        "Train a new basal sucker to replace affected trunks (trunk renewal).",
+        "Disinfect pruning shears regularly between vines."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Trichoderma atroviride SC1",
+          "product_example": "Vintec",
+          "dosage": "0.2 kg/ha",
+          "notes": "Bio-protectant applied directly to pruning cuts to colonize wounds against trunk fungi."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "MEDIUM",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 75,
+        "optimal_temp_c_min": 25,
+        "optimal_temp_c_max": 35,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "UC IPM Grapevine Trunk Diseases: Esca; INRAE Grapevine Trunk Diseases Guide"
+    },
+    "grape/downy_mildew": {
+      "class_key": "grape/downy_mildew",
+      "class_label": "Grape___Downy_mildew",
+      "crop": "Grape",
+      "condition": "Downy Mildew",
+      "scientific_name": "Plasmopara viticola",
+      "severity": "High",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "CRITICAL",
+      "general_description": "Downy mildew causes yellowish translucent 'oil spots' on the upper leaf surface and dense white sporulation on the underside, defoliating vines rapidly.",
+      "favorable_conditions": "Spring 10-10-10 rule: 10 mm rainfall, 10°C temperature, and 10 cm shoot growth; relative humidity >90%.",
+      "immediate_action": "Apply protective or systemic oomycete fungicide before rain; maintain open cluster zone canopy.",
+      "chemical_treatments": [
+        {
+          "product": "Metalaxyl-M 4% + Mancozeb 64% WP",
+          "active_substance": "Metalaxyl-M + Mancozeb",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "2.0–2.5 kg/ha",
+          "application_timing": "Apply preventatively or early post-infection during warm wet periods.",
+          "pre_harvest_interval_days": 28,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Bordeaux Mixture 20%",
+          "active_substance": "Copper Sulfate + Lime",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "3.0–5.0 kg/ha",
+          "application_timing": "Protectant spray prior to forecasted rain events.",
+          "pre_harvest_interval_days": 21,
+          "is_organic_certified": true
+        }
+      ],
+      "cultural_controls": [
+        "Pull leaves around grape clusters to accelerate drying after rain.",
+        "Maintain good vineyard soil drainage to eliminate standing puddles.",
+        "Avoid overhead sprinkler irrigation."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus subtilis QST 713",
+          "product_example": "Serenade Max",
+          "dosage": "2.0–3.0 kg/ha",
+          "notes": "Preventative biofungicide spray during active shoot growth."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "CRITICAL",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 90,
+        "optimal_temp_c_min": 18,
+        "optimal_temp_c_max": 25,
+        "consecutive_wet_hours_threshold": 6
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 6,
+        "recommended_irrigation_restriction": true
+      },
+      "sources": "Cornell Viticulture - Grape Downy Mildew; UC Davis IPM Grape Downy Mildew"
+    },
+    "rice/healthy": {
+      "class_key": "rice/healthy",
+      "class_label": "Rice___healthy",
+      "crop": "Rice",
+      "condition": "Healthy",
+      "scientific_name": null,
+      "severity": "None",
+      "pathogen_type": "HEALTHY",
+      "risk_level": "NONE",
+      "general_description": "Rice leaves show uniform erect green blades, healthy tillering, and no discoloration or lesions.",
+      "favorable_conditions": null,
+      "immediate_action": "Maintain optimal water depth and balanced fertilizer application.",
+      "chemical_treatments": [],
+      "cultural_controls": [
+        "Maintain balanced N-P-K fertilizer split.",
+        "Ensure uniform field leveling and water circulation."
+      ],
+      "biological_controls": [],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 20,
+        "optimal_temp_c_max": 32,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "IRRI Rice Knowledge Bank; FAO Rice Production Systems"
+    },
+    "rice/blast": {
+      "class_key": "rice/blast",
+      "class_label": "Rice___Blast",
+      "crop": "Rice",
+      "condition": "Rice Blast",
+      "scientific_name": "Magnaporthe oryzae",
+      "severity": "Critical",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "CRITICAL",
+      "general_description": "Rice blast produces diamond-shaped or spindle-shaped lesions with gray centers and dark brown borders, causing extensive leaf death and neck rot.",
+      "favorable_conditions": "High relative humidity (>90%), moderate temperatures (20–28°C), prolonged dew wetness (>10h), and excessive nitrogen application.",
+      "immediate_action": "Drain field temporarily if excess nitrogen was applied; apply blast-specific fungicide immediately at tillering/booting.",
+      "chemical_treatments": [
+        {
+          "product": "Tricyclazole 75% WP",
+          "active_substance": "Tricyclazole",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "0.4–0.6 kg/ha",
+          "application_timing": "Apply at early tillering and heading to protect panicle neck.",
+          "pre_harvest_interval_days": 30,
+          "is_organic_certified": false
+        },
+        {
+          "product": "Isoprothiolane 40% EC",
+          "active_substance": "Isoprothiolane",
+          "type": "CURATIVE_FUNGICIDE",
+          "dosage": "1.0–1.5 L/ha",
+          "application_timing": "Apply at first sign of spindle lesions.",
+          "pre_harvest_interval_days": 21,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Avoid excess nitrogen applications; balance with potassium and silicon.",
+        "Maintain continuous water depth (5–10 cm) to suppress blast sporulation.",
+        "Plant certified blast-resistant cultivars.",
+        "Destroy infected straw and stubble after harvest."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Pseudomonas fluorescens Pf-1",
+          "product_example": "Bio-Cure-B",
+          "dosage": "2.5 kg/ha",
+          "notes": "Seed and foliar biofungicide application."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "CRITICAL",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 90,
+        "optimal_temp_c_min": 20,
+        "optimal_temp_c_max": 28,
+        "consecutive_wet_hours_threshold": 10
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 10,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "IRRI Rice Knowledge Bank - Blast; PhilRice Blast Compendium"
+    },
+    "rice/brown_spot": {
+      "class_key": "rice/brown_spot",
+      "class_label": "Rice___Brown_spot",
+      "crop": "Rice",
+      "condition": "Brown Spot",
+      "scientific_name": "Bipolaris oryzae",
+      "severity": "High",
+      "pathogen_type": "FUNGAL",
+      "risk_level": "HIGH",
+      "general_description": "Brown spot causes oval, dark brown spots with yellow halos across rice leaves and glumes, severely reducing grain quality in nutrient-deficient soils.",
+      "favorable_conditions": "High humidity (>85%), temperatures 25–30°C, and nutrient-deficient soils (especially lacking potassium, silicon, or zinc).",
+      "immediate_action": "Apply balanced potassium fertilizer; correct soil nutrient deficiencies; apply foliar fungicide if spreading.",
+      "chemical_treatments": [
+        {
+          "product": "Mancozeb 75% WP",
+          "active_substance": "Mancozeb",
+          "type": "PREVENTATIVE_FUNGICIDE",
+          "dosage": "1.5–2.0 kg/ha",
+          "application_timing": "Apply protectively at early tillering and panicle initiation.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Apply balanced N-P-K fertilizer and supplement with potassium and zinc.",
+        "Soak seeds in warm water (52–54°C for 15 min) prior to sowing.",
+        "Avoid prolonged dry spells in the paddy."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Trichoderma viride TV-1",
+          "product_example": "Niprot",
+          "dosage": "2.5 kg/ha",
+          "notes": "Foliar spray for Bipolaris suppression."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "HIGH",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 85,
+        "optimal_temp_c_min": 25,
+        "optimal_temp_c_max": 30,
+        "consecutive_wet_hours_threshold": 8
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 8,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "IRRI Rice Knowledge Bank - Brown Spot; University of Arkansas Rice Diseases"
+    },
+    "rice/bacterial_leaf_blight": {
+      "class_key": "rice/bacterial_leaf_blight",
+      "class_label": "Rice___Bacterial_leaf_blight",
+      "crop": "Rice",
+      "condition": "Bacterial Leaf Blight",
+      "scientific_name": "Xanthomonas oryzae pv. oryzae",
+      "severity": "High",
+      "pathogen_type": "BACTERIAL",
+      "risk_level": "HIGH",
+      "general_description": "Bacterial leaf blight causes wavy water-soaked stripes starting at leaf tips and margins, rapidly turning yellow-white with milky bacterial ooze beads.",
+      "favorable_conditions": "High temperatures (25–34°C), relative humidity >80%, and driving monsoon storms causing leaf abrasion.",
+      "immediate_action": "Drain excess standing water; withhold nitrogen fertilizer top-dressing; avoid damaging leaves during weeding.",
+      "chemical_treatments": [
+        {
+          "product": "Copper Hydroxide 77% WP",
+          "active_substance": "Copper Hydroxide",
+          "type": "PREVENTATIVE_BACTERICIDE",
+          "dosage": "1.5–2.0 kg/ha",
+          "application_timing": "Apply at first sign of yellow marginal lesions.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": true
+        }
+      ],
+      "cultural_controls": [
+        "Stop nitrogen top-dressing during disease flare-up.",
+        "Ensure good field drainage during heavy rains.",
+        "Eradicate weed hosts (Leersia hexandra) along paddy bunds.",
+        "Plant resistant cultivars (Xa gene lines)."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus velezensis FZB42",
+          "product_example": "RhizoVital",
+          "dosage": "2.0 L/ha",
+          "notes": "Biological antagonism against Xanthomonas."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "HIGH",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 25,
+        "optimal_temp_c_max": 34,
+        "consecutive_wet_hours_threshold": 8
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 8,
+        "recommended_irrigation_restriction": true
+      },
+      "sources": "IRRI Rice Knowledge Bank - Bacterial Blight; FAO Rice IPM Pathology"
+    },
+    "rice/tungro": {
+      "class_key": "rice/tungro",
+      "class_label": "Rice___Tungro",
+      "crop": "Rice",
+      "condition": "Rice Tungro",
+      "scientific_name": "Rice tungro spherical virus + Rice tungro bacilliform virus",
+      "severity": "Critical",
+      "pathogen_type": "VIRAL",
+      "risk_level": "CRITICAL",
+      "general_description": "Tungro disease causes leaf yellowing or orange discoloration starting from tips, severe plant stunting, delayed flowering, and sterile panicles.",
+      "favorable_conditions": "Warm temperatures (24–30°C) supporting population outbreaks of green leafhopper vector (Nephotettix virescens).",
+      "immediate_action": "Plow under heavily infected fields; control leafhopper vectors; synchronize planting dates across the canal command area.",
+      "chemical_treatments": [
+        {
+          "product": "Dinotefuran 20% SG",
+          "active_substance": "Dinotefuran",
+          "type": "INSECTICIDE",
+          "dosage": "0.15–0.2 kg/ha",
+          "application_timing": "Foliar spray to suppress green leafhopper vectors upon detection.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Synchronize planting dates within 2–3 weeks across irrigation blocks.",
+        "Observe a 30-day crop-free fallow between successive crops.",
+        "Plant tungro-resistant certified rice varieties (Matatag lines).",
+        "Rogue and destroy infected hills within first 30 days."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Beauveria bassiana",
+          "product_example": "Broadspec Bio",
+          "dosage": "1.5–2.0 kg/ha",
+          "notes": "Targeted bio-insecticide for green leafhopper vectors."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 75,
+        "optimal_temp_c_min": 24,
+        "optimal_temp_c_max": 30,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "IRRI Rice Knowledge Bank - Tungro Disease; PhilRice Technical Bulletin"
+    },
+    "rice/hispa": {
+      "class_key": "rice/hispa",
+      "class_label": "Rice___Hispa",
+      "crop": "Rice",
+      "condition": "Rice Hispa",
+      "scientific_name": "Dicladispa armigera",
+      "severity": "Medium",
+      "pathogen_type": "PEST",
+      "risk_level": "MEDIUM",
+      "general_description": "Rice hispa adults scrape green tissue leaving white parallel streaks; internal leaf-mining grubs tunnel through leaf tissue causing blighted leaves.",
+      "favorable_conditions": "Warm, humid conditions (>80% RH, 24–30°C) and heavy nitrogen fertilizer use.",
+      "immediate_action": "Net and destroy adult spiny beetles; clip leaf tips of seedlings before transplanting; spray contact insecticide if threshold exceeded.",
+      "chemical_treatments": [
+        {
+          "product": "Cartap Hydrochloride 50% SP",
+          "active_substance": "Cartap Hydrochloride",
+          "type": "INSECTICIDE",
+          "dosage": "1.0 kg/ha",
+          "application_timing": "Apply when adult hispa counts exceed 1–2 per hill.",
+          "pre_harvest_interval_days": 21,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Clip seedling leaf tips before transplanting to eliminate eggs.",
+        "Sweep fields with hand nets to catch adult spiny beetles.",
+        "Avoid excessive nitrogen applications.",
+        "Drain paddies for 2–3 days to suppress larval development."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Trichogramma zahiri",
+          "product_example": "Trichocards",
+          "dosage": "50,000 wasps/ha",
+          "notes": "Egg parasitoid release against hispa eggs."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 80,
+        "optimal_temp_c_min": 24,
+        "optimal_temp_c_max": 30,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "IRRI Rice Knowledge Bank - Rice Hispa; Bangladesh Rice Research Institute (BRRI)"
+    },
+    "cassava/healthy": {
+      "class_key": "cassava/healthy",
+      "class_label": "Cassava___healthy",
+      "crop": "Cassava",
+      "condition": "Healthy",
+      "scientific_name": null,
+      "severity": "None",
+      "pathogen_type": "HEALTHY",
+      "risk_level": "NONE",
+      "general_description": "Cassava leaves show vibrant green palmate foliage with no mosaic mottle, vein distortion, necrosis, or mite feeding chlorosis.",
+      "favorable_conditions": null,
+      "immediate_action": "Maintain weed control and monitor for whitefly vectors.",
+      "chemical_treatments": [],
+      "cultural_controls": [
+        "Select clean stem cuttings from vigorous plants.",
+        "Keep field free of weed hosts."
+      ],
+      "biological_controls": [],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 75,
+        "optimal_temp_c_min": 20,
+        "optimal_temp_c_max": 35,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "IITA Cassava Guide; FAO Save and Grow: Cassava"
+    },
+    "cassava/mosaic": {
+      "class_key": "cassava/mosaic",
+      "class_label": "Cassava___Mosaic",
+      "crop": "Cassava",
+      "condition": "Cassava Mosaic",
+      "scientific_name": "African cassava mosaic virus (ACMV)",
+      "severity": "High",
+      "pathogen_type": "VIRAL",
+      "risk_level": "HIGH",
+      "general_description": "Cassava mosaic disease causes severe yellow-green chlorotic mottling, leaf distortion, stunting, and up to 80% tuber yield reduction.",
+      "favorable_conditions": "Warm conditions (25–32°C) favoring high populations of Bemisia tabaci whitefly vectors.",
+      "immediate_action": "Rogue out and burn mosaic-stunted plants; use only CMD-resistant stem cuttings; control whitefly vector.",
+      "chemical_treatments": [
+        {
+          "product": "Imidacloprid 200 SL",
+          "active_substance": "Imidacloprid",
+          "type": "INSECTICIDE",
+          "dosage": "0.25–0.35 L/ha",
+          "application_timing": "Foliar application to reduce whitefly vectors during early vegetative growth.",
+          "pre_harvest_interval_days": 21,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Plant certified CMD-resistant cassava varieties (e.g. TME 419, TMS 98/0505).",
+        "Take cuttings only from completely symptom-free parent plants.",
+        "Rogue infected plants within the first 3 months of planting.",
+        "Isolate young plantations from older infected cassava fields."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Azadirachtin 1% EC",
+          "product_example": "Neem seed extract",
+          "dosage": "1.5–2.0 L/ha",
+          "notes": "Botanical spray to repel whitefly vectors."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 75,
+        "optimal_temp_c_min": 25,
+        "optimal_temp_c_max": 32,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "IITA Cassava Mosaic Disease Field Guide; FAO Integrated Cassava Management"
+    },
+    "cassava/brown_streak": {
+      "class_key": "cassava/brown_streak",
+      "class_label": "Cassava___Brown_streak",
+      "crop": "Cassava",
+      "condition": "Cassava Brown Streak",
+      "scientific_name": "Cassava brown streak virus (CBSV)",
+      "severity": "Critical",
+      "pathogen_type": "VIRAL",
+      "risk_level": "CRITICAL",
+      "general_description": "Cassava brown streak causes feathery chlorosis along secondary leaf veins, brown streaks on green stems, and destructive dry-corky root rot.",
+      "favorable_conditions": "Warm low-to-mid elevation zones (25–33°C) with persistent Bemisia tabaci whitefly pressure.",
+      "immediate_action": "Quarantine field; destroy diseased plants; harvest roots early before rot spreads; never take cuttings from infected plants.",
+      "chemical_treatments": [
+        {
+          "product": "Acetamiprid 20% SP",
+          "active_substance": "Acetamiprid",
+          "type": "INSECTICIDE",
+          "dosage": "0.2–0.25 kg/ha",
+          "application_timing": "Foliar spray against sap-sucking whitefly vectors.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Plant clean, certified tissue-culture planting material.",
+        "Enforce strict quarantine on movement of vegetative cassava cuttings.",
+        "Harvest roots early (at 8–9 months) before severe internal necrosis develops.",
+        "Rogue plants displaying vein feathery chlorosis and brown stem streaks."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Paecilomyces fumosoroseus",
+          "product_example": "PreFeRal",
+          "dosage": "1.5–2.0 kg/ha",
+          "notes": "Entomopathogenic fungus targeting whitefly nymphs."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 75,
+        "optimal_temp_c_min": 25,
+        "optimal_temp_c_max": 33,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "IITA Cassava Brown Streak Disease Control Manual; FAO Plant Production and Protection Paper"
+    },
+    "cassava/green_mite": {
+      "class_key": "cassava/green_mite",
+      "class_label": "Cassava___Green_mite",
+      "crop": "Cassava",
+      "condition": "Cassava Green Mite",
+      "scientific_name": "Mononychellus tanajoa",
+      "severity": "Medium",
+      "pathogen_type": "PEST",
+      "risk_level": "MEDIUM",
+      "general_description": "Cassava green mite feeds on young leaves causing yellow pinhead speckling, leaf narrowing, shoe-stringing, and shoot tip dieback.",
+      "favorable_conditions": "Hot, dry conditions (28–35°C, RH <65%) during extended dry seasons.",
+      "immediate_action": "Introduce predatory mites (Typhlodromalus aripo); avoid broad-spectrum pyrethroid sprays; apply selective acaricide if defoliation is severe.",
+      "chemical_treatments": [
+        {
+          "product": "Abamectin 18 g/L EC",
+          "active_substance": "Abamectin",
+          "type": "ACARICIDE",
+          "dosage": "0.4–0.6 L/ha",
+          "application_timing": "Targeted acaricide application during severe dry season infestation.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": false
+        }
+      ],
+      "cultural_controls": [
+        "Plant early with start of rainy season so canopy matures before dry season.",
+        "Plant cultivars with hairy apical leaves that deter mite feeding.",
+        "Intercrop with maize or pigeon pea to reduce mite migration."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Typhlodromalus aripo",
+          "product_example": "Biological predator release",
+          "dosage": "1 colony/shoot tip",
+          "notes": "Predatory phytoseiid mite that controls cassava green mite naturally."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "LOW",
+        "optimal_humidity_pct_max": 65,
+        "optimal_temp_c_min": 28,
+        "optimal_temp_c_max": 35,
+        "consecutive_wet_hours_threshold": null
+      },
+      "telemetry_linkage": {
+        "moisture_risk": false,
+        "leaf_wetness_threshold_hours": 0,
+        "recommended_irrigation_restriction": false
+      },
+      "sources": "IITA Biological Control of Cassava Green Mite; CIAT Cassava Pest Management"
+    },
+    "cassava/bacterial_blight": {
+      "class_key": "cassava/bacterial_blight",
+      "class_label": "Cassava___Bacterial_blight",
+      "crop": "Cassava",
+      "condition": "Cassava Bacterial Blight",
+      "scientific_name": "Xanthomonas axonopodis pv. manihotis",
+      "severity": "High",
+      "pathogen_type": "BACTERIAL",
+      "risk_level": "HIGH",
+      "general_description": "Cassava bacterial blight causes angular water-soaked leaf spots, leaf wilting, shoot dieback, and gummy exudate droplets along stems.",
+      "favorable_conditions": "Warm temperatures (25–30°C) with high humidity and driving rainstorms creating leaf wounds.",
+      "immediate_action": "Prune wilted shoot tips and burn them; disinfect tools; prune back stems in dry season; apply copper barrier before heavy rains.",
+      "chemical_treatments": [
+        {
+          "product": "Copper Oxychloride 50% WP",
+          "active_substance": "Copper Oxychloride",
+          "type": "PREVENTATIVE_BACTERICIDE",
+          "dosage": "2.5–3.0 kg/ha",
+          "application_timing": "Apply at the onset of rainy season prior to storm events.",
+          "pre_harvest_interval_days": 14,
+          "is_organic_certified": true
+        }
+      ],
+      "cultural_controls": [
+        "Use certified disease-free stem cuttings.",
+        "Sterilize cutting tools in 10% bleach solution between plants.",
+        "Prune infected branches 20 cm below the lowest visible lesion.",
+        "Rotate fields with non-host crops (maize, sorghum, cowpea)."
+      ],
+      "biological_controls": [
+        {
+          "agent": "Bacillus amyloliquefaciens QST 713",
+          "product_example": "Serenade ASO",
+          "dosage": "4.0–6.0 L/ha",
+          "notes": "Foliar bio-bactericide for Xanthomonas suppression."
+        }
+      ],
+      "microclimate_risks": {
+        "fungal_risk": "LOW",
+        "bacterial_risk": "HIGH",
+        "optimal_humidity_pct_max": 85,
+        "optimal_temp_c_min": 25,
+        "optimal_temp_c_max": 30,
+        "consecutive_wet_hours_threshold": 8
+      },
+      "telemetry_linkage": {
+        "moisture_risk": true,
+        "leaf_wetness_threshold_hours": 8,
+        "recommended_irrigation_restriction": true
+      },
+      "sources": "CIAT Cassava Bacterial Blight Manual; IITA Integrated Control of CBB in Africa"
     }
-
   }
 }
