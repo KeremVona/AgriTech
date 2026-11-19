@@ -33,6 +33,7 @@ from advisory import (
     get_kb_class_count,
     get_kb_version,
     is_kb_loaded,
+    resolve_class_key,
 )
 from config import settings
 from plantml_engine import plantml_engine
@@ -352,9 +353,11 @@ async def classify_leaf(
     # High-confidence path: full diagnostic response
     # ------------------------------------------------------------------
     meta = get_class_meta(top_label)
+    canonical_key = resolve_class_key(result.get("class_key") or top_label)
 
     response = ClassifyLeafResponse(
         inference_id=inference_id,
+        class_key=canonical_key,
         prediction=PredictionDetail(
             crop=meta["crop"],
             condition=meta["condition"],
