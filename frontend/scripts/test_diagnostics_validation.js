@@ -100,7 +100,7 @@ for (const preset of CLINICAL_SAMPLE_PRESETS) {
   const probSum = preset.topProbabilities.reduce((acc, curr) => acc + curr.probability, 0);
   assert.ok(probSum <= 1.001, `Preset ${preset.id} probabilities sum > 1.0 (${probSum})`);
 
-  assert.ok(preset.sampleImageUrl && preset.sampleImageUrl.startsWith('/progression/'), `Preset ${preset.id} must have valid progression sampleImageUrl`);
+  assert.ok(preset.sampleImageUrl && preset.sampleImageUrl.startsWith('/progression-experimental/'), `Preset ${preset.id} must have valid progression sampleImageUrl`);
 
   // Test adapter conversion
   const prediction = presetToPrediction(preset);
