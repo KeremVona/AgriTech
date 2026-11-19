@@ -112,7 +112,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
     try {
       const prediction = await classifyLeafImage(file, controller.signal);
       setVerdict(prediction);
-      if (prediction.requiresRescan || prediction.confidenceScore < 0.70) {
+      if (prediction.requiresRescan) {
         setUiState('LOW_CONFIDENCE');
       } else {
         setUiState('SUCCESS');

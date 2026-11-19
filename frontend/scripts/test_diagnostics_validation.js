@@ -12,6 +12,8 @@ import {
   formatClassLabel,
   mapAgronomicSeverity,
   normalizeCropSpecies,
+  mapMlAdvisoryToFrontend,
+  resolveBackendAdvisory,
   CLINICAL_SAMPLE_PRESETS,
   presetToPrediction,
   LOW_CONFIDENCE_THRESHOLD,
@@ -77,6 +79,9 @@ assert.equal(normalizeCropSpecies('potato'), 'Potato');
 assert.equal(normalizeCropSpecies('corn'), 'Corn');
 assert.equal(normalizeCropSpecies('maize'), 'Corn');
 assert.equal(normalizeCropSpecies('apple'), 'Apple');
+assert.equal(normalizeCropSpecies('grape'), 'Grape');
+assert.equal(normalizeCropSpecies('rice'), 'Rice');
+assert.equal(normalizeCropSpecies('cassava'), 'Cassava');
 
 // 6. Clinical Sample Presets Integrity Tests
 console.log('6. Testing CLINICAL_SAMPLE_PRESETS...');
@@ -139,5 +144,77 @@ const validStates = [
   'ERROR',
 ];
 assert.equal(validStates.length, 8, 'SPEC-UI-006 §5 defines exactly 8 operational component states');
+
+// 9. ML Service Advisory Field Mapping & Backend LLM/DB Resolution
+console.log('9. Testing mapMlAdvisoryToFrontend() and resolveBackendAdvisory()...');
+const mappedFallback = mapMlAdvisoryToFrontend({
+  immediate_action: 'Isolate infected block.',
+  chemical_treatments: [
+    { product: 'Mancozeb 80% WP', dosage: '2.0 kg/ha', type: 'PREVENTATIVE_FUNGICIDE' },
+  ],
+  biological_controls: [
+    { agent: 'Bacillus subtilis', product_example: 'Serenade ASO', dosage: '4 L/ha' },
+  ],
+  cultural_controls: ['Remove lower leaves'],
+  environmental_risk_factors: 'Favourable conditions: Relative humidity >85%.',
+});
+assert.equal(mappedFallback.immediateAction, 'Isolate infected block.');
+assert.equal(mappedFallback.fungicideTreatments.length, 3);
+assert.match(mappedFallback.fungicideTreatments[0], /Mancozeb 80% WP/);
+assert.match(mappedFallback.fungicideTreatments[1], /Serenade ASO/);
+assert.equal(mappedFallback.fungicideTreatments[2], 'Remove lower leaves');
+assert.equal(mappedFallback.environmentalRiskFactors, 'Favourable conditions: Relative humidity >85%.');
+
+// 9b. Backend cache hit / LLM resolution overrides fallback
+let capturedUrl = '';
+const resolvedHit = await resolveBackendAdvisory(
+  {
+    classKey: 'tomato/late_blight',
+    crop: 'Tomato',
+    condition: 'Late Blight',
+    scientificName: 'Phytophthora infestans',
+    severityIndex: 'Critical',
+  },
+  mappedFallback,
+  {
+    apiBaseUrl: 'http://localhost:5051',
+    fetchImpl: async (url) => {
+      capturedUrl = String(url);
+      return new Response(
+        JSON.stringify({
+          class_key: 'tomato/late_blight',
+          immediate_action: 'DB cached immediate action.',
+          recommended_treatments: ['Copper Hydroxide 77% WP — 2.0 kg/ha'],
+          microclimate_risk: 'RH >90% at 15-22°C.',
+          source: 'database_cache',
+          llm_model: 'gemini-2.5-flash',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    },
+  }
+);
+assert.equal(capturedUrl, 'http://localhost:5051/api/v1/advisories/resolve');
+assert.equal(resolvedHit.immediateAction, 'DB cached immediate action.');
+assert.deepEqual(resolvedHit.fungicideTreatments, ['Copper Hydroxide 77% WP — 2.0 kg/ha']);
+assert.equal(resolvedHit.environmentalRiskFactors, 'RH >90% at 15-22°C.');
+assert.equal(resolvedHit.source, 'database_cache');
+assert.equal(resolvedHit.llmModel, 'gemini-2.5-flash');
+
+// 9c. Backend 503 or offline gracefully returns mapped ml-service fallback
+const resolvedFallback = await resolveBackendAdvisory(
+  {
+    classKey: 'tomato/late_blight',
+    crop: 'Tomato',
+    condition: 'Late Blight',
+  },
+  mappedFallback,
+  {
+    apiBaseUrl: 'http://localhost:5051',
+    fetchImpl: async () => new Response(null, { status: 503 }),
+  }
+);
+assert.equal(resolvedFallback.immediateAction, 'Isolate infected block.');
+assert.equal(resolvedFallback.source, 'knowledge_base');
 
 console.log('✅ All AI Leaf Diagnostics validation, service and component contract tests passed cleanly!');
