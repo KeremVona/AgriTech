@@ -98,6 +98,7 @@ class PlantmlEngine:
                 raise ValueError(f"Cannot decode image: {exc}") from exc
         top = [{"label": agritech_label(n), "probability": float(p)} for n, p in pred.top_k]
         return {
+            "class_key": pred.class_name,
             "top_label": agritech_label(pred.class_name),
             "confidence": float(pred.confidence),
             "top_probabilities": top,
