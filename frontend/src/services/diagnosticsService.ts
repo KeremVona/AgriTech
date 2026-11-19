@@ -48,7 +48,7 @@ export function mapAgronomicSeverity(
   const norm = (rawSeverity || '').toLowerCase();
   const condNorm = (condition || '').toLowerCase();
 
-  if (norm === 'healthy' || condNorm.includes('healthy')) {
+  if (norm === 'healthy' || norm === 'none' || condNorm.includes('healthy')) {
     return { severityTier: 'Tier 0', severityIndex: 'Healthy' };
   }
   if (
@@ -214,7 +214,13 @@ export async function resolveBackendAdvisory(
     }
 
     const data = await response.json();
-    if (!data || typeof data.immediate_action !== 'string' || typeof data.microclimate_risk !== 'string') {
+    if (
+      !data ||
+      typeof data.immediate_action !== 'string' ||
+      data.immediate_action.trim().length === 0 ||
+      typeof data.microclimate_risk !== 'string' ||
+      data.microclimate_risk.trim().length === 0
+    ) {
       return fallbackAdvisory;
     }
 
@@ -428,6 +434,8 @@ export async function classifyLeafImage(
       throw new Error(
         `Unable to reach the AI vision service at ${ML_URL}. Check server connection or use a verified clinical sample.`
       );
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     const elapsed = Math.round(performance.now() - startTime);
@@ -542,7 +550,7 @@ export async function classifyLeafImage(
       classKey: derivedClassKey,
       crop,
       condition,
-      scientificName: rawPred.scientific_name || 'Plant Pathogen',
+      scientificName: rawPred.scientific_name || (severity.severityIndex === 'Healthy' ? '' : 'Plant Pathogen'),
       confidenceScore,
       severityIndex: severity.severityIndex,
       severityTier: severity.severityTier,

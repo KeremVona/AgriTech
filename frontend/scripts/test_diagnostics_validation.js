@@ -217,4 +217,43 @@ const resolvedFallback = await resolveBackendAdvisory(
 assert.equal(resolvedFallback.immediateAction, 'Isolate infected block.');
 assert.equal(resolvedFallback.source, 'knowledge_base');
 
+// 9d. Network failure, blank payload, and external AbortSignal handling
+const resolvedNetworkErr = await resolveBackendAdvisory(
+  { classKey: 'tomato/late_blight', crop: 'Tomato', condition: 'Late Blight' },
+  mappedFallback,
+  {
+    apiBaseUrl: 'http://localhost:5051',
+    fetchImpl: async () => {
+      throw new TypeError('Failed to fetch');
+    },
+  }
+);
+assert.equal(resolvedNetworkErr.source, 'knowledge_base');
+
+const resolvedBlankFields = await resolveBackendAdvisory(
+  { classKey: 'tomato/late_blight', crop: 'Tomato', condition: 'Late Blight' },
+  mappedFallback,
+  {
+    apiBaseUrl: 'http://localhost:5051',
+    fetchImpl: async () =>
+      new Response(JSON.stringify({ immediate_action: '   ', microclimate_risk: '' }), { status: 200 }),
+  }
+);
+assert.equal(resolvedBlankFields.source, 'knowledge_base');
+
+const abortCtrl = new AbortController();
+abortCtrl.abort();
+await assert.rejects(
+  () =>
+    resolveBackendAdvisory(
+      { classKey: 'tomato/late_blight', crop: 'Tomato', condition: 'Late Blight' },
+      mappedFallback,
+      { apiBaseUrl: 'http://localhost:5051', signal: abortCtrl.signal }
+    ),
+  (err) => err && err.name === 'AbortError'
+);
+
+// 9e. mapAgronomicSeverity handles 'None' -> Healthy / Tier 0
+assert.deepEqual(mapAgronomicSeverity('None', 'Healthy'), { severityTier: 'Tier 0', severityIndex: 'Healthy' });
+
 console.log('✅ All AI Leaf Diagnostics validation, service and component contract tests passed cleanly!');

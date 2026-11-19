@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using AgriTech.Api.Data;
 using AgriTech.Api.Models;
 using AgriTech.Api.Models.DTOs;
@@ -23,6 +24,8 @@ namespace AgriTech.Api.Controllers;
 [Produces("application/json")]
 public class AdvisoriesController : ControllerBase
 {
+    private static readonly Regex ValidClassKeyRegex = new("^[a-z0-9_]+/[a-z0-9_]+$", RegexOptions.Compiled);
+
     private readonly AgriTechDbContext _db;
     private readonly IGeminiAdvisoryClient _geminiClient;
     private readonly ILogger<AdvisoriesController> _logger;
@@ -45,15 +48,25 @@ public class AdvisoriesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var normalizedKey = NormalizeClassKey(classKey);
-        if (string.IsNullOrEmpty(normalizedKey))
-            return BadRequest(new { message = "class_key is required." });
+        if (!IsValidClassKey(normalizedKey))
+            return BadRequest(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Invalid class_key",
+                Detail = "class_key must match '<crop>/<condition>' using lowercase letters, digits, or underscores."
+            });
 
         var existing = await _db.DiseaseAdvisories
             .AsNoTracking()
             .FirstOrDefaultAsync(d => d.ClassKey == normalizedKey, cancellationToken);
 
         if (existing is null)
-            return NotFound(new { message = $"No cached advisory found for '{normalizedKey}'." });
+            return NotFound(new ProblemDetails
+            {
+                Status = StatusCodes.Status404NotFound,
+                Title = "Advisory not found",
+                Detail = $"No cached advisory found for '{normalizedKey}'."
+            });
 
         return Ok(ToDto(existing, "database_cache"));
     }
@@ -67,13 +80,13 @@ public class AdvisoriesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var normalizedKey = NormalizeClassKey(request.ClassKey);
-        if (string.IsNullOrEmpty(normalizedKey))
+        if (!IsValidClassKey(normalizedKey))
         {
             return BadRequest(new ProblemDetails
             {
                 Status = StatusCodes.Status400BadRequest,
                 Title = "Invalid class_key",
-                Detail = "class_key cannot be empty."
+                Detail = "class_key must match '<crop>/<condition>' using lowercase letters, digits, or underscores."
             });
         }
 
@@ -124,13 +137,17 @@ public class AdvisoriesController : ControllerBase
             ? await _db.DiseaseAdvisories.FirstOrDefaultAsync(d => d.ClassKey == normalizedKey, cancellationToken)
             : null;
 
+        var severity = string.IsNullOrWhiteSpace(normalizedRequest.SeverityIndex)
+            ? "Medium"
+            : normalizedRequest.SeverityIndex;
+
         DiseaseAdvisory persisted;
         if (existingTracked is not null)
         {
             existingTracked.Crop = normalizedRequest.Crop;
             existingTracked.Condition = normalizedRequest.Condition;
             existingTracked.ScientificName = normalizedRequest.ScientificName;
-            existingTracked.Severity = normalizedRequest.SeverityIndex ?? "Medium";
+            existingTracked.Severity = severity;
             existingTracked.ImmediateAction = generated.ImmediateAction;
             existingTracked.RecommendedTreatmentsJson = treatmentsJson;
             existingTracked.MicroclimateRisk = generated.MicroclimateRisk;
@@ -146,7 +163,7 @@ public class AdvisoriesController : ControllerBase
                 Crop = normalizedRequest.Crop,
                 Condition = normalizedRequest.Condition,
                 ScientificName = normalizedRequest.ScientificName,
-                Severity = normalizedRequest.SeverityIndex ?? "Medium",
+                Severity = severity,
                 ImmediateAction = generated.ImmediateAction,
                 RecommendedTreatmentsJson = treatmentsJson,
                 MicroclimateRisk = generated.MicroclimateRisk,
@@ -190,14 +207,24 @@ public class AdvisoriesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var normalizedKey = NormalizeClassKey(classKey);
-        if (string.IsNullOrEmpty(normalizedKey))
-            return BadRequest(new { message = "class_key is required." });
+        if (!IsValidClassKey(normalizedKey))
+            return BadRequest(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Invalid class_key",
+                Detail = "class_key must match '<crop>/<condition>' using lowercase letters, digits, or underscores."
+            });
 
         var existing = await _db.DiseaseAdvisories
             .FirstOrDefaultAsync(d => d.ClassKey == normalizedKey, cancellationToken);
 
         if (existing is null)
-            return NotFound(new { message = $"No cached advisory found for '{normalizedKey}'." });
+            return NotFound(new ProblemDetails
+            {
+                Status = StatusCodes.Status404NotFound,
+                Title = "Advisory not found",
+                Detail = $"No cached advisory found for '{normalizedKey}'."
+            });
 
         _db.DiseaseAdvisories.Remove(existing);
         await _db.SaveChangesAsync(cancellationToken);
@@ -206,6 +233,9 @@ public class AdvisoriesController : ControllerBase
 
     private static string NormalizeClassKey(string? raw) =>
         (raw ?? string.Empty).Trim().ToLowerInvariant();
+
+    private static bool IsValidClassKey(string normalizedKey) =>
+        !string.IsNullOrEmpty(normalizedKey) && ValidClassKeyRegex.IsMatch(normalizedKey);
 
     private static bool IsUniqueConstraintViolation(DbUpdateException ex) =>
         ex.InnerException is PostgresException pg && pg.SqlState == PostgresErrorCodes.UniqueViolation;
