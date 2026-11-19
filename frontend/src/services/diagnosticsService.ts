@@ -5,13 +5,20 @@ import type {
   SeverityIndex,
   TopProbability,
   ClinicalSamplePreset,
+  AgronomicAdvisory,
+  AdvisorySource,
 } from '../types/diagnostics';
 
 const ML_URL: string =
   typeof import.meta !== 'undefined' && import.meta.env?.VITE_ML_URL !== undefined
     ? import.meta.env.VITE_ML_URL
     : 'http://localhost:8000';
+const API_URL: string =
+  typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL !== undefined
+    ? import.meta.env.VITE_API_BASE_URL
+    : 'http://localhost:5051';
 const DEFAULT_TIMEOUT_MS = 30000;
+const ADVISORY_TIMEOUT_MS = 15000;
 export const LOW_CONFIDENCE_THRESHOLD = 0.70; // SPEC-UI-006 §5 State 6
 
 /**
@@ -72,14 +79,168 @@ export function mapAgronomicSeverity(
 }
 
 /**
- * Normalizes crop strings to the 4 supported staples
+ * Normalizes crop strings to the supported plant-ml crop species.
  */
 export function normalizeCropSpecies(rawCrop: string): CropSpecies {
   const norm = (rawCrop || '').toLowerCase();
   if (norm.includes('potato')) return 'Potato';
   if (norm.includes('corn') || norm.includes('maize')) return 'Corn';
   if (norm.includes('apple')) return 'Apple';
+  if (norm.includes('grape')) return 'Grape';
+  if (norm.includes('rice')) return 'Rice';
+  if (norm.includes('cassava')) return 'Cassava';
   return 'Tomato';
+}
+
+interface RawMlChemicalTreatment {
+  product?: string;
+  dosage?: string;
+  type?: string;
+}
+
+interface RawMlBiologicalControl {
+  agent?: string;
+  product_example?: string;
+  dosage?: string;
+}
+
+/**
+ * Normalizes ml-service's structured advisory payload (which uses `chemical_treatments`,
+ * `biological_controls`, and `cultural_controls`) into the frontend AgronomicAdvisory shape.
+ */
+export function mapMlAdvisoryToFrontend(rawAdvisory: any): AgronomicAdvisory {
+  const advisory = rawAdvisory || {};
+  const treatments: string[] = [];
+
+  if (Array.isArray(advisory.fungicide_treatments)) {
+    for (const item of advisory.fungicide_treatments) {
+      if (typeof item === 'string' && item.trim()) {
+        treatments.push(item.trim());
+      }
+    }
+  }
+
+  if (treatments.length === 0 && Array.isArray(advisory.chemical_treatments)) {
+    for (const item of advisory.chemical_treatments as RawMlChemicalTreatment[]) {
+      if (!item?.product) continue;
+      const parts = [item.product];
+      if (item.dosage) parts.push(item.dosage);
+      if (item.type) parts.push(item.type.replace(/_/g, ' ').toLowerCase());
+      treatments.push(parts.join(' — '));
+    }
+  }
+
+  if (Array.isArray(advisory.biological_controls)) {
+    for (const bio of advisory.biological_controls as RawMlBiologicalControl[]) {
+      const label = bio.product_example || bio.agent;
+      if (!label) continue;
+      const details = [label];
+      if (bio.agent && bio.product_example) details.push(`(${bio.agent})`);
+      if (bio.dosage) details.push(bio.dosage);
+      treatments.push(`Bio: ${details.join(' ')}`);
+    }
+  }
+
+  if (Array.isArray(advisory.cultural_controls)) {
+    for (const cultural of advisory.cultural_controls) {
+      if (typeof cultural === 'string' && cultural.trim()) {
+        treatments.push(cultural.trim());
+      }
+    }
+  }
+
+  return {
+    immediateAction: advisory.immediate_action || 'Inspect field foliage for symptom confirmation.',
+    fungicideTreatments: treatments,
+    environmentalRiskFactors: advisory.environmental_risk_factors || 'Standard crop growing conditions.',
+    source: 'knowledge_base',
+  };
+}
+
+export interface ResolveAdvisoryInput {
+  classKey: string;
+  crop: string;
+  condition: string;
+  scientificName?: string;
+  severityIndex?: string;
+}
+
+/**
+ * Resolves the disease advisory from the ASP.NET Core backend (`POST /api/v1/advisories/resolve`),
+ * which returns a cached PostgreSQL record or generates & stores one via Gemini on cache miss.
+ * Falls back cleanly to the ml-service advisory if the backend or LLM is unavailable.
+ */
+export async function resolveBackendAdvisory(
+  input: ResolveAdvisoryInput,
+  fallbackAdvisory: AgronomicAdvisory,
+  options?: {
+    apiBaseUrl?: string;
+    signal?: AbortSignal;
+    fetchImpl?: typeof fetch;
+  }
+): Promise<AgronomicAdvisory> {
+  const apiBaseUrl = (options?.apiBaseUrl ?? API_URL).replace(/\/$/, '');
+  const fetchImpl = options?.fetchImpl ?? fetch;
+  const externalSignal = options?.signal;
+
+  if (externalSignal?.aborted) {
+    throw new DOMException('Advisory resolution cancelled.', 'AbortError');
+  }
+
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort();
+  externalSignal?.addEventListener('abort', abortFromCaller, { once: true });
+  const timeoutId = setTimeout(() => controller.abort(), ADVISORY_TIMEOUT_MS);
+
+  try {
+    const response = await fetchImpl(`${apiBaseUrl}/api/v1/advisories/resolve`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        class_key: input.classKey,
+        crop: input.crop,
+        condition: input.condition,
+        scientific_name: input.scientificName,
+        severity_index: input.severityIndex,
+      }),
+    });
+
+    if (!response.ok) {
+      return fallbackAdvisory;
+    }
+
+    const data = await response.json();
+    if (!data || typeof data.immediate_action !== 'string' || typeof data.microclimate_risk !== 'string') {
+      return fallbackAdvisory;
+    }
+
+    const source: AdvisorySource =
+      data.source === 'database_cache' || data.source === 'llm_generated'
+        ? data.source
+        : 'database_cache';
+
+    return {
+      immediateAction: data.immediate_action,
+      fungicideTreatments: Array.isArray(data.recommended_treatments)
+        ? data.recommended_treatments.filter((t: unknown): t is string => typeof t === 'string' && t.trim().length > 0)
+        : [],
+      environmentalRiskFactors: data.microclimate_risk,
+      source,
+      llmModel: typeof data.llm_model === 'string' ? data.llm_model : undefined,
+    };
+  } catch (err: unknown) {
+    if (externalSignal?.aborted) {
+      throw err;
+    }
+    return fallbackAdvisory;
+  } finally {
+    clearTimeout(timeoutId);
+    externalSignal?.removeEventListener('abort', abortFromCaller);
+  }
 }
 
 /**
@@ -213,7 +374,10 @@ export function presetToPrediction(preset: ClinicalSamplePreset): DiagnosticPred
     severityIndex: preset.severityIndex,
     severityTier: preset.severityTier,
     topProbabilities: preset.topProbabilities,
-    agronomicAdvisory: preset.agronomicAdvisory,
+    agronomicAdvisory: {
+      ...preset.agronomicAdvisory,
+      source: 'sample',
+    },
     executionTimeMs: preset.executionTimeMs,
     sampleImageUrl: preset.sampleImageUrl,
   };
@@ -290,10 +454,12 @@ export async function classifyLeafImage(
     const data = await response.json();
     const rawPred = data.prediction || {};
     const confidenceScore = Number(rawPred.confidence_score ?? 0);
+    const usesCalibratedModel = typeof data.model_version === 'string' && data.model_version.startsWith('plantml');
 
-    // SPEC-UI-006 §5 State 6: Centralized Low-Confidence (< 70%) or Explicit Server Rescan
+    // SPEC-UI-006 §5 State 6: Server rescan flag, plus 0.70 gate for uncalibrated legacy models
     const isLowConfidence =
-      Boolean(data.requires_rescan) || (confidenceScore > 0 && confidenceScore < LOW_CONFIDENCE_THRESHOLD);
+      Boolean(data.requires_rescan) ||
+      (!usesCalibratedModel && confidenceScore > 0 && confidenceScore < LOW_CONFIDENCE_THRESHOLD);
 
     if (isLowConfidence) {
       const rescanInst: string[] =
@@ -353,10 +519,27 @@ export async function classifyLeafImage(
       })
     );
 
-    const advisory = data.agronomic_advisory || {};
+    const fallbackAdvisory = mapMlAdvisoryToFrontend(data.agronomic_advisory);
+    const derivedClassKey =
+      typeof data.class_key === 'string' && data.class_key.trim()
+        ? data.class_key.trim().toLowerCase()
+        : `${crop.toLowerCase()}/${condition.toLowerCase().replace(/\s+/g, '_')}`;
+
+    const resolvedAdvisory = await resolveBackendAdvisory(
+      {
+        classKey: derivedClassKey,
+        crop,
+        condition,
+        scientificName: rawPred.scientific_name || undefined,
+        severityIndex: severity.severityIndex,
+      },
+      fallbackAdvisory,
+      { signal }
+    );
 
     return {
       inferenceId: data.inference_id || `inf-${Date.now()}`,
+      classKey: derivedClassKey,
       crop,
       condition,
       scientificName: rawPred.scientific_name || 'Plant Pathogen',
@@ -364,11 +547,7 @@ export async function classifyLeafImage(
       severityIndex: severity.severityIndex,
       severityTier: severity.severityTier,
       topProbabilities,
-      agronomicAdvisory: {
-        immediateAction: advisory.immediate_action || 'Inspect field foliage for symptom confirmation.',
-        fungicideTreatments: advisory.fungicide_treatments || [],
-        environmentalRiskFactors: advisory.environmental_risk_factors || 'Standard crop growing conditions.',
-      },
+      agronomicAdvisory: resolvedAdvisory,
       executionTimeMs: data.execution_time_ms || elapsed,
     };
   } finally {
