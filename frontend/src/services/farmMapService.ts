@@ -268,7 +268,7 @@ export async function updateParcelMetadata(options: {
     const request = async (): Promise<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> => {
       let response: Response;
       const url = `${apiBaseUrl.replace(/\/$/, '')}${PARCELS_WRITE_PATH}/${encodeURIComponent(parcelId)}`;
-      const payload = buildParcelCreatePayload(data, effectiveGeom);
+      const payload = buildParcelCreatePayload(data, geometry);
 
       try {
         response = await fetchImpl(url, {
