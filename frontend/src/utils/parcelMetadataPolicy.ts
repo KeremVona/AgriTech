@@ -369,13 +369,25 @@ export function validateParcelForm(
 }
 
 /**
- * Constructs an RFC 7946 GeoJSON compliant parcel creation DTO payload.
+ * Seeded database UUIDs for the 4 canonical crops (matches backend SeedReferenceData migration).
+ */
+export const CROP_UUID_BY_ID: Record<string, string> = {
+  'crop-tomato': 'c0000000-0000-0000-0000-000000000001',
+  'crop-corn': 'c0000000-0000-0000-0000-000000000002',
+  'crop-potato': 'c0000000-0000-0000-0000-000000000003',
+  'crop-apple': 'c0000000-0000-0000-0000-000000000004',
+};
+
+/**
+ * Constructs a parcel create/update DTO payload matching the ASP.NET Core backend
+ * (`CreateParcelRequest` / `UpdateParcelRequest`).
  * Supports both canonical names (cropId, cropName, soilProfileId, soilProfileName)
- * and shorthand fields (crop, soil).
+ * and shorthand fields (crop, soil). Omits `boundary_geom` when `geometry` is absent/empty
+ * so metadata-only PUT updates do not fail `[ValidPolygon]`.
  */
 export function buildParcelCreatePayload(
   data: ParcelFormData,
-  geometry: any,
+  geometry?: any,
 ): Record<string, any> {
   const matchedCrop = findCrop(
     data.cropName,
@@ -392,12 +404,25 @@ export function buildParcelCreatePayload(
     (data as any)?.soil_profile_id,
   );
 
+  const cropId = matchedCrop
+    ? (CROP_UUID_BY_ID[matchedCrop.id] ?? matchedCrop.id)
+    : ((data as any)?.crop_id || data.cropId || '');
+  const soilProfileId = matchedSoil
+    ? matchedSoil.id
+    : ((data as any)?.soil_profile_id || data.soilProfileId || '');
+
+  const hasBoundary = Boolean(
+    geometry &&
+      Array.isArray(geometry.coordinates) &&
+      geometry.coordinates.length > 0,
+  );
+
   return {
     field_id: data.fieldId ?? (data as any)?.field_id ?? null,
     name: data.name ?? '',
-    crop_type: matchedCrop ? matchedCrop.category : ((data as any)?.crop_type || data.crop || ''),
-    soil_type: matchedSoil ? matchedSoil.type : ((data as any)?.soil_type || data.soil || ''),
+    crop_id: cropId,
+    soil_profile_id: soilProfileId,
     planting_date: data.plantingDate ?? (data as any)?.planting_date ?? '',
-    geometry,
+    ...(hasBoundary ? { boundary_geom: geometry } : {}),
   };
 }

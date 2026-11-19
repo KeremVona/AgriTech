@@ -91,11 +91,14 @@ test('saveParcel in api mode sends POST with JSON payload and returns response f
   assert.equal(calledHeaders['Content-Type'], 'application/json');
   assert.match(calledHeaders['Accept'], /application\/geo\+json/);
   assert.equal(calledBody.name, 'North Tomato Plot');
-  assert.equal(calledBody.crop_type, 'Tomato');
-  assert.equal(calledBody.soil_type, 'Sandy Loam');
+  assert.equal(calledBody.crop_id, 'c0000000-0000-0000-0000-000000000001');
+  assert.equal(calledBody.soil_profile_id, 'sandy_loam');
   assert.equal(calledBody.planting_date, '2026-04-15');
   assert.equal(calledBody.field_id, 'field-101');
-  assert.deepEqual(calledBody.geometry, sampleGeometry);
+  assert.deepEqual(calledBody.boundary_geom, sampleGeometry);
+  assert.equal(calledBody.crop_type, undefined);
+  assert.equal(calledBody.soil_type, undefined);
+  assert.equal(calledBody.geometry, undefined);
   assert.equal(calledBody.crop_name, undefined);
   assert.equal(calledBody.area_hectares, undefined);
 
@@ -281,15 +284,43 @@ test('updateParcelMetadata in api mode sends PUT and returns updated feature', a
   assert.equal(calledUrl, 'http://localhost:5051/api/v1/parcels/parcel-100');
   assert.equal(calledMethod, 'PUT');
   assert.equal(calledBody.name, 'Updated Corn Plot');
-  assert.equal(calledBody.crop_type, 'Corn');
-  assert.equal(calledBody.soil_type, 'Clay');
+  assert.equal(calledBody.crop_id, 'c0000000-0000-0000-0000-000000000002');
+  assert.equal(calledBody.soil_profile_id, 'clay');
   assert.equal(calledBody.planting_date, '2026-05-01');
+  assert.deepEqual(calledBody.boundary_geom, sampleGeometry);
   assert.equal(calledBody.crop_name, undefined);
   assert.equal(calledBody.area_hectares, undefined);
 
   assert.equal(feature.id, 'parcel-100');
   assert.equal(feature.properties?.name, 'Updated Corn Plot');
   assert.equal(feature.properties?.crop_name, 'Corn (Maize)');
+});
+
+test('updateParcelMetadata omits boundary_geom when geometry is omitted', async () => {
+  let calledBody = null;
+  const mockFetch = async (_url, init) => {
+    calledBody = JSON.parse(init.body);
+    return new Response(JSON.stringify({ id: 'parcel-100' }), { status: 200 });
+  };
+  await updateParcelMetadata({
+    ...baseOptions,
+    mode: 'api',
+    parcelId: 'parcel-100',
+    data: {
+      name: 'Metadata Only',
+      cropId: 'crop-potato',
+      cropName: 'Potato',
+      crop: 'Potato',
+      soilProfileId: 'sandy_loam',
+      soilProfileName: 'Sandy Loam',
+      soil: 'Sandy Loam',
+      plantingDate: '2026-05-01',
+    },
+    fetchImpl: mockFetch,
+  });
+  assert.equal(calledBody.crop_id, 'c0000000-0000-0000-0000-000000000003');
+  assert.equal(calledBody.soil_profile_id, 'sandy_loam');
+  assert.equal('boundary_geom' in calledBody, false);
 });
 
 test('updateParcelMetadata in auto mode rejects on 5xx or offline', async () => {
