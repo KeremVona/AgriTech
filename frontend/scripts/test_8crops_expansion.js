@@ -12,22 +12,22 @@ import { fileURLToPath } from 'node:url';
 import {
   AGRONOMIC_CALIBRATION_REGISTRY,
   calculateElapsedDays,
-} from '../src/p2p-experimental/models/agronomicTimelineModel.ts';
+} from '../src/models/agronomicTimelineModel.ts';
 import {
   SYMPTOM_HOTSPOTS_REGISTRY,
   getActiveHotspotsForProgress,
-} from '../src/p2p-experimental/models/hotspotRegistry.ts';
+} from '../src/models/hotspotRegistry.ts';
 import {
   AGRONOMIC_INTERVENTION_REGISTRY,
   getTreatmentProducts,
   calculateInterventionEfficacy,
   evaluateYieldRetention,
-} from '../src/p2p-experimental/models/treatmentBranchingModel.ts';
+} from '../src/models/treatmentBranchingModel.ts';
 import {
   EXPERIMENTAL_8CROPS_MANIFEST,
   getExperimentalCropProgression,
-} from '../src/p2p-experimental/services/experimentalProgressionService.ts';
-import { assembleFieldReportData } from '../src/p2p-experimental/models/exportReportModel.ts';
+} from '../src/services/progressionService.ts';
+import { assembleFieldReportData } from '../src/models/exportReportModel.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

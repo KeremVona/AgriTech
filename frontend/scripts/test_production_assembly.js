@@ -79,27 +79,9 @@ for (const exp of requiredExports) {
 console.log('  [✓] Test 2 Passed: All 16 canonical components, models, and utilities properly exported');
 
 // ----------------------------------------------------------------------------
-// Test 3: Backward Compatibility in p2p-experimental Shims
+// Test 3: Production Light-Mode Tokens in DiseaseProgressionPage.tsx
 // ----------------------------------------------------------------------------
-console.log('  [+] Test 3: Verifying Backward Compatibility Shims in p2p-experimental...');
-
-const expViewerPath = path.resolve(
-  __dirname,
-  '../src/p2p-experimental/components/DiseaseProgressionViewerExperimental.tsx'
-);
-const expViewerSource = fs.readFileSync(expViewerPath, 'utf8');
-
-assert(
-  expViewerSource.includes('DiseaseProgressionViewer as DiseaseProgressionViewerExperimental'),
-  'DiseaseProgressionViewerExperimental must re-export DiseaseProgressionViewer for backward compatibility'
-);
-
-console.log('  [✓] Test 3 Passed: p2p-experimental shims cleanly re-export canonical components');
-
-// ----------------------------------------------------------------------------
-// Test 4: Production Light-Mode Tokens in DiseaseProgressionPage.tsx
-// ----------------------------------------------------------------------------
-console.log('  [+] Test 4: Verifying Light-Mode Tokens in DiseaseProgressionPage.tsx...');
+console.log('  [+] Test 3: Verifying Light-Mode Tokens in DiseaseProgressionPage.tsx...');
 
 const pagePath = path.resolve(__dirname, '../src/pages/DiseaseProgressionPage.tsx');
 const pageSource = fs.readFileSync(pagePath, 'utf8');
@@ -125,6 +107,6 @@ assert(
   'DiseaseProgressionPage must wire DEFAULT_CROP_SPECIMENS'
 );
 
-console.log('  [✓] Test 4 Passed: Light-mode tokens and layout architecture verified');
+console.log('  [✓] Test 3 Passed: Light-mode tokens and layout architecture verified');
 
-console.log('\n[✓] All Production Disease Progression Studio Assembly Tests PASSED (4/4 suites).');
+console.log('\n[✓] All Production Disease Progression Studio Assembly Tests PASSED (3/3 suites).');

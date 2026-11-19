@@ -7,7 +7,7 @@ import assert from 'node:assert';
 import {
   SYMPTOM_HOTSPOTS_REGISTRY,
   getActiveHotspotsForProgress,
-} from '../src/p2p-experimental/models/hotspotRegistry.ts';
+} from '../src/models/hotspotRegistry.ts';
 
 console.log('[+] Starting Symptom Hotspots Registry Unit Tests...\n');
 
