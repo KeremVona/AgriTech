@@ -375,19 +375,19 @@ test('buildParcelCreatePayload produces RFC 7946 compliant parcel creation DTO',
   const payload = buildParcelCreatePayload(formData, geometry);
 
   assert.deepEqual(Object.keys(payload).sort(), [
-    'crop_type',
+    'boundary_geom',
+    'crop_id',
     'field_id',
-    'geometry',
     'name',
     'planting_date',
-    'soil_type',
+    'soil_profile_id',
   ]);
   assert.equal(payload.field_id, 'field-1234');
   assert.equal(payload.name, 'P-04 - North Field Potato');
-  assert.equal(payload.crop_type, 'Potato');
-  assert.equal(payload.soil_type, 'Sandy Loam');
+  assert.equal(payload.crop_id, 'c0000000-0000-0000-0000-000000000003');
+  assert.equal(payload.soil_profile_id, 'sandy_loam');
   assert.equal(payload.planting_date, '2026-04-15');
-  assert.deepEqual(payload.geometry, geometry);
+  assert.deepEqual(payload.boundary_geom, geometry);
 });
 
 test('buildParcelCreatePayload resolves shorthand crop and soil fields', () => {
@@ -412,16 +412,16 @@ test('buildParcelCreatePayload resolves shorthand crop and soil fields', () => {
   };
   const payload = buildParcelCreatePayload(shorthandData, geometry);
   assert.deepEqual(Object.keys(payload).sort(), [
-    'crop_type',
+    'boundary_geom',
+    'crop_id',
     'field_id',
-    'geometry',
     'name',
     'planting_date',
-    'soil_type',
+    'soil_profile_id',
   ]);
   assert.equal(payload.name, 'Shorthand Parcel');
-  assert.equal(payload.crop_type, 'Tomato');
-  assert.equal(payload.soil_type, 'Sandy Loam');
+  assert.equal(payload.crop_id, 'c0000000-0000-0000-0000-000000000001');
+  assert.equal(payload.soil_profile_id, 'sandy_loam');
 });
 
 // -----------------------------------------------------------------------------
