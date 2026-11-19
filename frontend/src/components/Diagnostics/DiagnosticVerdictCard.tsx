@@ -30,7 +30,8 @@ export const DiagnosticVerdictCard: React.FC<DiagnosticVerdictCardProps> = ({
   const treatments = verdict.agronomicAdvisory?.fungicideTreatments ?? [];
 
   const handleCopySummary = async () => {
-    const summary = `Ag-Intelligence Diagnosis: ${verdict.crop} — ${verdict.condition} (${verdict.scientificName})
+    const sciSuffix = verdict.scientificName ? ` (${verdict.scientificName})` : '';
+    const summary = `Ag-Intelligence Diagnosis: ${verdict.crop} — ${verdict.condition}${sciSuffix}
 Confidence: ${confidencePct}% | Severity: ${verdict.severityTier} (${verdict.severityIndex})
 Immediate Action: ${verdict.agronomicAdvisory?.immediateAction || 'Inspect field foliage.'}
 Recommended Treatments: ${treatments.join(', ') || 'None required'}
@@ -118,7 +119,9 @@ Environmental Risk: ${verdict.agronomicAdvisory?.environmentalRiskFactors || 'St
               {verdict.crop} — {verdict.condition}
             </h2>
           </div>
-          <p className="text-sm italic text-ag-ink-secondary">{verdict.scientificName}</p>
+          {verdict.scientificName && (
+            <p className="text-sm italic text-ag-ink-secondary">{verdict.scientificName}</p>
+          )}
         </div>
 
         <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-1 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">

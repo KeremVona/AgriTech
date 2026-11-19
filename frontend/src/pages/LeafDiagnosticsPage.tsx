@@ -271,7 +271,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
                 <div className="space-y-1.5 max-w-md mx-auto">
                   <h3 className="text-base font-bold text-ag-ink">Diagnostic Engine Ready</h3>
                   <p className="text-xs sm:text-sm text-ag-ink-secondary leading-relaxed">
-                    Select or photograph a single plant leaf from Tomato, Potato, Corn, or Apple to run deep learning foliar diagnostics and view treatment recommendations.
+                    Select or photograph a single plant leaf from Tomato, Potato, Corn, Apple, Grape, Rice, or Cassava to run deep learning foliar diagnostics and view treatment recommendations.
                   </p>
                 </div>
 

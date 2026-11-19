@@ -169,4 +169,104 @@ public class AdvisoriesControllerTests
         Assert.Equal(503, obj.StatusCode);
         Assert.Equal(0, await db.DiseaseAdvisories.CountAsync());
     }
+
+    [Fact]
+    public async Task ResolveAdvisory_InvalidClassKey_Returns400()
+    {
+        await using var db = CreateInMemoryContext();
+        var fakeLlm = new FakeGeminiClient(_ => throw new InvalidOperationException("Should reject invalid key"));
+        var controller = new AdvisoriesController(db, fakeLlm, NullLogger<AdvisoriesController>.Instance);
+
+        var result = await controller.ResolveAdvisory(new ResolveAdvisoryRequest
+        {
+            ClassKey = "invalid-key-without-slash",
+            Crop = "Tomato",
+            Condition = "Late Blight"
+        }, CancellationToken.None);
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(400, bad.StatusCode);
+        Assert.Equal(0, fakeLlm.CallCount);
+    }
+
+    [Fact]
+    public async Task ResolveAdvisory_ForceRefresh_UpdatesExistingRow()
+    {
+        await using var db = CreateInMemoryContext();
+        db.DiseaseAdvisories.Add(new DiseaseAdvisory
+        {
+            ClassKey = "tomato/late_blight",
+            Crop = "Tomato",
+            Condition = "Late Blight",
+            Severity = "High",
+            ImmediateAction = "Old action.",
+            RecommendedTreatmentsJson = "[\"Old spray\"]",
+            MicroclimateRisk = "Old risk.",
+            LlmModel = "gemini-2.5-flash"
+        });
+        await db.SaveChangesAsync();
+
+        var fakeLlm = new FakeGeminiClient(_ => new GeneratedAdvisoryPayload(
+            "Refreshed action.",
+            new[] { "Refreshed spray" },
+            "Refreshed risk.",
+            "gemini-2.5-flash"));
+        var controller = new AdvisoriesController(db, fakeLlm, NullLogger<AdvisoriesController>.Instance);
+
+        var result = await controller.ResolveAdvisory(new ResolveAdvisoryRequest
+        {
+            ClassKey = "tomato/late_blight",
+            Crop = "Tomato",
+            Condition = "Late Blight",
+            SeverityIndex = "   ",
+            ForceRefresh = true
+        }, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<AdvisoryResponseDto>(ok.Value);
+        Assert.Equal(1, fakeLlm.CallCount);
+        Assert.Equal("llm_generated", dto.Source);
+        Assert.Equal("Refreshed action.", dto.ImmediateAction);
+        Assert.Equal("Medium", dto.SeverityIndex);
+        Assert.Equal(1, await db.DiseaseAdvisories.CountAsync());
+    }
+
+    [Fact]
+    public async Task GetAndDeleteAdvisory_HandleHitMissAndInvalidKey()
+    {
+        await using var db = CreateInMemoryContext();
+        db.DiseaseAdvisories.Add(new DiseaseAdvisory
+        {
+            ClassKey = "corn/common_rust",
+            Crop = "Corn",
+            Condition = "Common Rust",
+            Severity = "Low",
+            ImmediateAction = "Monitor pustules.",
+            RecommendedTreatmentsJson = "[\"Triazole foliar spray\"]",
+            MicroclimateRisk = "Cool 16-23C with heavy dew.",
+            LlmModel = "gemini-2.5-flash"
+        });
+        await db.SaveChangesAsync();
+
+        var fakeLlm = new FakeGeminiClient(_ => throw new InvalidOperationException("Unused"));
+        var controller = new AdvisoriesController(db, fakeLlm, NullLogger<AdvisoriesController>.Instance);
+
+        var getHit = await controller.GetAdvisory("Corn/Common_Rust", CancellationToken.None);
+        var ok = Assert.IsType<OkObjectResult>(getHit.Result);
+        var dto = Assert.IsType<AdvisoryResponseDto>(ok.Value);
+        Assert.Equal("corn/common_rust", dto.ClassKey);
+
+        var getMiss = await controller.GetAdvisory("apple/scab", CancellationToken.None);
+        Assert.IsType<NotFoundObjectResult>(getMiss.Result);
+
+        var getBad = await controller.GetAdvisory("bad key!", CancellationToken.None);
+        Assert.IsType<BadRequestObjectResult>(getBad.Result);
+
+        var delOk = await controller.DeleteAdvisory("corn/common_rust", CancellationToken.None);
+        Assert.IsType<NoContentResult>(delOk);
+        Assert.Equal(0, await db.DiseaseAdvisories.CountAsync());
+
+        var delMiss = await controller.DeleteAdvisory("corn/common_rust", CancellationToken.None);
+        Assert.IsType<NotFoundObjectResult>(delMiss);
+    }
 }

@@ -108,6 +108,7 @@ public class GeminiAdvisoryClientTests
     [Theory]
     [InlineData(HttpStatusCode.TooManyRequests, "{\"error\":\"rate limit\"}")]
     [InlineData(HttpStatusCode.OK, "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"not-json\"}]}}]}")]
+    [InlineData(HttpStatusCode.OK, "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"{\\\"immediate_action\\\":\\\"\\\",\\\"recommended_treatments\\\":[],\\\"microclimate_risk\\\":\\\"RH > 80%\\\"}\"}]}}]}")]
     public async Task GenerateAdvisoryAsync_ThrowsOnHttpErrorOrMalformedJson(HttpStatusCode status, string body)
     {
         var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(status)
@@ -120,5 +121,60 @@ public class GeminiAdvisoryClientTests
 
         await Assert.ThrowsAsync<LlmAdvisoryUnavailableException>(() =>
             client.GenerateAdvisoryAsync(SampleRequest()));
+    }
+
+    [Fact]
+    public async Task GenerateAdvisoryAsync_SupportsHealthyEmptyTreatmentsAndMarkdownFence()
+    {
+        var fencedPayload = """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "text": "```json\n{\"immediate_action\":\"Continue weekly field scouting.\",\"recommended_treatments\":[],\"microclimate_risk\":\"Maintain good canopy airflow below 80% RH.\"}\n```"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+        """;
+
+        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(fencedPayload, Encoding.UTF8, "application/json")
+        });
+        var httpClient = new HttpClient(handler);
+        var options = Options.Create(new GeminiOptions { ApiKey = "test-key", Model = "gemini-2.5-flash" });
+        var client = new GeminiAdvisoryClient(httpClient, options, NullLogger<GeminiAdvisoryClient>.Instance);
+
+        var result = await client.GenerateAdvisoryAsync(new ResolveAdvisoryRequest
+        {
+            ClassKey = "tomato/healthy",
+            Crop = "Tomato",
+            Condition = "Healthy",
+            SeverityIndex = "None"
+        });
+
+        Assert.Equal("Continue weekly field scouting.", result.ImmediateAction);
+        Assert.Empty(result.RecommendedTreatments);
+        Assert.Contains("80% RH", result.MicroclimateRisk);
+        Assert.Contains("systemInstruction", handler.LastBody);
+    }
+
+    [Fact]
+    public async Task GenerateAdvisoryAsync_PropagatesCallerCancellation()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var handler = new StubHttpMessageHandler(_ => throw new TaskCanceledException("Cancelled"));
+        var httpClient = new HttpClient(handler);
+        var options = Options.Create(new GeminiOptions { ApiKey = "test-key", Model = "gemini-2.5-flash" });
+        var client = new GeminiAdvisoryClient(httpClient, options, NullLogger<GeminiAdvisoryClient>.Instance);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            client.GenerateAdvisoryAsync(SampleRequest(), cts.Token));
     }
 }
