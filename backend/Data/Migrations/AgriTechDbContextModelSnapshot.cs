@@ -218,6 +218,85 @@ namespace AgriTech.Api.Data.Migrations
                     b.ToView(null, (string)null);
                 });
 
+            modelBuilder.Entity("AgriTech.Api.Models.DiseaseAdvisory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
+
+                    b.Property<string>("ClassKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("class_key");
+
+                    b.Property<string>("Condition")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("condition");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Crop")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("crop");
+
+                    b.Property<string>("ImmediateAction")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("immediate_action");
+
+                    b.Property<string>("LlmModel")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("llm_model");
+
+                    b.Property<string>("MicroclimateRisk")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("microclimate_risk");
+
+                    b.Property<string>("RecommendedTreatmentsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("recommended_treatments");
+
+                    b.Property<string>("ScientificName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("scientific_name");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("severity");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_disease_advisories_class_key");
+
+                    b.ToTable("disease_advisories", (string)null);
+                });
+
             modelBuilder.Entity("AgriTech.Api.Models.Field", b =>
                 {
                     b.Property<Guid>("Id")
