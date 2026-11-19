@@ -12,7 +12,7 @@ import {
   calculateTreatedSeverity,
   evaluateYieldRetention,
   getTreatmentProducts,
-} from '../src/p2p-experimental/models/treatmentBranchingModel.ts';
+} from '../src/models/treatmentBranchingModel.ts';
 
 console.log('[+] Starting Agronomic Treatment Branching Unit Tests...\n');
 

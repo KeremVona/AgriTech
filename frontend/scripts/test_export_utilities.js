@@ -9,14 +9,14 @@ import assert from 'node:assert';
 import {
   generateExportFilename,
   assembleFieldReportData,
-} from '../src/p2p-experimental/models/exportReportModel.ts';
+} from '../src/models/exportReportModel.ts';
 import {
   calculateElapsedDays,
-} from '../src/p2p-experimental/models/agronomicTimelineModel.ts';
+} from '../src/models/agronomicTimelineModel.ts';
 import {
   calculateInterventionEfficacy,
   evaluateYieldRetention,
-} from '../src/p2p-experimental/models/treatmentBranchingModel.ts';
+} from '../src/models/treatmentBranchingModel.ts';
 
 console.log('[+] Starting Progression Timelapse & PDF Export Unit Tests...\n');
 
