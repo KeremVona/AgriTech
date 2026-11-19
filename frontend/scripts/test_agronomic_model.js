@@ -12,7 +12,7 @@ import {
   calculateElapsedDays,
   calculateSliderFromDays,
   evaluateMicroclimate,
-} from '../src/p2p-experimental/models/agronomicTimelineModel.ts';
+} from '../src/models/agronomicTimelineModel.ts';
 
 console.log('[+] Starting Canonical Agronomic Model Unit Tests (Imported directly from source TS module)...\n');
 
