@@ -12,7 +12,7 @@
     "test:agronomy": "node --experimental-strip-types scripts/test_agronomic_model.js",
     "test:hotspots": "node --experimental-strip-types scripts/test_hotspot_registry.js",
     "test:treatment": "node --experimental-strip-types scripts/test_treatment_branching.js",
-    "test:export": "node --experimental-strip-types scripts/test_export_utilities.js",
+    "test:export": "node --experimental-strip-types scripts/test_export_utilities.js && node --experimental-strip-types scripts/test_timelapse_recorder.js",
     "test:crops": "node --experimental-strip-types scripts/test_8crops_expansion.js",
     "test:shader": "node --experimental-strip-types scripts/test_shader_modes.js && node --experimental-strip-types scripts/test_shader_context_restore.js",
     "test:inspector": "node --experimental-strip-types scripts/test_studio_inspector.js",
