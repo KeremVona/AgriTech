@@ -9,7 +9,10 @@ import {
   formatCountdown,
   formatStartsIn,
   initialValveControlState,
+  statusIsStale,
+  stopConfirmVisible,
   stoppableEventId,
+  upcomingRunLabel,
   valveControlReducer,
 } from '../src/models/valveControlModel.ts';
 
@@ -86,11 +89,34 @@ test('start success shows Opening immediately', () => {
   assert.equal(s.pending, null);
 });
 
-test('start success with a PENDING event lands in nextScheduledEvent', () => {
-  let s = valveControlReducer(withServer(closedStatus), { type: 'start-requested', durationMinutes: 15, nowMs: T0 });
-  s = valveControlReducer(s, { type: 'start-succeeded', event: event({ id: 'evt-p', status: 'PENDING', actualStart: null, scheduledStart: iso(T0 + 60_000) }), nowMs: T0 });
-  assert.equal(s.server.nextScheduledEvent.id, 'evt-p');
+test('start success with a PENDING manual event lands in activeEvent and keeps the automated schedule', () => {
+  let s = valveControlReducer(withServer(closedWithNextAutomatedIn2h), { type: 'start-requested', durationMinutes: 15, nowMs: T0 });
+  s = valveControlReducer(s, { type: 'start-succeeded', event: event({ id: 'evt-p', triggerType: 'MANUAL_OVERRIDE', status: 'PENDING', actualStart: null, scheduledStart: iso(T0 + 60_000) }), nowMs: T0 });
+  assert.equal(s.server.activeEvent.id, 'evt-p');
+  assert.equal(s.server.nextScheduledEvent.id, 'evt-next');
   assert.equal(s.server.valveState, 'CLOSED');
+});
+
+test('upcoming run label comes from the trigger type', () => {
+  assert.equal(upcomingRunLabel(event({ triggerType: 'MANUAL_OVERRIDE' })), 'Manual run');
+  assert.equal(upcomingRunLabel(event({ triggerType: 'AUTOMATED_DEFICIT' })), 'Next automatic run');
+  assert.equal(upcomingRunLabel(event({ triggerType: 'SCHEDULED_RECIPE' })), 'Next scheduled run');
+});
+
+test('status goes stale after two missed polls', () => {
+  assert.equal(statusIsStale(null, T0, 15_000), true);
+  assert.equal(statusIsStale(T0, T0 + 30_000, 15_000), false);
+  assert.equal(statusIsStale(T0, T0 + 30_001, 15_000), true);
+  const s = valveControlReducer(initialValveControlState, { type: 'poll-received', status: closedStatus, requestStartedAtMs: T0 - 50, receivedAtMs: T0 });
+  assert.equal(s.lastPollReceivedAtMs, T0);
+});
+
+test('stop confirmation only applies to the run it was opened for', () => {
+  const s = withServer(pumpingStatus);
+  assert.equal(stopConfirmVisible(s, pumpingStatus.activeEvent.id, true), true);
+  assert.equal(stopConfirmVisible(s, 'old-run', true), false);
+  assert.equal(stopConfirmVisible(s, null, true), false);
+  assert.equal(stopConfirmVisible(s, pumpingStatus.activeEvent.id, false), false);
 });
 
 test('poll sent before write settled is discarded', () => {
@@ -151,7 +177,11 @@ test('pending manual run without actualStart', () => {
   assert.equal(d.secondsLeft, null);
   assert.equal(d.startsInSeconds, 90);
   assert.equal(d.isStarting, false);
+  assert.equal(d.canStart, false, 'own pending manual run blocks a second Water now');
+  assert.equal(d.startBlockedReason, ACTIVE_RUN_MESSAGE);
   assert.equal(deriveValveDisplay(withServer(activePendingManual({ scheduledStartMs: T0 - 5_000 })), T0, true).isStarting, true);
+  const busy = withServer(activePendingManual({ scheduledStartMs: T0 + 90_000 }));
+  assert.equal(valveControlReducer(busy, { type: 'start-requested', durationMinutes: 30, nowMs: T0 }), busy);
 });
 
 test('countdown uses server clock offset and clamps at zero', () => {

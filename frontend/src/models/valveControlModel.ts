@@ -13,6 +13,7 @@ export interface ValveControlState {
     | { kind: 'stop'; eventId: string }
     | null;
   lastWriteSettledAtMs: number | null;
+  lastPollReceivedAtMs: number | null;
   error: string | null;
 }
 
@@ -21,6 +22,7 @@ export const initialValveControlState: ValveControlState = {
   clockOffsetMs: 0,
   pending: null,
   lastWriteSettledAtMs: null,
+  lastPollReceivedAtMs: null,
   error: null,
 };
 
@@ -58,21 +60,43 @@ function isManualDuration(minutes: number): boolean {
   return (MANUAL_DURATIONS as readonly number[]).includes(minutes);
 }
 
+/**
+ * A run in progress, or a manual run that is accepted but not yet started (both live in
+ * `activeEvent`), blocks another manual start. A pending automated run in
+ * `nextScheduledEvent` does not.
+ */
 function hasRunInProgress(server: IrrigationStatus | null): boolean {
-  return server?.activeEvent?.status === 'IN_PROGRESS';
+  const status = server?.activeEvent?.status;
+  return status === 'IN_PROGRESS' || status === 'PENDING';
 }
 
 export function stoppableEventId(state: ValveControlState): string | null {
   return state.server?.activeEvent?.id ?? state.server?.nextScheduledEvent?.id ?? null;
 }
 
+export function upcomingRunLabel(event: IrrigationEvent): string {
+  if (event.triggerType === 'MANUAL_OVERRIDE') return 'Manual run';
+  if (event.triggerType === 'SCHEDULED_RECIPE') return 'Next scheduled run';
+  return 'Next automatic run';
+}
+
+/** Valve status counts as stale (controls lock) after two missed polls. */
+export function statusIsStale(lastPollReceivedAtMs: number | null, nowMs: number, pollMs: number): boolean {
+  return lastPollReceivedAtMs === null || nowMs - lastPollReceivedAtMs > 2 * pollMs;
+}
+
+/** The stop confirmation belongs to one run; it must not reappear for a later run. */
+export function stopConfirmVisible(state: ValveControlState, confirmingForEventId: string | null, canStop: boolean): boolean {
+  return canStop && confirmingForEventId !== null && confirmingForEventId === stoppableEventId(state);
+}
+
 export function valveControlReducer(state: ValveControlState, action: ValveAction): ValveControlState {
   switch (action.type) {
     case 'poll-received': {
       const clockOffsetMs = Date.parse(action.status.serverTime) - action.receivedAtMs;
-      if (state.pending !== null) return { ...state, clockOffsetMs };
+      if (state.pending !== null) return { ...state, clockOffsetMs, lastPollReceivedAtMs: action.receivedAtMs };
       if (state.lastWriteSettledAtMs !== null && action.requestStartedAtMs < state.lastWriteSettledAtMs) return state;
-      return { ...state, server: action.status, clockOffsetMs };
+      return { ...state, server: action.status, clockOffsetMs, lastPollReceivedAtMs: action.receivedAtMs };
     }
     case 'start-requested': {
       if (state.server === null || state.pending !== null || hasRunInProgress(state.server) || !isManualDuration(action.durationMinutes)) {
@@ -91,7 +115,7 @@ export function valveControlReducer(state: ValveControlState, action: ValveActio
         action.event.status === 'IN_PROGRESS'
           ? { ...server, activeEvent: action.event, valveState: 'OPENING' }
           : action.event.status === 'PENDING'
-            ? { ...server, nextScheduledEvent: action.event }
+            ? { ...server, activeEvent: action.event }
             : server;
       return { ...state, server: next, pending: null, lastWriteSettledAtMs: action.nowMs };
     }
