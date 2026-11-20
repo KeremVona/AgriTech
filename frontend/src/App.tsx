@@ -7,6 +7,9 @@ import { LeafDiagnosticsPage } from './pages/LeafDiagnosticsPage';
 const FieldMapPage = lazy(() => import('./pages/FieldMapPage').then((module) => ({ default: module.FieldMapPage })));
 const fieldMapRoute = <Suspense fallback={<div className="p-6 text-ag-ink" role="status">Loading field map…</div>}><FieldMapPage /></Suspense>;
 
+const ParcelIrrigationPage = lazy(() => import('./pages/ParcelIrrigationPage').then((module) => ({ default: module.ParcelIrrigationPage })));
+const parcelIrrigationRoute = <Suspense fallback={<div className="p-6 text-ag-ink" role="status">Loading water dashboard…</div>}><ParcelIrrigationPage /></Suspense>;
+
 function App() {
   return (
     <BrowserRouter>
@@ -27,6 +30,9 @@ function App() {
         <Route path="/map" element={fieldMapRoute} />
         <Route path="/fields/:fieldId/parcels" element={fieldMapRoute} />
         <Route path="/field-map" element={<Navigate to="/map" replace />} />
+
+        {/* Parcel Water Dashboard (Phase 3: TODO-307 / 308 / 309) */}
+        <Route path="/parcels/:parcelId/irrigation" element={parcelIrrigationRoute} />
 
         {/* Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />

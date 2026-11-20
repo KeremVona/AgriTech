@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { combineSources, controlsEnabled, resolveIrrigationConfig } from '../src/utils/irrigationConfig.ts';
+import { readDashboardHints, waterDashboardPath } from '../src/utils/irrigationRoutes.ts';
 import {
   IrrigationRequestError,
   abortIrrigation,
@@ -211,6 +212,22 @@ await test('caller abort rejects with AbortError', async () => {
   const pending = fetchWaterBudget({ config: autoConfig, parcelId: 'p-1', fetchImpl, signal: controller.signal });
   controller.abort();
   await assert.rejects(pending, (error) => error.name === 'AbortError');
+});
+
+await test('waterDashboardPath encodes id and hints', () => {
+  assert.equal(waterDashboardPath('a b'), '/parcels/a%20b/irrigation');
+  assert.equal(
+    waterDashboardPath('x', { parcelName: 'North & South', soilProfileId: 'clay' }),
+    '/parcels/x/irrigation?name=North+%26+South&soil=clay',
+  );
+  assert.equal(waterDashboardPath('x', { parcelName: '', cropName: null }), '/parcels/x/irrigation');
+});
+
+await test('readDashboardHints inverts the query', () => {
+  assert.deepEqual(readDashboardHints('?name=North+%26+South&soil=clay'), {
+    parcelName: 'North & South', cropName: undefined, soilProfileId: 'clay',
+  });
+  assert.deepEqual(readDashboardHints(''), { parcelName: undefined, cropName: undefined, soilProfileId: undefined });
 });
 
 console.log(`\n${tests - failures}/${tests} irrigation service tests passed`);
