@@ -105,7 +105,9 @@ Reason: the map page is already 600 lines with drawing state; a separate lazy-lo
 - `Emergency stop` (red outline button) visible only while a run is pending or in progress; it targets `activeEvent ?? nextScheduledEvent`; confirm step ("Stop the valve now?"), optimistic `Stopping`, rollback on failure.
 - While a manual trigger or stop request is in flight, poll results do not overwrite the valve state, and any poll whose request was **sent before** the latest write settled is discarded when it arrives.
 - Double clicks send one request (synchronous guard in the hook, not only the reducer).
-- Starting a manual run while a run is **in progress** is blocked in the UI with the message `A run is already active — stop it first.` (matches the backend's 409). A pending automated run scheduled later does not block manual watering. **(my call)**
+- Starting a manual run while a run is **in progress**, or while the user's own manual run is accepted but pending, is blocked in the UI with the message `A run is already active — stop it first.` (matches the backend's 409). A pending automated run scheduled later does not block manual watering. **(my call)**
+- If valve-status polling fails after a successful load, the card keeps the last state but shows `Could not refresh valve status: … The state above may be out of date.`; once the last successful status is older than two poll intervals, the controls lock with `Controls unavailable — live data unavailable`.
+- The gauge's trigger estimate only uses hourly readings from the same source as the water budget (never a sample slope on a live reading).
 - Native `<dialog>`: `showModal()` only when not already open (React StrictMode double-mounts), state synced from the dialog's `close` event.
 
 ### 5.5 Deficit gauge (TODO-309)
@@ -179,6 +181,8 @@ Note: `soil_profiles` stores fractions (`0.220`). The contract asks for percent,
   "serverTime": "2026-11-20T10:00:05Z"
 }
 ```
+
+Slot rules the frontend relies on: a run that is `IN_PROGRESS`, **or a manual run that is accepted but still `PENDING`**, is returned in `activeEvent`; `nextScheduledEvent` is reserved for upcoming automated / scheduled runs. Labels come from `triggerType`, not the slot.
 
 ### 6.4 `POST /api/v1/parcels/{id}/irrigate-manual`
 

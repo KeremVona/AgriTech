@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from 'react';
 import {
   deriveValveDisplay,
   initialValveControlState,
+  statusIsStale,
   stoppableEventId,
   valveControlReducer,
 } from '../models/valveControlModel.ts';
@@ -57,9 +58,10 @@ export function useValveControl(parcelId: string, config: IrrigationConfig, refr
   }, [status.data, status.dataRequestedAt, status.updatedAt]);
 
   const source = status.data?.source ?? null;
-  const enabled = areControlsEnabled(source, config.mode);
   const needsClock = state.pending !== null || Boolean(state.server?.activeEvent || state.server?.nextScheduledEvent);
-  const now = useNow(1000, needsClock);
+  // Ticks slowly even when idle so a status that stops refreshing locks the controls.
+  const now = useNow(needsClock ? 1000 : 5000, true);
+  const enabled = areControlsEnabled(source, config.mode) && !statusIsStale(state.lastPollReceivedAtMs, now, config.pollMs);
   const display = deriveValveDisplay(state, now, enabled);
 
   // Synchronous guard: dispatch is async, so a double click must be stopped here, not in the reducer.

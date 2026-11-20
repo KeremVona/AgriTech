@@ -12,7 +12,7 @@ import { usePolledResource } from '../hooks/usePolledResource.ts';
 import type { SampleHints } from '../services/irrigationSampleData.ts';
 import { fetchTelemetry, fetchWaterBudget } from '../services/irrigationService.ts';
 import type { Sourced } from '../types/irrigation.ts';
-import { combineSources } from '../utils/irrigationConfig.ts';
+import { combineSources, gaugeSamples } from '../utils/irrigationConfig.ts';
 import type { IrrigationConfig } from '../utils/irrigationConfig.ts';
 import { readDashboardHints } from '../utils/irrigationRoutes.ts';
 
@@ -149,7 +149,7 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
               wiltingPoint={data.wiltingPointPct}
               mad={data.madFraction}
               hoursUntilTrigger={data.hoursUntilTrigger}
-              recentSamples={hourly.data?.data.points ?? []}
+              recentSamples={gaugeSamples(budget.data, hourly.data)}
               latestReadingAt={data.latestReadingAt}
               nowMs={now}
             />

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { combineSources, controlsEnabled, resolveIrrigationConfig } from '../src/utils/irrigationConfig.ts';
+import { combineSources, controlsEnabled, gaugeSamples, resolveIrrigationConfig } from '../src/utils/irrigationConfig.ts';
 import { readDashboardHints, waterDashboardPath } from '../src/utils/irrigationRoutes.ts';
 import {
   IrrigationRequestError,
@@ -76,6 +76,18 @@ await test('combineSources labels', () => {
   assert.deepEqual(combineSources([sample, null], 'sample'), { label: 'Sample data', anySample: true });
   assert.deepEqual(combineSources([api, fallback], 'auto'), { label: 'Partly sample data — some live data unavailable', anySample: true });
   assert.deepEqual(combineSources([null, null], 'auto'), { label: 'Loading…', anySample: false });
+});
+
+await test('gauge samples only come from the same source as the budget', () => {
+  const points = [{ timestamp: '2026-11-20T10:00:00Z', soilMoisturePct: 24, etcMm: 0.3, effectiveRainMm: 0, irrigationMm: 0, isForecast: false }];
+  const live = (data) => ({ data, source: 'api', fallbackReason: null });
+  const fallback = (data) => ({ data, source: 'sample', fallbackReason: 'HTTP 404' });
+  const telemetry = { parcelId: 'p', window: '24h', resolution: 'hour', soil: null, points, irrigationEvents: [] };
+  assert.deepEqual(gaugeSamples(live({}), live(telemetry)), points);
+  assert.deepEqual(gaugeSamples(live({}), fallback(telemetry)), []);
+  assert.deepEqual(gaugeSamples(fallback({}), fallback(telemetry)), points);
+  assert.deepEqual(gaugeSamples(null, live(telemetry)), []);
+  assert.deepEqual(gaugeSamples(live({}), null), []);
 });
 
 await test('controlsEnabled', () => {

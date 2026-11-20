@@ -1,4 +1,4 @@
-import type { DataSource, IrrigationDataMode, Sourced } from '../types/irrigation.ts';
+import type { DataSource, IrrigationDataMode, Sourced, TelemetryResponse } from '../types/irrigation.ts';
 
 export interface IrrigationConfig {
   apiBaseUrl: string;
@@ -44,6 +44,18 @@ export function combineSources(sources: (Sourced<unknown> | null)[], mode: Irrig
   if (mode === 'sample') return { label: 'Sample data', anySample: true };
   if (sampleCount === loaded.length) return { label: 'Sample data — live data unavailable', anySample: true };
   return { label: 'Partly sample data — some live data unavailable', anySample: true };
+}
+
+/**
+ * Hourly readings for the gauge's trigger estimate, only when they come from the same
+ * source as the water budget — never a sample drying slope applied to a live reading.
+ */
+export function gaugeSamples(
+  budget: Sourced<unknown> | null,
+  hourly: Sourced<TelemetryResponse> | null,
+): TelemetryResponse['points'] {
+  if (budget === null || hourly === null || budget.source !== hourly.source) return [];
+  return hourly.data.points;
 }
 
 /** Valve controls never drive a simulator unless the whole app is in sample mode (spec §5.4). */

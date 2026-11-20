@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useValveControl } from '../../hooks/useValveControl.ts';
-import { formatCountdown, formatStartsIn } from '../../models/valveControlModel.ts';
+import {
+  formatCountdown,
+  formatStartsIn,
+  stopConfirmVisible,
+  stoppableEventId,
+  upcomingRunLabel,
+} from '../../models/valveControlModel.ts';
 import type { IrrigationEvent, Sourced } from '../../types/irrigation.ts';
 import type { IrrigationConfig } from '../../utils/irrigationConfig.ts';
 import { DEFAULT_IRRIGATION_CONFIG } from './defaultIrrigationConfig.ts';
@@ -52,7 +58,7 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
   const valve = useValveControl(parcelId, config, refreshToken);
   const { display, state } = valve;
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [confirmingStop, setConfirmingStop] = useState(false);
+  const [confirmingStopFor, setConfirmingStopFor] = useState<string | null>(null);
   const [lastAction, setLastAction] = useState<'start' | 'stop'>('start');
 
   useEffect(() => {
@@ -66,7 +72,8 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
   const targetVolume = state.pending?.kind === 'start'
     ? state.pending.durationMinutes * flowRate
     : active?.waterVolumeLiters ?? null;
-  const showConfirm = confirmingStop && display.canStop;
+  const upcoming = active && !active.actualStart ? active : server?.nextScheduledEvent ?? null;
+  const showConfirm = stopConfirmVisible(state, confirmingStopFor, display.canStop);
   const errorPrefix = lastAction === 'stop' ? 'Could not stop irrigation: ' : 'Could not start irrigation: ';
 
   return (
@@ -98,11 +105,16 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
               />
             )}
             {display.startsInSeconds !== null && (
-              <Readout label={active && !active.actualStart ? 'Manual run' : 'Next automatic run'} value={display.isStarting ? 'Starting…' : `Starts in ${formatStartsIn(display.startsInSeconds)}`} />
+              <Readout label={upcoming ? upcomingRunLabel(upcoming) : 'Next run'} value={display.isStarting ? 'Starting…' : `Starts in ${formatStartsIn(display.startsInSeconds)}`} />
             )}
             {targetVolume !== null && <Readout label="Target volume" value={`${Math.round(targetVolume).toLocaleString('en-US')} L`} />}
             {reasonEvent && <Readout label={active ? 'Trigger' : 'Last run'} value={triggerReason(reasonEvent)} />}
           </dl>
+          {valve.statusError && (
+            <p role="alert" className="mt-3 rounded-lg border border-ag-risk-critical-border bg-ag-risk-critical-bg px-3 py-2 text-sm text-red-900">
+              Could not refresh valve status: {valve.statusError} The state above may be out of date.
+            </p>
+          )}
         </>
       )}
 
@@ -136,7 +148,7 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
         {display.canStop && !showConfirm && (
           <button
             type="button"
-            onClick={() => setConfirmingStop(true)}
+            onClick={() => setConfirmingStopFor(stoppableEventId(state))}
             className={`min-h-12 rounded-lg border-2 border-red-600 px-4 text-sm font-semibold text-red-700 hover:bg-red-50 focus-visible:outline-red-700 md:min-h-10 ${PRESS}`}
           >
             Emergency stop
@@ -149,7 +161,7 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
               type="button"
               autoFocus
               onClick={() => {
-                setConfirmingStop(false);
+                setConfirmingStopFor(null);
                 setLastAction('stop');
                 void valve.stop();
               }}
@@ -157,7 +169,7 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
             >
               Stop valve
             </button>
-            <button type="button" onClick={() => setConfirmingStop(false)} className={`min-h-12 rounded-lg border border-ag-border bg-white px-3 text-sm font-semibold focus-visible:outline-ag-brand md:min-h-10 ${PRESS}`}>
+            <button type="button" onClick={() => setConfirmingStopFor(null)} className={`min-h-12 rounded-lg border border-ag-border bg-white px-3 text-sm font-semibold focus-visible:outline-ag-brand md:min-h-10 ${PRESS}`}>
               Cancel
             </button>
           </div>
