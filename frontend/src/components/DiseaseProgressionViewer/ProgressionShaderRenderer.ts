@@ -216,6 +216,8 @@ export class ProgressionShaderRenderer {
   private imgStage0: HTMLImageElement | null = null;
   private imgStage1: HTMLImageElement | null = null;
   private imgStage2: HTMLImageElement | null = null;
+  private imgMask1: HTMLImageElement | null = null;
+  private imgMask2: HTMLImageElement | null = null;
 
   private currentProgress = 0.0;
   private viewMode: ProgressionViewMode = 'rgb';
@@ -234,6 +236,7 @@ export class ProgressionShaderRenderer {
       this.canvas.height = 800;
     }
     this.canvas.addEventListener('webglcontextlost', this.handleContextLost, false);
+    this.canvas.addEventListener('webglcontextrestored', this.handleContextRestored, false);
     this.initContext();
   }
 
@@ -252,6 +255,28 @@ export class ProgressionShaderRenderer {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
+  };
+
+  /**
+   * The browser hands back a fresh context after a loss (GPU reset, too many contexts).
+   * Every old GL handle is invalid, so rebuild the pipeline and re-upload the last images.
+   */
+  private handleContextRestored = () => {
+    if (this.isDisposed) return;
+    this.locations = null;
+    this.positionBuffer = null;
+    this.texCoordBuffer = null;
+    this.texStage0 = this.texStage1 = this.texStage2 = this.texMask1 = this.texMask2 = null;
+    this.initContext();
+    const gl = this.gl;
+    if (this.isWebGL && gl && this.imgStage0 && this.imgStage1 && this.imgStage2) {
+      this.texStage0 = this.createGLTexture(gl, this.imgStage0);
+      this.texStage1 = this.createGLTexture(gl, this.imgStage1);
+      this.texStage2 = this.createGLTexture(gl, this.imgStage2);
+      this.texMask1 = this.imgMask1 ? this.createGLTexture(gl, this.imgMask1) : null;
+      this.texMask2 = this.imgMask2 ? this.createGLTexture(gl, this.imgMask2) : null;
+    }
+    if (this.isLoaded) this.render(this.currentProgress);
   };
 
   private initContext() {
@@ -401,6 +426,8 @@ export class ProgressionShaderRenderer {
     this.imgStage0 = img0;
     this.imgStage1 = img1;
     this.imgStage2 = img2;
+    this.imgMask1 = m1;
+    this.imgMask2 = m2;
 
     if (this.isWebGL && this.gl && !this.gl.isContextLost()) {
       const gl = this.gl;
@@ -705,6 +732,7 @@ export class ProgressionShaderRenderer {
     this.currentLoadId++;
 
     this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
+    this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored);
 
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
