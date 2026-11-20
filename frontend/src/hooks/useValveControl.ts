@@ -23,6 +23,7 @@ export interface ValveControl {
   state: ValveControlState;
   source: DataSource | null;
   sourced: Sourced<IrrigationStatus> | null;
+  statusError: string | null;
   controlsEnabled: boolean;
   start(durationMinutes: number): Promise<void>;
   stop(): Promise<void>;
@@ -36,12 +37,12 @@ function writeErrorMessage(error: unknown, mode: IrrigationConfig['mode']): stri
   return 'Could not reach the irrigation service.';
 }
 
-export function useValveControl(parcelId: string, config: IrrigationConfig): ValveControl {
+export function useValveControl(parcelId: string, config: IrrigationConfig, refreshToken = 0): ValveControl {
   const [state, dispatch] = useReducer(valveControlReducer, initialValveControlState);
   const status = usePolledResource(
     (signal) => fetchIrrigationStatus({ config, parcelId, signal }),
     config.pollMs,
-    `${parcelId}|${config.mode}|${config.apiBaseUrl}|status`,
+    `${parcelId}|${config.mode}|${config.apiBaseUrl}|status|${refreshToken}`,
   );
   const refreshStatus = status.refresh;
 
@@ -107,6 +108,7 @@ export function useValveControl(parcelId: string, config: IrrigationConfig): Val
     state,
     source,
     sourced: status.data,
+    statusError: status.error,
     controlsEnabled: enabled,
     start,
     stop,

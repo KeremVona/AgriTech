@@ -4,6 +4,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { DeficitGauge } from '../components/Irrigation/DeficitGauge.tsx';
 import { DEFAULT_IRRIGATION_CONFIG } from '../components/Irrigation/defaultIrrigationConfig.ts';
 import { ErrorNotice } from '../components/Irrigation/ErrorNotice.tsx';
+import { IrrigationControlCard } from '../components/Irrigation/IrrigationControlCard.tsx';
 import { ParcelTelemetryChart } from '../components/Irrigation/ParcelTelemetryChart.tsx';
 import { SampleTag } from '../components/Irrigation/SampleTag.tsx';
 import { useNow } from '../hooks/useNow.ts';
@@ -72,6 +73,7 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
     setChildSources((previous) => (previous[name] === source ? previous : { ...previous, [name]: source }));
   }, []);
   const reportChartSource = useCallback((source: Sourced<unknown> | null) => reportSource('chart', source), [reportSource]);
+  const reportValveSource = useCallback((source: Sourced<unknown> | null) => reportSource('valve', source), [reportSource]);
 
   const refreshAll = () => {
     budget.refresh();
@@ -81,6 +83,13 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
 
   const now = useNow(60_000, true);
   const source = combineSources([budget.data, hourly.data, ...Object.values(childSources)], config.mode);
+  const pill = source.label === 'Loading…' && budget.error
+    ? { label: 'Live data unavailable', icon: '✕', className: 'border-ag-risk-critical-border bg-ag-risk-critical-bg text-red-900' }
+    : source.label === 'Loading…'
+      ? { label: source.label, icon: '○', className: 'border-ag-border bg-ag-surface-muted text-ag-ink-secondary' }
+      : source.anySample
+        ? { label: source.label, icon: '◐', className: 'border-ag-risk-low-border bg-ag-risk-low-bg text-amber-900' }
+        : { label: source.label, icon: '●', className: 'border-ag-risk-healthy-border bg-ag-risk-healthy-bg text-emerald-900' };
   const data = budget.data?.data ?? null;
   const parcelName = data?.parcelName ?? hints.parcelName ?? 'Parcel';
   const subtitle = [data?.cropName ?? hints.cropName, data?.soilProfileName ?? hints.soilProfileId].filter(Boolean).join(' · ');
@@ -106,10 +115,10 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
           <div className="flex items-center gap-3">
             <span
               role="status"
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${source.anySample ? 'border-ag-risk-low-border bg-ag-risk-low-bg text-amber-900' : 'border-ag-risk-healthy-border bg-ag-risk-healthy-bg text-emerald-900'}`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${pill.className}`}
             >
-              <span aria-hidden="true">{source.anySample ? '◐' : '●'}</span>
-              {source.label}
+              <span aria-hidden="true">{pill.icon}</span>
+              {pill.label}
             </span>
             {budget.updatedAt !== null && (
               <span className="hidden font-mono text-xs tabular-nums text-ag-ink-tertiary sm:inline">
@@ -152,7 +161,13 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
           {data && budget.error && <p className="mt-3 text-xs text-ag-ink-secondary" role="status">Could not refresh: {budget.error}</p>}
         </section>
         <section aria-labelledby="valve-control-heading" className="rounded-lg border border-ag-border bg-ag-surface p-4 lg:col-start-2 lg:row-start-2">
-          <h2 id="valve-control-heading" className="text-lg font-semibold tracking-tight">Valve control</h2>
+          <IrrigationControlCard
+            parcelId={parcelId}
+            config={config}
+            onSourceChange={reportValveSource}
+            refreshToken={refreshToken}
+            headingId="valve-control-heading"
+          />
         </section>
         <section aria-labelledby="telemetry-heading" className="min-w-0 rounded-lg border border-ag-border bg-ag-surface p-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <ParcelTelemetryChart
