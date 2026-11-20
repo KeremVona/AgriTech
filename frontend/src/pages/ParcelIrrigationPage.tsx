@@ -1,7 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
+import { DeficitGauge } from '../components/Irrigation/DeficitGauge.tsx';
 import { DEFAULT_IRRIGATION_CONFIG } from '../components/Irrigation/defaultIrrigationConfig.ts';
+import { SampleTag } from '../components/Irrigation/SampleTag.tsx';
+import { useNow } from '../hooks/useNow.ts';
 import { usePolledResource } from '../hooks/usePolledResource.ts';
 import type { SampleHints } from '../services/irrigationSampleData.ts';
 import { fetchTelemetry, fetchWaterBudget } from '../services/irrigationService.ts';
@@ -14,6 +17,21 @@ const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute:
 
 function PageFrame({ children }: { children: ReactNode }) {
   return <div className="min-h-screen bg-ag-canvas text-ag-ink font-sans">{children}</div>;
+}
+
+function ErrorNotice({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div role="alert" className="rounded-lg border border-ag-risk-critical-border bg-ag-risk-critical-bg p-4 text-sm text-red-900">
+      <p>{message}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-3 inline-flex min-h-12 items-center rounded-lg border border-red-300 bg-white px-3 font-semibold transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 md:min-h-10"
+      >
+        Retry
+      </button>
+    </div>
+  );
 }
 
 function CenteredNotice({ title, body }: { title: string; body: string }) {
@@ -75,6 +93,7 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
   };
   void refreshToken;
 
+  const now = useNow(60_000, true);
   const source = combineSources([budget.data, hourly.data, ...Object.values(childSources)], config.mode);
   const data = budget.data?.data ?? null;
   const parcelName = data?.parcelName ?? hints.parcelName ?? 'Parcel';
@@ -124,10 +143,27 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
 
       <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,35%)] lg:py-6">
         <section aria-labelledby="water-budget-heading" className="rounded-lg border border-ag-border bg-ag-surface p-4 lg:col-start-2 lg:row-start-1">
-          <h2 id="water-budget-heading" className="text-lg font-semibold tracking-tight">Water budget</h2>
-          <p className="mt-2 text-sm text-ag-ink-secondary">
-            {budget.error && !data ? budget.error : data ? `Moisture ${data.currentMoisturePct ?? '—'} %` : 'Loading water budget…'}
-          </p>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 id="water-budget-heading" className="text-lg font-semibold tracking-tight">Water budget</h2>
+            {budget.data?.source === 'sample' && <SampleTag />}
+          </div>
+          {data ? (
+            <DeficitGauge
+              currentMoisture={data.currentMoisturePct}
+              fieldCapacity={data.fieldCapacityPct}
+              wiltingPoint={data.wiltingPointPct}
+              mad={data.madFraction}
+              hoursUntilTrigger={data.hoursUntilTrigger}
+              recentSamples={hourly.data?.data.points ?? []}
+              latestReadingAt={data.latestReadingAt}
+              nowMs={now}
+            />
+          ) : budget.error ? (
+            <ErrorNotice message={budget.error} onRetry={budget.refresh} />
+          ) : (
+            <div className="h-[300px] animate-pulse rounded-lg bg-ag-surface-muted motion-reduce:animate-none" role="status" aria-label="Loading water budget" />
+          )}
+          {data && budget.error && <p className="mt-3 text-xs text-ag-ink-secondary" role="status">Could not refresh: {budget.error}</p>}
         </section>
         <section aria-labelledby="valve-control-heading" className="rounded-lg border border-ag-border bg-ag-surface p-4 lg:col-start-2 lg:row-start-2">
           <h2 id="valve-control-heading" className="text-lg font-semibold tracking-tight">Valve control</h2>
