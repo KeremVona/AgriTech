@@ -12,6 +12,7 @@ import type { GisDataMode, ParcelFeatureCollection, ParcelMapData } from '../typ
 import type { ParcelMetrics } from '../types/farmMapDrawing.ts';
 import type { ParcelFormData } from '../types/parcelMetadata.ts';
 import {
+  confirmParcelDelete,
   createDrawnParcelFeature,
   filterParcelsByField,
   formatParcelFeedback,
@@ -299,6 +300,11 @@ function FieldMapView({
       return;
     }
 
+    if (!confirmParcelDelete(matchingParcel.properties?.name, (message) => window.confirm(message))) {
+      // Geoman already removed the layer from the map; re-render to bring it back.
+      setRenderVersion((v) => v + 1);
+      return;
+    }
     await deleteParcel(targetStr);
   };
 
@@ -445,6 +451,7 @@ function FieldMapView({
   const handleDrawerDelete = async () => {
     if (!selectedParcel || isSaving) return;
     const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
+    if (!confirmParcelDelete(selectedParcel.properties?.name, (message) => window.confirm(message))) return;
     await deleteParcel(targetId);
   };
 

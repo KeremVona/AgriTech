@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   resolveFarmMapConfig,
+  confirmParcelDelete,
   getLoadedFields,
   filterParcelsByField,
   mergeDrawnParcels,
@@ -274,4 +275,16 @@ test('createDrawnParcelFeature adheres to ParcelMapProperties schema with id and
   assert.equal(feature.properties.area_ha, 1.5);
   assert.equal(feature.properties.area_hectares, 1.5);
   assert.equal(feature.properties.field_id, 'f-1');
+});
+
+test('confirmParcelDelete asks with the parcel name and history warning, and respects cancel', () => {
+  const asked = [];
+  assert.equal(confirmParcelDelete('North Block', (message) => { asked.push(message); return false; }), false);
+  assert.equal(confirmParcelDelete('North Block', () => true), true);
+  assert.match(asked[0], /Delete "North Block"\?/);
+  assert.match(asked[0], /sensor, telemetry and irrigation history/);
+  assert.match(asked[0], /cannot be undone/);
+  const unnamed = [];
+  confirmParcelDelete(null, (message) => { unnamed.push(message); return true; });
+  assert.match(unnamed[0], /Delete this parcel\?/);
 });

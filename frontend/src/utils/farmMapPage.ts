@@ -256,3 +256,17 @@ export function formatParcelFeedback(
       : 'Parcel boundary removed.',
   };
 }
+
+/**
+ * Asks before a saved parcel is deleted. On the server a parcel delete cascades to its
+ * sensor nodes, telemetry and irrigation events, so one stray click must not lose data.
+ */
+export function confirmParcelDelete(
+  parcelName: string | null | undefined,
+  confirmFn: (message: string) => boolean,
+): boolean {
+  const subject = parcelName?.trim() ? `"${parcelName.trim()}"` : 'this parcel';
+  return confirmFn(
+    `Delete ${subject}? This also removes its sensor, telemetry and irrigation history and cannot be undone.`,
+  );
+}
