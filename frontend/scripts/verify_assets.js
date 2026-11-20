@@ -1,98 +1,58 @@
 /**
- * Node.js Asset Verification Script for CI and Local Development.
- * Validates manifest.json, WebP binary signatures, file sizes, and paths.
+ * Verifies every progression image the app references.
+ *
+ * Scans `src/` for `/progression-experimental/...` paths (used by the Disease
+ * Progression Studio and the diagnostics sample presets) and checks that each
+ * file exists under `public/`, is a real WebP (RIFF....WEBP header) and stays
+ * under the 150 KB per-asset budget. This replaces the old manifest check,
+ * which pointed at `public/progression/` after that folder was removed.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SRC_DIR = path.resolve(__dirname, '../src');
+const PUBLIC_DIR = path.resolve(__dirname, '../public');
+const MAX_FILE_SIZE_BYTES = 150 * 1024;
+const ASSET_PATTERN = /\/progression-experimental\/[A-Za-z0-9_./-]+\.(?:webp|png|jpe?g)/g;
 
-const PUBLIC_DIR = path.resolve(__dirname, '../public/progression');
-const MANIFEST_PATH = path.join(PUBLIC_DIR, 'manifest.json');
-const MAX_FILE_SIZE_BYTES = 150 * 1024; // 150 KB
-
-console.log('--- Verifying Disease Progression Assets & Manifest ---');
-
-if (!fs.existsSync(MANIFEST_PATH)) {
-  console.error(`[FAIL] Manifest missing at: ${MANIFEST_PATH}`);
-  process.exit(1);
+function sourceFiles(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) return sourceFiles(full);
+    return /\.(?:ts|tsx)$/.test(entry.name) ? [full] : [];
+  });
 }
 
-const manifestRaw = fs.readFileSync(MANIFEST_PATH, 'utf-8');
-const manifest = JSON.parse(manifestRaw);
-
-if (!manifest.crops || manifest.crops.length !== 4) {
-  console.error(`[FAIL] Expected 4 crops, found: ${manifest.crops ? manifest.crops.length : 0}`);
-  process.exit(1);
+const referenced = new Set();
+for (const file of sourceFiles(SRC_DIR)) {
+  for (const match of fs.readFileSync(file, 'utf-8').matchAll(ASSET_PATTERN)) referenced.add(match[0]);
 }
 
-let imageCount = 0;
-let maskCount = 0;
+console.log('--- Verifying referenced Disease Progression assets ---');
+const failures = [];
+if (referenced.size === 0) failures.push('No /progression-experimental/ asset references found in src/ (pattern out of date?).');
 
-for (const crop of manifest.crops) {
-  if (!crop.stages || crop.stages.length !== 3) {
-    console.error(`[FAIL] Crop ${crop.crop_id} must have exactly 3 stages`);
-    process.exit(1);
+for (const assetPath of [...referenced].sort()) {
+  const filePath = path.join(PUBLIC_DIR, assetPath);
+  if (!fs.existsSync(filePath)) {
+    failures.push(`Missing: public${assetPath}`);
+    continue;
   }
-
-  for (const stage of crop.stages) {
-    // 1. Verify Base Image
-    const baseRel = stage.assets.base_image_url.replace(/^\/progression\//, '');
-    const basePath = path.join(PUBLIC_DIR, baseRel);
-
-    if (!fs.existsSync(basePath)) {
-      console.error(`[FAIL] Base image file missing: ${basePath}`);
-      process.exit(1);
-    }
-
-    const baseStats = fs.statSync(basePath);
-    if (baseStats.size > MAX_FILE_SIZE_BYTES) {
-      console.error(`[FAIL] Image ${baseRel} exceeds 150 KB: ${(baseStats.size / 1024).toFixed(1)} KB`);
-      process.exit(1);
-    }
-
-    // Check WebP Header signature (RIFF....WEBP)
-    const baseBuffer = fs.readFileSync(basePath);
-    const isWebP = baseBuffer.subarray(0, 4).toString() === 'RIFF' && baseBuffer.subarray(8, 12).toString() === 'WEBP';
-    if (!isWebP) {
-      console.error(`[FAIL] Image ${baseRel} is not a valid WebP file`);
-      process.exit(1);
-    }
-
-    imageCount++;
-
-    // 2. Verify Companion Mask if defined
-    if (stage.assets.mask_image_url) {
-      const maskRel = stage.assets.mask_image_url.replace(/^\/progression\//, '');
-      const maskPath = path.join(PUBLIC_DIR, maskRel);
-
-      if (!fs.existsSync(maskPath)) {
-        console.error(`[FAIL] Mask image file missing: ${maskPath}`);
-        process.exit(1);
-      }
-
-      const maskStats = fs.statSync(maskPath);
-      if (maskStats.size > MAX_FILE_SIZE_BYTES) {
-        console.error(`[FAIL] Mask ${maskRel} exceeds 150 KB: ${(maskStats.size / 1024).toFixed(1)} KB`);
-        process.exit(1);
-      }
-
-      const maskBuffer = fs.readFileSync(maskPath);
-      const isMaskWebP = maskBuffer.subarray(0, 4).toString() === 'RIFF' && maskBuffer.subarray(8, 12).toString() === 'WEBP';
-      if (!isMaskWebP) {
-        console.error(`[FAIL] Mask ${maskRel} is not a valid WebP file`);
-        process.exit(1);
-      }
-
-      maskCount++;
+  const { size } = fs.statSync(filePath);
+  if (size > MAX_FILE_SIZE_BYTES) failures.push(`Too large (${(size / 1024).toFixed(1)} KB > 150 KB): public${assetPath}`);
+  if (assetPath.endsWith('.webp')) {
+    const header = fs.readFileSync(filePath).subarray(0, 12);
+    if (header.subarray(0, 4).toString() !== 'RIFF' || header.subarray(8, 12).toString() !== 'WEBP') {
+      failures.push(`Not a valid WebP file: public${assetPath}`);
     }
   }
 }
 
-console.log(`[PASS] Verified ${manifest.crops.length} crops in manifest.json`);
-console.log(`[PASS] Verified ${imageCount} base WebP leaf images (all < 150 KB)`);
-console.log(`[PASS] Verified ${maskCount} transition WebP mask images (all < 150 KB)`);
-console.log('All frontend asset checks passed successfully!\n');
+if (failures.length > 0) {
+  for (const failure of failures) console.error(`[FAIL] ${failure}`);
+  process.exit(1);
+}
+console.log(`[PASS] ${referenced.size} referenced progression assets exist, are valid and within budget.`);
