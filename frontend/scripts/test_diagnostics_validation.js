@@ -15,6 +15,8 @@ import {
   CLINICAL_SAMPLE_PRESETS,
   presetToPrediction,
   LOW_CONFIDENCE_THRESHOLD,
+  classifyLeafImage,
+  resolveMlUrl,
 } from '../src/services/diagnosticsService.ts';
 
 console.log('🧪 Starting AI Leaf Diagnostics Unit Test Suite...');
@@ -139,5 +141,33 @@ const validStates = [
   'ERROR',
 ];
 assert.equal(validStates.length, 8, 'SPEC-UI-006 §5 defines exactly 8 operational component states');
+
+// Review fix 5: the documented VITE_ML_SERVICE_URL must be honoured (legacy VITE_ML_URL still works).
+assert.equal(resolveMlUrl({}), 'http://localhost:8000');
+assert.equal(resolveMlUrl({ VITE_ML_SERVICE_URL: 'http://ml.lan:9000' }), 'http://ml.lan:9000');
+assert.equal(resolveMlUrl({ VITE_ML_URL: 'http://legacy:8001' }), 'http://legacy:8001');
+assert.equal(resolveMlUrl({ VITE_ML_SERVICE_URL: 'http://ml.lan:9000', VITE_ML_URL: 'http://legacy:8001' }), 'http://ml.lan:9000');
+assert.equal(resolveMlUrl({ VITE_ML_SERVICE_URL: '  ' }), 'http://localhost:8000');
+
+// Review fix 3: a timeout must surface as a visible error, not as a silent user cancel.
+const hangingFetch = (_url, init) => new Promise((_, reject) => {
+  init.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')), { once: true });
+});
+const realFetch = globalThis.fetch;
+globalThis.fetch = hangingFetch;
+try {
+  const leaf = new File([new Uint8Array([1, 2, 3])], 'leaf.jpg', { type: 'image/jpeg' });
+  await assert.rejects(classifyLeafImage(leaf, undefined, undefined, 20), (error) => {
+    assert.notEqual(error.name, 'AbortError', 'timeout must not look like a user cancel');
+    assert.match(error.message, /took too long/);
+    return true;
+  });
+  const controller = new AbortController();
+  const pending = classifyLeafImage(leaf, controller.signal, undefined, 5000);
+  controller.abort();
+  await assert.rejects(pending, (error) => error.name === 'AbortError');
+} finally {
+  globalThis.fetch = realFetch;
+}
 
 console.log('✅ All AI Leaf Diagnostics validation, service and component contract tests passed cleanly!');
