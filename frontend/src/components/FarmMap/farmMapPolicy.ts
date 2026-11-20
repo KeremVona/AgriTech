@@ -31,3 +31,14 @@ export function getScale(maxMeters: number, imperial: boolean): { label: string;
   const label = `${Number(rounded.toPrecision(3))} ${imperial ? (largerUnit ? 'mi' : 'ft') : (largerUnit ? 'km' : 'm')}`;
   return { label, width: 90 * rounded / units };
 }
+
+/**
+ * Cancels pending pan/zoom animations unless the Leaflet map has already been removed.
+ * On unmount, MapContainer removes the map (deleting its panes) before child effect
+ * cleanups run; calling `stop()` then throws and blanks the app on in-app navigation.
+ */
+export function stopMapIfAttached(map: { getPane(name: string): unknown; stop(): unknown }): boolean {
+  if (!map.getPane('mapPane')) return false;
+  map.stop();
+  return true;
+}

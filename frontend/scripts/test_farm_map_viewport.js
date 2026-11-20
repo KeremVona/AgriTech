@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';
-import { shouldFitParcels, getFitOptions, formatCoordinates, getScale } from '../src/components/FarmMap/farmMapPolicy.ts';
+import { shouldFitParcels, getFitOptions, formatCoordinates, getScale, stopMapIfAttached } from '../src/components/FarmMap/farmMapPolicy.ts';
+
+// Unmount order: MapContainer removes the Leaflet map (panes deleted) before child cleanups run.
+let stops = 0;
+const attachedMap = { getPane: () => ({}), stop: () => { stops++; } };
+const removedMap = { getPane: () => undefined, stop: () => { throw new TypeError("Cannot read properties of undefined (reading '_leaflet_pos')"); } };
+assert.equal(stopMapIfAttached(attachedMap), true);
+assert.equal(stops, 1);
+assert.equal(stopMapIfAttached(removedMap), false, 'removed map is not stopped (in-app navigation away from /map must not crash)');
 
 const bounds = [[38, 27], [39, 28]];
 assert.equal(shouldFitParcels(null, null, 0), false);
