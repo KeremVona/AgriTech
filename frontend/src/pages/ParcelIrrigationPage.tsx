@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { DeficitGauge } from '../components/Irrigation/DeficitGauge.tsx';
 import { DEFAULT_IRRIGATION_CONFIG } from '../components/Irrigation/defaultIrrigationConfig.ts';
+import { ErrorNotice } from '../components/Irrigation/ErrorNotice.tsx';
+import { ParcelTelemetryChart } from '../components/Irrigation/ParcelTelemetryChart.tsx';
 import { SampleTag } from '../components/Irrigation/SampleTag.tsx';
 import { useNow } from '../hooks/useNow.ts';
 import { usePolledResource } from '../hooks/usePolledResource.ts';
@@ -17,21 +19,6 @@ const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute:
 
 function PageFrame({ children }: { children: ReactNode }) {
   return <div className="min-h-screen bg-ag-canvas text-ag-ink font-sans">{children}</div>;
-}
-
-function ErrorNotice({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div role="alert" className="rounded-lg border border-ag-risk-critical-border bg-ag-risk-critical-bg p-4 text-sm text-red-900">
-      <p>{message}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="mt-3 inline-flex min-h-12 items-center rounded-lg border border-red-300 bg-white px-3 font-semibold transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 md:min-h-10"
-      >
-        Retry
-      </button>
-    </div>
-  );
 }
 
 function CenteredNotice({ title, body }: { title: string; body: string }) {
@@ -84,14 +71,13 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
   const reportSource = useCallback((name: string, source: Sourced<unknown> | null) => {
     setChildSources((previous) => (previous[name] === source ? previous : { ...previous, [name]: source }));
   }, []);
-  void reportSource;
+  const reportChartSource = useCallback((source: Sourced<unknown> | null) => reportSource('chart', source), [reportSource]);
 
   const refreshAll = () => {
     budget.refresh();
     hourly.refresh();
     setRefreshToken((token) => token + 1);
   };
-  void refreshToken;
 
   const now = useNow(60_000, true);
   const source = combineSources([budget.data, hourly.data, ...Object.values(childSources)], config.mode);
@@ -168,8 +154,15 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
         <section aria-labelledby="valve-control-heading" className="rounded-lg border border-ag-border bg-ag-surface p-4 lg:col-start-2 lg:row-start-2">
           <h2 id="valve-control-heading" className="text-lg font-semibold tracking-tight">Valve control</h2>
         </section>
-        <section aria-labelledby="telemetry-heading" className="rounded-lg border border-ag-border bg-ag-surface p-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
-          <h2 id="telemetry-heading" className="text-lg font-semibold tracking-tight">Soil moisture &amp; water inputs</h2>
+        <section aria-labelledby="telemetry-heading" className="min-w-0 rounded-lg border border-ag-border bg-ag-surface p-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+          <ParcelTelemetryChart
+            parcelId={parcelId}
+            config={config}
+            hints={hints}
+            onSourceChange={reportChartSource}
+            refreshToken={refreshToken}
+            headingId="telemetry-heading"
+          />
         </section>
       </main>
     </PageFrame>
