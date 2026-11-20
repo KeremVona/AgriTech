@@ -178,6 +178,9 @@ Build output will be placed in `dist/`.
 The frontend employs unit test suites, static analysis, and type checking:
 
 ```powershell
+# Run every frontend test suite (all test:* scripts, including the referenced-asset check)
+npm test
+
 # Run GIS Field Map test suite (217 tests: geometry, bounds, service policies, routing, drawing topology, HUD policies, metadata policies, styling tokens, drawer state, and spatial CRUD)
 npm run test:map
 
