@@ -17,6 +17,7 @@ import {
   LOW_CONFIDENCE_THRESHOLD,
   classifyLeafImage,
   resolveMlUrl,
+  formatConfidence,
 } from '../src/services/diagnosticsService.ts';
 
 console.log('🧪 Starting AI Leaf Diagnostics Unit Test Suite...');
@@ -166,6 +167,21 @@ try {
   const pending = classifyLeafImage(leaf, controller.signal, undefined, 5000);
   controller.abort();
   await assert.rejects(pending, (error) => error.name === 'AbortError');
+} finally {
+  globalThis.fetch = realFetch;
+}
+
+// Review fix 13: a missing confidence must never be replaced by an invented number.
+assert.equal(formatConfidence(0), '—');
+assert.equal(formatConfidence(Number.NaN), '—');
+assert.equal(formatConfidence(0.9642), '96.4%');
+globalThis.fetch = async () => new Response(JSON.stringify({ requires_rescan: true, prediction: { crop: 'Tomato' }, top_probabilities: [] }), { status: 200 });
+try {
+  const leaf = new File([new Uint8Array([1])], 'leaf.jpg', { type: 'image/jpeg' });
+  const rescan = await classifyLeafImage(leaf);
+  assert.equal(rescan.confidenceScore, 0, 'missing confidence stays 0, not a made-up 0.582');
+  assert.equal(rescan.requiresRescan, true);
+  assert.ok(!/58\.2|0\.0%/.test(rescan.agronomicAdvisory.immediateAction), rescan.agronomicAdvisory.immediateAction);
 } finally {
   globalThis.fetch = realFetch;
 }
