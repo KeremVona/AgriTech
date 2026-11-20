@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import {
   resolveFarmMapConfig,
   confirmParcelDelete,
+  buildShapeSaveRequest,
+  geometryAreaHa,
   getLoadedFields,
   filterParcelsByField,
   mergeDrawnParcels,
@@ -287,4 +289,28 @@ test('confirmParcelDelete asks with the parcel name and history warning, and res
   const unnamed = [];
   confirmParcelDelete(null, (message) => { unnamed.push(message); return true; });
   assert.match(unnamed[0], /Delete this parcel\?/);
+});
+
+test('buildShapeSaveRequest keeps stored metadata and recomputes area for the new shape', () => {
+  const feature = {
+    type: 'Feature',
+    id: 'p-1',
+    geometry: { type: 'Polygon', coordinates: [[[32.5, 37.9], [32.501, 37.9], [32.501, 37.901], [32.5, 37.901], [32.5, 37.9]]] },
+    properties: {
+      id: 'p-1', name: 'North Potato', field_id: 'f-1', field_name: 'Farm',
+      crop_id: 'crop-potato', crop_name: 'Potato', soil_profile_id: 'sandy_loam', soil_profile_name: 'Sandy Loam',
+      area_hectares: 0.98, planting_date: '2026-04-15',
+    },
+  };
+  const bigger = { type: 'Polygon', coordinates: [[[32.5, 37.9], [32.502, 37.9], [32.502, 37.902], [32.5, 37.902], [32.5, 37.9]]] };
+  const request = buildShapeSaveRequest(feature, bigger);
+  assert.equal(request.parcelId, 'p-1');
+  assert.equal(request.geometry, bigger);
+  assert.equal(request.data.name, 'North Potato');
+  assert.equal(request.data.cropName, 'Potato');
+  assert.equal(request.data.soilProfileId, 'sandy_loam');
+  assert.equal(request.data.plantingDate, '2026-04-15');
+  assert.equal(request.data.fieldId, 'f-1');
+  assert.equal(request.areaHa, geometryAreaHa(bigger));
+  assert.ok(request.areaHa > 3 * geometryAreaHa(feature.geometry));
 });
