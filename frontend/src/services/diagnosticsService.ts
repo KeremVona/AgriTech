@@ -22,6 +22,11 @@ const ML_URL: string = resolveMlUrl({
 const DEFAULT_TIMEOUT_MS = 30000;
 export const LOW_CONFIDENCE_THRESHOLD = 0.70; // SPEC-UI-006 §5 State 6
 
+/** Confidence as a percentage, or "—" when the service did not report one. */
+export function formatConfidence(score: number): string {
+  return Number.isFinite(score) && score > 0 ? `${(score * 100).toFixed(1)}%` : '—';
+}
+
 /**
  * Format raw model labels like "Tomato___Late_blight" -> "Tomato — Late Blight"
  */
@@ -334,7 +339,8 @@ export async function classifyLeafImage(
         crop,
         condition: `${condition} (Low Confidence)`,
         scientificName: rawPred.scientific_name || 'Uncertain Foliar Pathogen',
-        confidenceScore: confidenceScore || 0.582,
+        // A missing score stays 0 and is shown as "—"; never invent a number.
+        confidenceScore: Number.isFinite(confidenceScore) ? confidenceScore : 0,
         severityIndex: severity.severityIndex,
         severityTier: severity.severityTier,
         topProbabilities: (data.top_probabilities || []).map((tp: { label: string; probability: number }) => ({
@@ -345,7 +351,7 @@ export async function classifyLeafImage(
         agronomicAdvisory: {
           immediateAction:
             data.low_confidence_advisory?.message ||
-            `Low confidence diagnosis (${(confidenceScore * 100).toFixed(1)}%). Poor lighting or obscured foliage detected. Re-sampling is recommended before chemical intervention.`,
+            `Low confidence diagnosis${confidenceScore > 0 ? ` (${formatConfidence(confidenceScore)})` : ''}. Poor lighting or obscured foliage detected. Re-sampling is recommended before chemical intervention.`,
           fungicideTreatments: [],
           environmentalRiskFactors:
             'Uncertain microclimate risk. Confirm foliar symptoms with a secondary in-field scan.',
