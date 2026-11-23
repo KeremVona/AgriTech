@@ -19,6 +19,7 @@ public class AgriTechDbContext : DbContext
     public DbSet<SensorNode> SensorNodes => Set<SensorNode>();
     public DbSet<ModelInference> ModelInferences => Set<ModelInference>();
     public DbSet<CropScan> CropScans => Set<CropScan>();
+    public DbSet<WeatherCache> WeatherCaches => Set<WeatherCache>();
 
     // Keyless Query Results (BACK-203 Stored Procedures & Functions)
     public DbSet<ParcelCoordinateLookupResult> ParcelCoordinateLookups => Set<ParcelCoordinateLookupResult>();
@@ -231,7 +232,42 @@ public class AgriTechDbContext : DbContext
                   .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // 10. Keyless Entity Types for Spatial Functions & Stored Procedures (BACK-203)
+        // 10. WeatherCache Configuration (Module 6: Open-Meteo Weather Cache & FAO-56 Engine)
+        modelBuilder.Entity<WeatherCache>(entity =>
+        {
+            entity.ToTable("weather_cache");
+            entity.HasKey(w => w.Id);
+            entity.Property(w => w.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
+            entity.Property(w => w.ParcelId).HasColumnName("parcel_id").IsRequired();
+            entity.Property(w => w.ForecastDate).HasColumnName("forecast_date").IsRequired();
+            entity.Property(w => w.IsForecast).HasColumnName("is_forecast").HasDefaultValue(false);
+            entity.Property(w => w.Et0Mm).HasColumnName("et0_mm").HasPrecision(5, 2).IsRequired();
+            entity.Property(w => w.PrecipitationMm).HasColumnName("precipitation_mm").HasPrecision(5, 2).IsRequired();
+            entity.Property(w => w.EffectivePrecipitationMm).HasColumnName("effective_precipitation_mm").HasPrecision(5, 2).IsRequired();
+            entity.Property(w => w.TempMinC).HasColumnName("temp_min_c").HasPrecision(4, 1).IsRequired();
+            entity.Property(w => w.TempMaxC).HasColumnName("temp_max_c").HasPrecision(4, 1).IsRequired();
+            entity.Property(w => w.RelativeHumidityAvgPct).HasColumnName("relative_humidity_avg_pct").HasPrecision(4, 1);
+            entity.Property(w => w.SolarRadiationMj).HasColumnName("solar_radiation_mj").HasPrecision(6, 2);
+            entity.Property(w => w.WindSpeedMs).HasColumnName("wind_speed_ms").HasPrecision(4, 1);
+            entity.Property(w => w.IngestedAt).HasColumnName("ingested_at").HasDefaultValueSql("now()");
+
+            // Composite Unique Constraint: uq_weather_parcel_date
+            entity.HasIndex(w => new { w.ParcelId, w.ForecastDate })
+                  .IsUnique()
+                  .HasDatabaseName("uq_weather_parcel_date");
+
+            // Spatial lookup index
+            entity.HasIndex(w => w.ParcelId)
+                  .HasDatabaseName("idx_weather_cache_parcel_id");
+
+            // Foreign Key: Parcel -> WeatherCaches (CASCADE)
+            entity.HasOne(w => w.Parcel)
+                  .WithMany(p => p.WeatherCaches)
+                  .HasForeignKey(w => w.ParcelId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // 11. Keyless Entity Types for Spatial Functions & Stored Procedures (BACK-203)
         modelBuilder.Entity<ParcelCoordinateLookupResult>(entity =>
         {
             entity.HasNoKey();
