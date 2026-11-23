@@ -1,63 +1,37 @@
-# TODO-112: Disease Progression Studio Integration & Light-Mode Refactor
+# BACK-301 / TODO-301: Open-Meteo Weather Client & Daily Ingestion Job
 
-## Current Status: READY FOR APPROVAL
-**Assignee:** Senior Front-End Engineer  
-**Phase:** Phase 1 — Prompt-to-Prompt Cross-Attention Progression Core  
-**Spec:** `design/DISEASE_PROGRESSION_SPEC.md` (SPEC-UI-007)  
-**Plan:** `tasks/plan.md`  
-**Artifact:** `Disease_Progression_Studio_Implementation_Plan.md`
+## Current Status: DONE
+**Assignee:** Backend Engineer  
+**Phase:** Phase 3 — Telemetry Simulator & Dynamic FAO-56 Irrigation Engine  
+**Task ID:** BACK-301 / TODO-301  
+**Branch:** `feat/backend-todo301-open-meteo-weather-client`  
+**Report:** `PROJECT_DETAILS/Reports/Phase 3/TODO-301-open-meteo-weather-client.md`
 
 ---
 
-### Task List & Subagent Review Cadence
+### Deliverables & Acceptance Verification
 
-- [x] **Task 1: Domain Model Promotion, Canonical Services & Test Backward Compatibility**
-  - [x] Promote domain models from `p2p-experimental/models/` to canonical `frontend/src/models/`
-  - [x] Promote `timelapseRecorder.ts` to `frontend/src/utils/timelapseRecorder.ts`
-  - [x] Promote progression service & hook to `frontend/src/services/` and `frontend/src/hooks/`
-  - [x] Provide backward-compatible aliases in `frontend/src/p2p-experimental/`
-  - [x] Verify existing test suites pass: `npm run test:agronomy`, `npm run test:crops`, `npm run test:treatment`, `npm run test:hotspots`, `npm run test:export`
-  - [x] Commit changes
-  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
+- [x] **Typed HTTP Client `OpenMeteoClient` consuming `/v1/forecast`**
+  - [x] Configured with parameters: `et0_fao_evapotranspiration`, `precipitation_sum`, `temperature_2m_max`, `temperature_2m_min`, `relative_humidity_2m_mean`, `shortwave_radiation_sum`, `wind_speed_10m_max`.
+  - [x] Deserializes 7-day rolling forecast into strongly-typed DTOs (`OpenMeteoForecastResponse`, `OpenMeteoDailyDataDto`).
+  - [x] Invariant coordinate formatting (`CultureInfo.InvariantCulture`) and range validation (-90 to 90, -180 to 180).
 
-- [x] **Task 2: WebGL Shader View Mode Extension & Attention Map Colormap**
-  - [x] Create test script `frontend/scripts/test_shader_modes.js`
-  - [x] Extend `ProgressionShaderRenderer.ts` with `u_view_mode` (RGB, Attention Heatmap, Difference Mask)
-  - [x] Implement Turbo/Viridis color-coded attention heatmap gradient in GLSL
-  - [x] Implement difference mask mode & split curtain support
-  - [x] Verify WebGL context disposal hygiene
-  - [x] Verify compilation: `npm run build`
-  - [x] Commit changes
-  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
+- [x] **Polly Resilience Policy**
+  - [x] Rate-limiting resilience (HTTP 429 Too Many Requests) and transient HTTP server errors (5xx, 408).
+  - [x] Exponential backoff with randomized jitter to eliminate thundering herd spikes.
+  - [x] Automatically retries up to 3 times before logging a critical error on exhausted network/service failures.
 
-- [x] **Task 3: Studio Parameter Inspector Rail & Prompt Attention Inspector (Light Mode)**
-  - [x] Implement `<PromptAttentionInspector />` with Needleman-Wunsch prompt diff token visualizer & hyperparameters
-  - [x] Refactor `<MicroclimateControlPanel />` into light-mode tokens with interactive cardinal curve mini-SVG
-  - [x] Refactor `<TreatmentBranchingControls />` & `<TreatmentOutcomeCard />` into light mode with dual-coded severity callouts
-  - [x] Refactor `<ExportToolbar />` and `<DiagnosticPdfReportModal />` into light mode
-  - [x] Assemble `<StudioInspectorRail />` with tactile tab switching and light-mode tokens
-  - [x] Verify compilation: `npm run build`
-  - [x] Commit changes
-  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
+- [x] **Scheduled Task & Daily Ingestion Job (`IHostedService`)**
+  - [x] Implemented `WeatherIngestionBackgroundService` inheriting `BackgroundService` using `PeriodicTimer`.
+  - [x] Reads parcel centroids via PostGIS geometry centroids (`BoundaryGeom.Centroid.Y`, `BoundaryGeom.Centroid.X`).
+  - [x] Calculates FAO-56 effective precipitation $P_{\text{eff}} = \max(0, (P - 5) \times 0.75)$.
+  - [x] Idempotent upsert logic writing entries to `weather_cache` table matching unique constraint `uq_weather_parcel_date`.
 
-- [x] **Task 4: Interactive Foliar Canvas Viewport, Hotspots & Agronomic Scrubber (Light Mode)**
-  - [x] Refactor `<CompactCropSelectorRail />` in light mode with auto-scrolling active pill and 44px+ hit targets
-  - [x] Refactor `<LeafHotspotOverlay />` in light mode with 24 registered anatomical pins and popover cards
-  - [x] Refactor `<AgronomicTimelineSlider />` in light mode with Magarey Beta days $\longleftrightarrow$ severity sync, tabular numerals, play/pause loop, milestone tick marks, and `setPointerCapture`
-  - [x] Assemble `<ProgressionCanvasViewport />` with view mode toolbar, WebGL canvas, and 2D fallback
-  - [x] Export components in `frontend/src/components/DiseaseProgressionViewer/index.ts`
-  - [x] Verify compilation: `npm run build`
-  - [x] Commit changes
-  - [x] **Mandatory Subagent Review Gate:** Audit with `code-reviewer` subagent
+- [x] **Acceptance Criteria Verification**
+  - [x] **Acceptance Criteria 1:** System ingests and caches 7 days of forecast data per parcel without duplicating records (Verified in integration tests and PowerShell harness: DB row count strictly equals 7 on repeated passes).
+  - [x] **Acceptance Criteria 2:** API network failure automatically retries up to 3 times before logging a critical error (Verified in Polly unit tests).
 
-- [x] **Task 5: Production Page Assembly, Route Deprecation & End-to-End Verification**
-  - [x] Assemble `<DiseaseProgressionPage />` in `frontend/src/pages/DiseaseProgressionPage.tsx` with 12-column responsive layout (7 cols left / 5 cols right)
-  - [x] Manage 8-state state machine with zero memory leaks
-  - [x] Wire `/disease-progression` route and redirect `/disease-progression-experimental`
-  - [x] Update navigation links in `Navbar.tsx` and `LandingPage.tsx`
-  - [x] Run full automated verification: `test:agronomy`, `test:crops`, `test:treatment`, `test:hotspots`, `test:export`, `test:diagnostics`, `test:shader`, `test:inspector`, `test:canvas`, `test:assembly`
-  - [x] Run linter: `npm run lint` (`oxlint` 0 warnings, 0 errors)
-  - [x] Run production build: `npm run build`
-  - [x] Generate completion report `PROJECT_DETAILS/Reports/Phase 1/TODO-112-disease-progression-studio.md`
-  - [x] Final whole-feature code review subagent gate
-  - [x] Final commit and sign-off
+- [x] **Automated Test Suites & End-to-End Verification**
+  - [x] 18 xUnit unit and integration tests passing (`dotnet test tests/AgriTech.Api.Tests`).
+  - [x] Live end-to-end PowerShell harness `scripts/verify_open_meteo_client.ps1` passing all 6 tests.
+  - [x] Backward compatibility preserved: `scripts/verify_field_parcel_crud.ps1` passing all 7 tests.
