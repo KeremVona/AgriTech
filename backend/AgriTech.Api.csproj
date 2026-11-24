@@ -19,4 +19,15 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite" Version="10.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="Configuration\crop_growth_stages.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AgriTech.Api.Tests" />
+  </ItemGroup>
+
 </Project>
