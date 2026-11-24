@@ -1,5 +1,5 @@
 <Solution>
   <Project Path="AgriTech.Api.csproj" />
-  <Project Path="AgriTech.Api.Tests/AgriTech.Api.AdvisoryTests.csproj" />
+  <Project Path="..\tests\AgriTech.Api.AdvisoryTests\AgriTech.Api.AdvisoryTests.csproj" />
   <Project Path="..\tests\AgriTech.Api.Tests\AgriTech.Api.Tests.csproj" />
 </Solution>

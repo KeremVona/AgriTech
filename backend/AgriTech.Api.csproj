@@ -4,7 +4,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <DefaultItemExcludes>$(DefaultItemExcludes);AgriTech.Api.Tests\**</DefaultItemExcludes>
     <UserSecretsId>530f516b-a77a-4cac-911f-2affd45c3ab2</UserSecretsId>
   </PropertyGroup>
 
