@@ -19,6 +19,7 @@ public class AgriTechDbContext : DbContext
     public DbSet<SensorNode> SensorNodes => Set<SensorNode>();
     public DbSet<ModelInference> ModelInferences => Set<ModelInference>();
     public DbSet<CropScan> CropScans => Set<CropScan>();
+    public DbSet<DiseaseAdvisory> DiseaseAdvisories => Set<DiseaseAdvisory>();
 
     // Keyless Query Results (BACK-203 Stored Procedures & Functions)
     public DbSet<ParcelCoordinateLookupResult> ParcelCoordinateLookups => Set<ParcelCoordinateLookupResult>();
@@ -229,6 +230,29 @@ public class AgriTechDbContext : DbContext
                   .WithMany(u => u.UploadedCropScans)
                   .HasForeignKey(c => c.UploadedByUserId)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // 9b. DiseaseAdvisory Cache Configuration
+        modelBuilder.Entity<DiseaseAdvisory>(entity =>
+        {
+            entity.ToTable("disease_advisories");
+            entity.HasKey(d => d.Id);
+            entity.Property(d => d.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
+            entity.Property(d => d.ClassKey).HasColumnName("class_key").HasMaxLength(120).IsRequired();
+            entity.HasIndex(d => d.ClassKey).IsUnique().HasDatabaseName("ix_disease_advisories_class_key");
+            entity.Property(d => d.Crop).HasColumnName("crop").HasMaxLength(80).IsRequired();
+            entity.Property(d => d.Condition).HasColumnName("condition").HasMaxLength(120).IsRequired();
+            entity.Property(d => d.ScientificName).HasColumnName("scientific_name").HasMaxLength(120);
+            entity.Property(d => d.Severity).HasColumnName("severity").HasMaxLength(40).IsRequired();
+            entity.Property(d => d.ImmediateAction).HasColumnName("immediate_action").IsRequired();
+            entity.Property(d => d.RecommendedTreatmentsJson)
+                  .HasColumnName("recommended_treatments")
+                  .HasColumnType("jsonb")
+                  .IsRequired();
+            entity.Property(d => d.MicroclimateRisk).HasColumnName("microclimate_risk").IsRequired();
+            entity.Property(d => d.LlmModel).HasColumnName("llm_model").HasMaxLength(80).IsRequired();
+            entity.Property(d => d.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(d => d.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
         });
 
         // 10. Keyless Entity Types for Spatial Functions & Stored Procedures (BACK-203)

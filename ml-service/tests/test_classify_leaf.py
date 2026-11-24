@@ -267,6 +267,7 @@ async def test_classify_leaf_valid_jpeg(client):
 
     # Schema shape checks
     assert "inference_id" in data
+    assert data["class_key"] == "tomato/late_blight"
     assert "prediction" in data
     assert "top_probabilities" in data
     assert "agronomic_advisory" in data

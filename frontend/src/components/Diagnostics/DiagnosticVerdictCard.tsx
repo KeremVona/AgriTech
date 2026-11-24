@@ -30,7 +30,8 @@ export const DiagnosticVerdictCard: React.FC<DiagnosticVerdictCardProps> = ({
   const treatments = verdict.agronomicAdvisory?.fungicideTreatments ?? [];
 
   const handleCopySummary = async () => {
-    const summary = `Ag-Intelligence Diagnosis: ${verdict.crop} — ${verdict.condition} (${verdict.scientificName})
+    const sciSuffix = verdict.scientificName ? ` (${verdict.scientificName})` : '';
+    const summary = `Ag-Intelligence Diagnosis: ${verdict.crop} — ${verdict.condition}${sciSuffix}
 Confidence: ${confidencePct}% | Severity: ${verdict.severityTier} (${verdict.severityIndex})
 Immediate Action: ${verdict.agronomicAdvisory?.immediateAction || 'Inspect field foliage.'}
 Recommended Treatments: ${treatments.join(', ') || 'None required'}
@@ -118,7 +119,9 @@ Environmental Risk: ${verdict.agronomicAdvisory?.environmentalRiskFactors || 'St
               {verdict.crop} — {verdict.condition}
             </h2>
           </div>
-          <p className="text-sm italic text-ag-ink-secondary">{verdict.scientificName}</p>
+          {verdict.scientificName && (
+            <p className="text-sm italic text-ag-ink-secondary">{verdict.scientificName}</p>
+          )}
         </div>
 
         <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-1 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
@@ -136,7 +139,23 @@ Environmental Risk: ${verdict.agronomicAdvisory?.environmentalRiskFactors || 'St
       {/* 2. Dual-Coded Agronomic Severity Banner */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {renderSeverityBadge(verdict.severityTier)}
-        <span className="text-xs text-ag-ink-secondary font-mono">ID: {verdict.inferenceId.slice(0, 16)}</span>
+        <div className="flex items-center gap-2">
+          {verdict.agronomicAdvisory?.source && (
+            <span
+              className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-slate-50 border-slate-200 text-ag-ink-secondary"
+              title={verdict.agronomicAdvisory.llmModel ? `Model: ${verdict.agronomicAdvisory.llmModel}` : undefined}
+            >
+              {verdict.agronomicAdvisory.source === 'database_cache'
+                ? 'DB Cached Advice'
+                : verdict.agronomicAdvisory.source === 'llm_generated'
+                ? 'Gemini AI Advice'
+                : verdict.agronomicAdvisory.source === 'sample'
+                ? 'Sample Preset'
+                : 'Knowledge Base'}
+            </span>
+          )}
+          <span className="text-xs text-ag-ink-secondary font-mono">ID: {verdict.inferenceId.slice(0, 16)}</span>
+        </div>
       </div>
 
       {/* 3. Top-3 Class Probability Distribution Bars (6px tracks per SPEC-UI-006 §3.3) */}
