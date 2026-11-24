@@ -43,6 +43,12 @@ builder.Services.Configure<WeatherIngestionOptions>(
     builder.Configuration.GetSection(WeatherIngestionOptions.SectionName));
 builder.Services.AddHostedService<WeatherIngestionBackgroundService>();
 
+// BACK-302: FAO-56 Dynamic Crop Coefficient (Kc) & Phenology Engine
+builder.Services.Configure<CropPhenologyOptions>(
+    builder.Configuration.GetSection(CropPhenologyOptions.SectionName));
+builder.Services.AddSingleton<ICropPhenologyService, CropPhenologyService>();
+builder.Services.AddScoped<IParcelPhenologyQueryService, ParcelPhenologyQueryService>();
+
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
 builder.Services.AddHttpClient<IGeminiAdvisoryClient, GeminiAdvisoryClient>(client =>
 {
