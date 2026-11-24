@@ -33,5 +33,5 @@
 
 - [x] **Automated Test Suites & End-to-End Verification**
   - [x] 18 xUnit unit and integration tests passing (`dotnet test tests/AgriTech.Api.Tests`).
-  - [x] Live end-to-end PowerShell harness `scripts/verify_open_meteo_client.ps1` passing all 6 tests.
+  - [x] Live end-to-end PowerShell harness `backend/scripts/verify_open_meteo_client.ps1` passing all 6 tests.
   - [x] Backward compatibility preserved: `scripts/verify_field_parcel_crud.ps1` passing all 7 tests.
