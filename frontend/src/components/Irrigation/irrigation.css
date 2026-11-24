@@ -1,0 +1,28 @@
+/* Parcel Water Dashboard — motion that Tailwind utilities cannot express. Numbers are never animated. */
+
+.ag-gauge-needle {
+  transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-gauge-needle {
+    transition: none;
+  }
+}
+
+@keyframes agValveDropletPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.18); opacity: 0.7; }
+}
+
+.ag-valve-droplet-pulse {
+  animation: agValveDropletPulse 1.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-valve-droplet-pulse {
+    animation: none;
+  }
+}

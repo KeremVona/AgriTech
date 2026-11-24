@@ -19,6 +19,7 @@
     "test:assembly": "node --experimental-strip-types scripts/test_production_assembly.js",
     "test:diagnostics": "node --experimental-strip-types scripts/test_diagnostics_validation.js",
     "test:map": "node --experimental-strip-types scripts/test_farm_map_data.js && node --experimental-strip-types scripts/test_farm_map_viewport.js && node --experimental-strip-types scripts/test_farm_map_page.js && node --experimental-strip-types scripts/test_farm_map_drawing.js && node --experimental-strip-types scripts/test_parcel_metadata.js && node --experimental-strip-types scripts/test_parcel_styling.js && node --experimental-strip-types scripts/test_parcel_drawer.js && node --experimental-strip-types scripts/test_farm_map_crud.js",
+    "test:irrigation": "node --experimental-strip-types scripts/test_water_balance.js && node --experimental-strip-types scripts/test_telemetry_chart_model.js && node --experimental-strip-types scripts/test_valve_control_model.js && node --experimental-strip-types scripts/test_irrigation_sample_data.js && node --experimental-strip-types scripts/test_irrigation_service.js",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "react-dom": "^19.2.8",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.4",
+    "recharts": "3.10.1",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
