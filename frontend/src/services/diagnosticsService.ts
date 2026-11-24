@@ -9,10 +9,18 @@ import type {
   AdvisorySource,
 } from '../types/diagnostics';
 
-const ML_URL: string =
-  typeof import.meta !== 'undefined' && import.meta.env?.VITE_ML_URL !== undefined
-    ? import.meta.env.VITE_ML_URL
-    : 'http://localhost:8000';
+/**
+ * ML service base URL. `VITE_ML_SERVICE_URL` is the documented name (frontend/.env.example);
+ * the older `VITE_ML_URL` is still honoured so existing local setups keep working.
+ */
+export function resolveMlUrl(env: Partial<Record<'VITE_ML_SERVICE_URL' | 'VITE_ML_URL', string>>): string {
+  return env.VITE_ML_SERVICE_URL?.trim() || env.VITE_ML_URL?.trim() || 'http://localhost:8000';
+}
+
+const ML_URL: string = resolveMlUrl({
+  VITE_ML_SERVICE_URL: import.meta.env?.VITE_ML_SERVICE_URL,
+  VITE_ML_URL: import.meta.env?.VITE_ML_URL,
+});
 const API_URL: string =
   typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL !== undefined
     ? import.meta.env.VITE_API_BASE_URL
@@ -20,6 +28,11 @@ const API_URL: string =
 const DEFAULT_TIMEOUT_MS = 30000;
 const ADVISORY_TIMEOUT_MS = 15000;
 export const LOW_CONFIDENCE_THRESHOLD = 0.70; // SPEC-UI-006 §5 State 6
+
+/** Confidence as a percentage, or "—" when the service did not report one. */
+export function formatConfidence(score: number): string {
+  return Number.isFinite(score) && score > 0 ? `${(score * 100).toFixed(1)}%` : '—';
+}
 
 /**
  * Format raw model labels like "Tomato___Late_blight" -> "Tomato — Late Blight"
@@ -396,7 +409,8 @@ export function presetToPrediction(preset: ClinicalSamplePreset): DiagnosticPred
 export async function classifyLeafImage(
   file: File,
   signal?: AbortSignal,
-  cropHint?: CropSpecies
+  cropHint?: CropSpecies,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
 ): Promise<DiagnosticPrediction> {
   const formData = new FormData();
   formData.append('file', file);
@@ -405,7 +419,11 @@ export async function classifyLeafImage(
   }
 
   const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), DEFAULT_TIMEOUT_MS);
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    abortController.abort();
+  }, timeoutMs);
 
   // Handle incoming abort signal with pre-aborted check and one-time listener
   if (signal) {
@@ -428,8 +446,14 @@ export async function classifyLeafImage(
       });
     } catch (err: unknown) {
       const error = err as Error;
+      // A timeout is a failure the user must see; only a caller cancel stays a silent AbortError.
+      if (timedOut) {
+        throw new Error(
+          `The AI vision service took too long to respond (over ${Math.round(timeoutMs / 1000)} s). Please try the scan again.`
+        );
+      }
       if (error?.name === 'AbortError' || abortController.signal.aborted) {
-        throw new DOMException('Classification request timed out or was cancelled.', 'AbortError');
+        throw new DOMException('Classification request was cancelled.', 'AbortError');
       }
       throw new Error(
         `Unable to reach the AI vision service at ${ML_URL}. Check server connection or use a verified clinical sample.`
@@ -489,7 +513,8 @@ export async function classifyLeafImage(
         crop,
         condition: `${condition} (Low Confidence)`,
         scientificName: rawPred.scientific_name || 'Uncertain Foliar Pathogen',
-        confidenceScore: confidenceScore || 0.582,
+        // A missing score stays 0 and is shown as "—"; never invent a number.
+        confidenceScore: Number.isFinite(confidenceScore) ? confidenceScore : 0,
         severityIndex: severity.severityIndex,
         severityTier: severity.severityTier,
         topProbabilities: (data.top_probabilities || []).map((tp: { label: string; probability: number }) => ({
@@ -500,7 +525,7 @@ export async function classifyLeafImage(
         agronomicAdvisory: {
           immediateAction:
             data.low_confidence_advisory?.message ||
-            `Low confidence diagnosis (${(confidenceScore * 100).toFixed(1)}%). Poor lighting or obscured foliage detected. Re-sampling is recommended before chemical intervention.`,
+            `Low confidence diagnosis${confidenceScore > 0 ? ` (${formatConfidence(confidenceScore)})` : ''}. Poor lighting or obscured foliage detected. Re-sampling is recommended before chemical intervention.`,
           fungicideTreatments: [],
           environmentalRiskFactors:
             'Uncertain microclimate risk. Confirm foliar symptoms with a secondary in-field scan.',

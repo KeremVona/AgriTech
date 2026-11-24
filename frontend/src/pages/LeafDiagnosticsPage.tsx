@@ -109,8 +109,12 @@ export const LeafDiagnosticsPage: React.FC = () => {
     setUiState('INFERENCING');
     setErrorMessage(null);
 
+    // A run that was cancelled or replaced (Retake, Abort, sample preset) must not touch the page.
+    const isCurrentRun = () => abortControllerRef.current === controller;
+
     try {
       const prediction = await classifyLeafImage(file, controller.signal);
+      if (!isCurrentRun()) return;
       setVerdict(prediction);
       if (prediction.requiresRescan) {
         setUiState('LOW_CONFIDENCE');
@@ -118,6 +122,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
         setUiState('SUCCESS');
       }
     } catch (err: unknown) {
+      if (!isCurrentRun()) return;
       const error = err as Error;
       if (error?.name === 'AbortError' || controller.signal.aborted) {
         setUiState('IDLE');
@@ -126,7 +131,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
       setErrorMessage(error.message || 'Vision service error occurred during classification.');
       setUiState('ERROR');
     } finally {
-      abortControllerRef.current = null;
+      if (isCurrentRun()) abortControllerRef.current = null;
     }
   };
 
@@ -223,7 +228,8 @@ export const LeafDiagnosticsPage: React.FC = () => {
                   key={preset.id}
                   type="button"
                   onClick={() => handleSelectPreset(preset)}
-                  className="px-3 py-2 min-h-[44px] touch-manipulation rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-300 hover:border-ag-brand text-ag-ink flex items-center gap-1.5 ag-interactive shadow-xs cursor-pointer"
+                  disabled={uiState === 'VALIDATING' || uiState === 'INFERENCING'}
+                  className="disabled:cursor-not-allowed disabled:opacity-50 px-3 py-2 min-h-[44px] touch-manipulation rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-300 hover:border-ag-brand text-ag-ink flex items-center gap-1.5 ag-interactive shadow-xs cursor-pointer"
                   title={`Test ${preset.label} (${preset.severityTier})`}
                 >
                   <span>{preset.icon}</span>

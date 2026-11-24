@@ -17,6 +17,9 @@ import {
   CLINICAL_SAMPLE_PRESETS,
   presetToPrediction,
   LOW_CONFIDENCE_THRESHOLD,
+  classifyLeafImage,
+  resolveMlUrl,
+  formatConfidence,
 } from '../src/services/diagnosticsService.ts';
 
 console.log('🧪 Starting AI Leaf Diagnostics Unit Test Suite...');
@@ -255,5 +258,47 @@ await assert.rejects(
 
 // 9e. mapAgronomicSeverity handles 'None' -> Healthy / Tier 0
 assert.deepEqual(mapAgronomicSeverity('None', 'Healthy'), { severityTier: 'Tier 0', severityIndex: 'Healthy' });
+// Review fix 5: the documented VITE_ML_SERVICE_URL must be honoured (legacy VITE_ML_URL still works).
+assert.equal(resolveMlUrl({}), 'http://localhost:8000');
+assert.equal(resolveMlUrl({ VITE_ML_SERVICE_URL: 'http://ml.lan:9000' }), 'http://ml.lan:9000');
+assert.equal(resolveMlUrl({ VITE_ML_URL: 'http://legacy:8001' }), 'http://legacy:8001');
+assert.equal(resolveMlUrl({ VITE_ML_SERVICE_URL: 'http://ml.lan:9000', VITE_ML_URL: 'http://legacy:8001' }), 'http://ml.lan:9000');
+assert.equal(resolveMlUrl({ VITE_ML_SERVICE_URL: '  ' }), 'http://localhost:8000');
+
+// Review fix 3: a timeout must surface as a visible error, not as a silent user cancel.
+const hangingFetch = (_url, init) => new Promise((_, reject) => {
+  init.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')), { once: true });
+});
+const realFetch = globalThis.fetch;
+globalThis.fetch = hangingFetch;
+try {
+  const leaf = new File([new Uint8Array([1, 2, 3])], 'leaf.jpg', { type: 'image/jpeg' });
+  await assert.rejects(classifyLeafImage(leaf, undefined, undefined, 20), (error) => {
+    assert.notEqual(error.name, 'AbortError', 'timeout must not look like a user cancel');
+    assert.match(error.message, /took too long/);
+    return true;
+  });
+  const controller = new AbortController();
+  const pending = classifyLeafImage(leaf, controller.signal, undefined, 5000);
+  controller.abort();
+  await assert.rejects(pending, (error) => error.name === 'AbortError');
+} finally {
+  globalThis.fetch = realFetch;
+}
+
+// Review fix 13: a missing confidence must never be replaced by an invented number.
+assert.equal(formatConfidence(0), '—');
+assert.equal(formatConfidence(Number.NaN), '—');
+assert.equal(formatConfidence(0.9642), '96.4%');
+globalThis.fetch = async () => new Response(JSON.stringify({ requires_rescan: true, prediction: { crop: 'Tomato' }, top_probabilities: [] }), { status: 200 });
+try {
+  const leaf = new File([new Uint8Array([1])], 'leaf.jpg', { type: 'image/jpeg' });
+  const rescan = await classifyLeafImage(leaf);
+  assert.equal(rescan.confidenceScore, 0, 'missing confidence stays 0, not a made-up 0.582');
+  assert.equal(rescan.requiresRescan, true);
+  assert.ok(!/58\.2|0\.0%/.test(rescan.agronomicAdvisory.immediateAction), rescan.agronomicAdvisory.immediateAction);
+} finally {
+  globalThis.fetch = realFetch;
+}
 
 console.log('✅ All AI Leaf Diagnostics validation, service and component contract tests passed cleanly!');

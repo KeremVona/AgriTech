@@ -124,10 +124,17 @@ export async function recordProgressionTimelapse(
   const frameIntervalMs = totalDurationMs / totalFrames;
 
   // Wrap recording execution in Promise
+  // The canvas capture keeps producing frames until its tracks are stopped.
+  const stopCapture = () => stream.getTracks().forEach((track) => track.stop());
+
   return new Promise<Blob>((resolve, reject) => {
-    recorder.onerror = (err) => reject(err);
+    recorder.onerror = (err) => {
+      stopCapture();
+      reject(err);
+    };
 
     recorder.onstop = () => {
+      stopCapture();
       const finalBlob = new Blob(recordedChunks, { type: mimeType });
       resolve(finalBlob);
     };
