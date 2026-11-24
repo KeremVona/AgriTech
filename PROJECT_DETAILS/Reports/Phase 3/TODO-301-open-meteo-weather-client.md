@@ -90,7 +90,7 @@ During each ingestion cycle:
 - `tests/AgriTech.Api.Tests/OpenMeteoClientTests.cs`: Unit tests for URL generation, JSON deserialization, Polly 429 rate limit retries, and network failure logging.
 - `tests/AgriTech.Api.Tests/WeatherControllerTests.cs`: Controller unit tests covering 200 OK, 404 NotFound, and 429 concurrency throttling.
 - `tests/AgriTech.Api.Tests/WeatherIngestionServiceIntegrationTests.cs`: End-to-end integration tests with live PostgreSQL/PostGIS verifying deduplication.
-- `scripts/verify_open_meteo_client.ps1`: Automated 6-stage PowerShell verification test harness.
+- `backend/scripts/verify_open_meteo_client.ps1`: Automated 6-stage PowerShell verification test harness.
 
 ### Modified Files
 - `backend/AgriTech.Api.csproj`: Added `Microsoft.Extensions.Http.Resilience` (11.0.0).
@@ -100,7 +100,7 @@ During each ingestion cycle:
 - `backend/Program.cs`: Registered Open-Meteo client resilience pipeline, ingestion services, and background service.
 - `backend/appsettings.json`: Added `OpenMeteo` and `WeatherIngestion` configuration blocks.
 - `backend/appsettings.Development.json`: Added `OpenMeteo` and `WeatherIngestion` configuration blocks.
-- `tasks/todo.md`: Updated tracking to mark BACK-301 as DONE.
+- `PROJECT_DETAILS/Reports/Phase 3/tasks-todo-301/todo.md` (originally `tasks/todo.md`): Updated tracking to mark BACK-301 as DONE.
 
 ---
 
@@ -130,7 +130,7 @@ The implementation was submitted to the `code-reviewer` subagent for multi-axis 
 Başarılı!  - Başarısız:     0, Başarılı:    24, Atlanan:     0, Toplam:    24, Süre: 7 s - AgriTech.Api.Tests.dll (net10.0)
 ```
 
-### 5.2 Live PowerShell Verification Harness (`scripts/verify_open_meteo_client.ps1`)
+### 5.2 Live PowerShell Verification Harness (`backend/scripts/verify_open_meteo_client.ps1`)
 ```text
 =================================================================
  AgriTech BACK-301: Open-Meteo Client & Weather Ingestion Engine 
