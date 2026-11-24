@@ -153,6 +153,11 @@ def _normalize_key(label_or_key: str) -> str:
     return _ALIAS_TO_KEY.get(label_or_key, label_or_key)
 
 
+def resolve_class_key(label_or_key: str) -> str:
+    """Return canonical lowercase crop/disease key for a label or key."""
+    return _normalize_key(label_or_key).strip().lower()
+
+
 def has_kb_entry(label_or_key: str) -> bool:
     """Returns True if the class has a corresponding knowledge base entry."""
     return _normalize_key(label_or_key) in _CLASSES

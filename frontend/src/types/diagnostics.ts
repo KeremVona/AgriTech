@@ -3,7 +3,9 @@
  * Aligned with design/AI_Leaf_Diagnostics_Spec.md (SPEC-UI-006)
  */
 
-export type CropSpecies = 'Tomato' | 'Potato' | 'Corn' | 'Apple';
+export type CropSpecies = 'Tomato' | 'Potato' | 'Corn' | 'Apple' | 'Grape' | 'Rice' | 'Cassava';
+
+export type AdvisorySource = 'database_cache' | 'llm_generated' | 'knowledge_base' | 'sample';
 
 export type SeverityTier = 'Tier 0' | 'Tier 1' | 'Tier 2' | 'Tier 3';
 
@@ -19,10 +21,13 @@ export interface AgronomicAdvisory {
   immediateAction: string;
   fungicideTreatments: string[];
   environmentalRiskFactors: string;
+  source?: AdvisorySource;
+  llmModel?: string;
 }
 
 export interface DiagnosticPrediction {
   inferenceId: string;
+  classKey?: string;
   crop: CropSpecies;
   condition: string;
   scientificName: string;

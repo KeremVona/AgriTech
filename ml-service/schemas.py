@@ -125,6 +125,7 @@ class ClassifyLeafResponse(BaseModel):
     """
 
     inference_id: str = Field(..., examples=["c7a9b1c2-3d4e-4f5a-8b9c-0d1e2f3a4b5c"])
+    class_key: Optional[str] = Field(None, examples=["tomato/late_blight"])
     prediction: PredictionDetail
     top_probabilities: list[TopProbability]
     agronomic_advisory: AgronomicAdvisory
