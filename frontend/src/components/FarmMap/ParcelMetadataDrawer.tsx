@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { waterDashboardPath } from '../../utils/irrigationRoutes.ts';
 import type { ParcelFormData } from '../../types/parcelMetadata.ts';
 import type { ParcelMetrics } from '../../types/farmMapDrawing.ts';
 import { calculateDap, resolveCropPalette } from '../../utils/parcelMetadataPolicy.ts';
@@ -42,6 +44,9 @@ export function ParcelMetadataDrawer({
     (initialData as any)?.properties?.id ??
     initialData?.name ??
     '';
+
+  const rawParcelId = (initialData as any)?.id ?? (initialData as any)?.properties?.id;
+  const parcelId = rawParcelId === undefined || rawParcelId === null || rawParcelId === '' ? null : String(rawParcelId);
 
   const [formData, setFormData] = useState<ParcelFormData>(() =>
     getInitialDrawerFormData(mode, initialData),
@@ -460,6 +465,19 @@ export function ParcelMetadataDrawer({
           >
             {mode === 'create' ? 'Discard Boundary' : 'Cancel'}
           </button>
+
+          {mode === 'edit' && parcelId && (
+            <Link
+              to={waterDashboardPath(parcelId, {
+                parcelName: formData.name,
+                cropName: formData.cropName,
+                soilProfileId: formData.soilProfileId,
+              })}
+              className="w-full py-2.5 px-4 rounded-xl font-medium text-sm text-center text-[#0F766E] border border-[#0F766E] hover:bg-[#F0FDFA] active:scale-[0.99] transition-all"
+            >
+              Open water dashboard
+            </Link>
+          )}
 
           {mode === 'edit' && onDelete && (
             <button

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { useMap } from 'react-leaflet';
-import { getFitOptions, shouldFitParcels } from './farmMapPolicy';
+import { getFitOptions, shouldFitParcels, stopMapIfAttached } from './farmMapPolicy';
 import type { LastFit, MapBounds } from './farmMapPolicy';
 
 export function FarmMapViewport({ bounds, fitRequest }: { bounds: MapBounds | null; fitRequest: number }): null {
@@ -50,7 +50,7 @@ export function FarmMapViewport({ bounds, fitRequest }: { bounds: MapBounds | nu
       window.removeEventListener('resize', queue);
       document.removeEventListener('visibilitychange', queue);
       if (frame) cancelAnimationFrame(frame);
-      map.stop();
+      stopMapIfAttached(map);
     };
   }, [map]);
 

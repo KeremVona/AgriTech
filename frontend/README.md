@@ -115,6 +115,40 @@ Delivered in **TODO-207**, **TODO-208**, and **TODO-209**, the Field GIS Map pro
 
 ---
 
+## Parcel Water Dashboard (`/parcels/:parcelId/irrigation`)
+
+Delivered in **TODO-307**, **TODO-308** and **TODO-309** (Phase 3, Track C). One page per parcel answers three operator questions: how wet is the parcel and where is it heading, is it about to need water, and is the valve running. Design spec: [`docs/superpowers/specs/2026-11-20-phase3-irrigation-frontend-design.md`](../docs/superpowers/specs/2026-11-20-phase3-irrigation-frontend-design.md).
+
+### Entry point
+Open a saved parcel on the Field Map; the edit drawer shows **Open water dashboard**. The link carries display hints (`?name=…&crop=…&soil=…`) that are used before data loads and by sample mode; live data always wins. The route is lazy-loaded, so Recharts stays out of the landing and map chunks.
+
+### Components (`src/components/Irrigation/`)
+- `<DeficitGauge currentMoisture fieldCapacity wiltingPoint mad … />` — 240° SVG gauge of root-zone depletion as % of Readily Available Water. Zones: green `< 50 %`, yellow `50–100 %` (labelled *Irrigation soon* from 75 %), red `≥ 100 %`. Shows hours until the automatic trigger (API value, else a 24 h least-squares drying trend), a stale badge after 2 h, and a "Soil profile not set" state.
+- `<ParcelTelemetryChart parcelId />` — Recharts dual-axis chart: soil VWC line (dashed forecast), ETc line, stacked effective-rain and irrigation bars, Drainage / Readily available / Stress bands with FC and MAD lines. 24 h (hourly), 7 d and 30 d (UTC days + 7-day forecast) windows; tooltips list exact values and flags such as `Valve opened: 45 min (Automatic)`.
+- `<IrrigationControlCard parcelId />` — live valve badge (`Closed`, `Opening`, `Pumping: X L/min`, `Stopping`), countdown to cutoff, next automatic run, **Water now** dialog (15 / 30 / 45 / 60 min, estimated volume) and **Emergency stop** with confirmation. Optimistic updates with rollback; double clicks send one request; polls that were sent before a write settled are discarded.
+
+All maths and state transitions live in tested pure modules: `models/waterBalanceModel.ts`, `models/telemetryChartModel.ts`, `models/valveControlModel.ts`, `services/irrigationSampleData.ts`, `services/irrigationService.ts`.
+
+### Data modes (`VITE_IRRIGATION_DATA_MODE`)
+- **`auto` (Default)**: live API. Read-only views fall back to deterministic sample data on HTTP 404 / 5xx, network failure or a 5000 ms timeout, with a header notice and per-widget `Sample` tags. **Valve controls are disabled whenever the valve status is sample data** (*"Controls unavailable — live data unavailable"*); manual start/stop requests never fall back.
+- **`api`**: strict live mode; each widget shows its own error with Retry.
+- **`sample`**: offline demo; manual watering drives an in-memory valve simulator tagged `Simulated`.
+
+Polling: water budget, valve status and the gauge's 24 h feed every `VITE_IRRIGATION_POLL_MS` (default 15000, min 5000); the chart every 60 s. Polling pauses while the tab is hidden and refreshes on return.
+
+### Proposed backend contract (not yet implemented — TODO-301–306)
+| Method | Path | Purpose |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/parcels/{id}/water-budget` | Soil constants, current moisture, hours until trigger, flow rate |
+| `GET` | `/api/v1/parcels/{id}/telemetry?window=24h\|7d\|30d` | Chart points, soil constants, irrigation events |
+| `GET` | `/api/v1/parcels/{id}/irrigation/status` | Valve state, active / next / last event, server time |
+| `POST` | `/api/v1/parcels/{id}/irrigate-manual` | Body `{ "durationMinutes": 15\|30\|45\|60 }` → `202` event, `409` if a run is active |
+| `POST` | `/api/v1/parcels/{id}/irrigation/{eventId}/abort` | Emergency stop → `200` event |
+
+Full JSON shapes and error rules are in spec §6. Moisture values are percent; soil constants given as fractions (as stored in `soil_profiles`) are converted automatically.
+
+---
+
 ## Environment Configuration
 
 Configuration is managed via frontend-local environment files (e.g. `frontend/.env.local`). Copy the provided template to get started:
@@ -132,6 +166,8 @@ cp frontend/.env.example frontend/.env.local
 | `VITE_GIS_API_BASE_URL` | `http://localhost:5051` | GIS API base URL. Defaults to `VITE_API_BASE_URL` or the ASP.NET Core Kestrel port (`5051`). |
 | `VITE_GIS_PARCELS_PATH` | `/api/v1/spatial/geojson/parcels` | Path to the parcel GeoJSON endpoint. Update this single path when TODO-205 field-scoped CRUD endpoints become available. |
 | `VITE_GIS_DATA_MODE` | `auto` | Data loading policy: `auto`, `api`, or `sample`. |
+| `VITE_IRRIGATION_DATA_MODE` | `auto` | Parcel Water Dashboard data policy: `auto`, `api`, or `sample` (see above). |
+| `VITE_IRRIGATION_POLL_MS` | `15000` | Dashboard poll interval in ms (minimum 5000). |
 
 ### Data Modes (`VITE_GIS_DATA_MODE`)
 - **`auto` (Default)**: Attempts to fetch live parcels from the backend. On availability failures (HTTP 5xx, HTTP 404, network error, or 5000ms timeout), gracefully falls back to bundled demonstration parcels with an explicit status banner (*"Sample data — live data unavailable"*) and a retry button. Hard errors (HTTP 401/403, 429, invalid contract) display an error banner without substituting sample data.
@@ -180,6 +216,9 @@ The frontend employs unit test suites, static analysis, and type checking:
 ```powershell
 # Run GIS Field Map test suite (217 tests: geometry, bounds, service policies, routing, drawing topology, HUD policies, metadata policies, styling tokens, drawer state, and spatial CRUD)
 npm run test:map
+
+# Run Parcel Water Dashboard suites (water balance, chart model, valve control, sample data, service/config/routes)
+npm run test:irrigation
 
 # Run static linter (oxlint)
 npm run lint
