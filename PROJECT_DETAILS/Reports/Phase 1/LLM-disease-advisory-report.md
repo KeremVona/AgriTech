@@ -79,7 +79,7 @@ Table `disease_advisories`:
 - **`DELETE /api/v1/advisories/{**classKey}`** — Removes a cached entry so it can be regenerated on next scan (`204` / `404` / `400`).
 
 ### 2.4 Backend Tests & Verification Script
-- **Unit test project (new):** `backend/AgriTech.Api.Tests/` (added to `backend/AgriTech.slnx`, excluded from `AgriTech.Api.csproj` default globbing via `DefaultItemExcludes`):
+- **Unit test project (new):** originally `backend/AgriTech.Api.Tests/`; now `tests/AgriTech.Api.AdvisoryTests/` next to the TODO-301 tests (listed in `backend/AgriTech.slnx`; the `DefaultItemExcludes` entry in `AgriTech.Api.csproj` was removed with the move):
   - `GeminiAdvisoryClientTests.cs`: Valid JSON parsing, missing API key, HTTP 429/malformed/missing-field errors, healthy empty treatments + markdown fence stripping, caller cancellation propagation.
   - `AdvisoriesControllerTests.cs`: Cache hit (0 LLM calls), cache miss -> DB persist -> second call hits cache, `class_key` casing/whitespace normalization, 503 on LLM failure, invalid `class_key` 400, `force_refresh` update, and `GET`/`DELETE` behavior.
 - **Live smoke script:** `backend/scripts/verify_advisories_cache.ps1` (calls `/api/v1/advisories/resolve` twice and asserts the second call returns `source = "database_cache"`).

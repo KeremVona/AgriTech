@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AgriTech.Api.csproj" />
+    <ProjectReference Include="..\..\backend\AgriTech.Api.csproj" />
   </ItemGroup>
 
 </Project>
