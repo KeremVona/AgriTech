@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "1.0",
+  "reference": "FAO Irrigation and Drainage Paper No. 56 (Allen et al., 1998) — Tables 11, 12, and 22",
+  "crops": [
+    {
+      "cropId": "c0000000-0000-0000-0000-000000000001",
+      "cropType": "Tomato",
+      "scientificName": "Solanum lycopersicum",
+      "isPerennial": false,
+      "defaultRootDepthMaxM": 0.60,
+      "defaultMadFraction": 0.40,
+      "stages": {
+        "initial": {
+          "durationDays": 30,
+          "kc": 0.60,
+          "rootDepthRatio": 0.25,
+          "description": "Seed germination and transplant establishment to 10% canopy cover"
+        },
+        "development": {
+          "durationDays": 40,
+          "kcStart": 0.60,
+          "kcEnd": 1.15,
+          "rootDepthRatioStart": 0.25,
+          "rootDepthRatioEnd": 1.00,
+          "description": "Vegetative expansion from 10% to 70-80% effective ground cover"
+        },
+        "midSeason": {
+          "durationDays": 45,
+          "kc": 1.15,
+          "rootDepthRatio": 1.00,
+          "description": "Flowering, fruit set, and peak yield formation plateau"
+        },
+        "lateSeason": {
+          "durationDays": 30,
+          "kcStart": 1.15,
+          "kcEnd": 0.80,
+          "rootDepthRatioStart": 1.00,
+          "rootDepthRatioEnd": 1.00,
+          "description": "Fruit ripening, canopy senescence, and harvest maturity"
+        }
+      }
+    },
+    {
+      "cropId": "c0000000-0000-0000-0000-000000000002",
+      "cropType": "Corn",
+      "scientificName": "Zea mays",
+      "isPerennial": false,
+      "defaultRootDepthMaxM": 1.00,
+      "defaultMadFraction": 0.55,
+      "stages": {
+        "initial": {
+          "durationDays": 20,
+          "kc": 0.30,
+          "rootDepthRatio": 0.20,
+          "description": "Emergence and early leaf development to 10% ground cover"
+        },
+        "development": {
+          "durationDays": 35,
+          "kcStart": 0.30,
+          "kcEnd": 1.20,
+          "rootDepthRatioStart": 0.20,
+          "rootDepthRatioEnd": 1.00,
+          "description": "Rapid stem elongation and canopy closure toward tasseling"
+        },
+        "midSeason": {
+          "durationDays": 40,
+          "kc": 1.20,
+          "rootDepthRatio": 1.00,
+          "description": "Tasseling, silking, pollination, and grain filling plateau"
+        },
+        "lateSeason": {
+          "durationDays": 30,
+          "kcStart": 1.20,
+          "kcEnd": 0.35,
+          "rootDepthRatioStart": 1.00,
+          "rootDepthRatioEnd": 1.00,
+          "description": "Grain maturation, dry-down, and physiological senescence"
+        }
+      }
+    },
+    {
+      "cropId": "c0000000-0000-0000-0000-000000000003",
+      "cropType": "Potato",
+      "scientificName": "Solanum tuberosum",
+      "isPerennial": false,
+      "defaultRootDepthMaxM": 0.60,
+      "defaultMadFraction": 0.35,
+      "stages": {
+        "initial": {
+          "durationDays": 25,
+          "kc": 0.50,
+          "rootDepthRatio": 0.30,
+          "description": "Sprout emergence and initial stolon formation to 10% canopy cover"
+        },
+        "development": {
+          "durationDays": 30,
+          "kcStart": 0.50,
+          "kcEnd": 1.15,
+          "rootDepthRatioStart": 0.30,
+          "rootDepthRatioEnd": 1.00,
+          "description": "Foliar expansion and tuber initiation to full row closure"
+        },
+        "midSeason": {
+          "durationDays": 45,
+          "kc": 1.15,
+          "rootDepthRatio": 1.00,
+          "description": "Peak tuber bulking and maximum canopy transpiration plateau"
+        },
+        "lateSeason": {
+          "durationDays": 30,
+          "kcStart": 1.15,
+          "kcEnd": 0.75,
+          "rootDepthRatioStart": 1.00,
+          "rootDepthRatioEnd": 1.00,
+          "description": "Vine senescence, tuber skin set, and harvest maturation"
+        }
+      }
+    },
+    {
+      "cropId": "c0000000-0000-0000-0000-000000000004",
+      "cropType": "Apple",
+      "scientificName": "Malus domestica",
+      "isPerennial": true,
+      "defaultRootDepthMaxM": 1.50,
+      "defaultMadFraction": 0.50,
+      "stages": {
+        "initial": {
+          "durationDays": 20,
+          "kc": 0.45,
+          "rootDepthRatio": 0.85,
+          "description": "Perennial spring budbreak, leaf-out, and early blossom"
+        },
+        "development": {
+          "durationDays": 70,
+          "kcStart": 0.45,
+          "kcEnd": 0.95,
+          "rootDepthRatioStart": 0.85,
+          "rootDepthRatioEnd": 1.00,
+          "description": "Shoot elongation, fruit set, and full orchard canopy expansion"
+        },
+        "midSeason": {
+          "durationDays": 120,
+          "kc": 0.95,
+          "rootDepthRatio": 1.00,
+          "description": "Full canopy fruit sizing and peak summer transpiration plateau"
+        },
+        "lateSeason": {
+          "durationDays": 60,
+          "kcStart": 0.95,
+          "kcEnd": 0.70,
+          "rootDepthRatioStart": 1.00,
+          "rootDepthRatioEnd": 1.00,
+          "description": "Fruit harvest, autumn leaf senescence, and pre-dormancy transition"
+        }
+      }
+    }
+  ]
+}
