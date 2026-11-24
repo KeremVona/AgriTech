@@ -24,4 +24,5 @@ public class Parcel
 
     public ICollection<SensorNode> SensorNodes { get; set; } = new List<SensorNode>();
     public ICollection<CropScan> CropScans { get; set; } = new List<CropScan>();
+    public ICollection<WeatherCache> WeatherCaches { get; set; } = new List<WeatherCache>();
 }

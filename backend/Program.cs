@@ -1,3 +1,4 @@
+using AgriTech.Api.Configuration;
 using AgriTech.Api.Data;
 using AgriTech.Api.Extensions;
 using AgriTech.Api.Services;
@@ -25,9 +26,22 @@ builder.Services.AddCors(options =>
 
 // DbContext (PostgreSQL + NetTopologySuite spatial provider)
 builder.Services.AddDbContext<AgriTechDbContext>(options => 
+{
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        npgsqlOptions => npgsqlOptions.UseNetTopologySuite()));
+        npgsqlOptions => npgsqlOptions.UseNetTopologySuite());
+    options.ConfigureWarnings(w => 
+        w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+});
+
+// BACK-301: Open-Meteo Weather Client with Polly Resilience Policy (Rate limiting 429, retry with backoff & jitter)
+builder.Services.AddOpenMeteoClientWithResilience(builder.Configuration);
+
+// BACK-301: Weather Ingestion Service & Scheduled Background Job
+builder.Services.AddScoped<IWeatherIngestionService, WeatherIngestionService>();
+builder.Services.Configure<WeatherIngestionOptions>(
+    builder.Configuration.GetSection(WeatherIngestionOptions.SectionName));
+builder.Services.AddHostedService<WeatherIngestionBackgroundService>();
 
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
 builder.Services.AddHttpClient<IGeminiAdvisoryClient, GeminiAdvisoryClient>(client =>
