@@ -2,6 +2,7 @@ import { calculateParcelMetrics } from './parcelTopology.ts';
 import type { GisDataMode, ParcelFeatureCollection } from '../types/farmMap.ts';
 import type { ParcelMetrics } from '../types/farmMapDrawing.ts';
 import type { ParcelFormData } from '../types/parcelMetadata.ts';
+import { getInitialDrawerFormData } from './parcelDrawerState.ts';
 
 export type FarmMapConfig = { apiBaseUrl: string; parcelsPath: string; mode: GisDataMode };
 type Environment = Partial<Record<'VITE_GIS_API_BASE_URL' | 'VITE_API_BASE_URL' | 'VITE_GIS_PARCELS_PATH' | 'VITE_GIS_DATA_MODE', string>>;
@@ -254,5 +255,36 @@ export function formatParcelFeedback(
     message: localOnly
       ? 'Parcel boundary removed from sample data (not sent to the server).'
       : 'Parcel boundary removed.',
+  };
+}
+
+/**
+ * Asks before a saved parcel is deleted. On the server a parcel delete cascades to its
+ * sensor nodes, telemetry and irrigation events, so one stray click must not lose data.
+ */
+export function confirmParcelDelete(
+  parcelName: string | null | undefined,
+  confirmFn: (message: string) => boolean,
+): boolean {
+  const subject = parcelName?.trim() ? `"${parcelName.trim()}"` : 'this parcel';
+  return confirmFn(
+    `Delete ${subject}? This also removes its sensor, telemetry and irrigation history and cannot be undone.`,
+  );
+}
+
+/**
+ * Builds the update request that persists a reshaped saved parcel. Metadata comes from
+ * the stored feature properties, so a shape edit never changes name, crop, soil or date.
+ */
+export function buildShapeSaveRequest(
+  feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>,
+  geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon,
+): { parcelId: string; data: ParcelFormData; geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon; areaHa: number } {
+  const parcelId = String(feature.properties?.id ?? feature.id);
+  return {
+    parcelId,
+    data: getInitialDrawerFormData('edit', { ...feature.properties, id: parcelId }),
+    geometry,
+    areaHa: geometryAreaHa(geometry),
   };
 }

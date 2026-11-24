@@ -12,6 +12,8 @@ import type { GisDataMode, ParcelFeatureCollection, ParcelMapData } from '../typ
 import type { ParcelMetrics } from '../types/farmMapDrawing.ts';
 import type { ParcelFormData } from '../types/parcelMetadata.ts';
 import {
+  buildShapeSaveRequest,
+  confirmParcelDelete,
   createDrawnParcelFeature,
   filterParcelsByField,
   formatParcelFeedback,
@@ -299,6 +301,11 @@ function FieldMapView({
       return;
     }
 
+    if (!confirmParcelDelete(matchingParcel.properties?.name, (message) => window.confirm(message))) {
+      // Geoman already removed the layer from the map; re-render to bring it back.
+      setRenderVersion((v) => v + 1);
+      return;
+    }
     await deleteParcel(targetStr);
   };
 
@@ -332,6 +339,13 @@ function FieldMapView({
       return;
     }
 
+    // Shape of the saved parcel before this edit, used to restore it if saving fails.
+    const storedFeature = activeCollection.features.find((f) => String(f.properties?.id ?? f.id) === id);
+    applyShape(id, geometry);
+    if (storedFeature) void persistShape(storedFeature, geometry);
+  };
+
+  const applyShape = (id: string, geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon) => {
     setGeometryOverrides((prev) => ({
       ...prev,
       [id]: geometry,
@@ -348,6 +362,34 @@ function FieldMapView({
           : p;
       })
     );
+  };
+
+  /** Saves a reshaped or dragged saved parcel as soon as the edit ends (it used to stay local until the drawer was saved). */
+  const persistShape = async (
+    storedFeature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>,
+    geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon,
+  ) => {
+    const effectiveConfig = config ?? configuration.config ?? {
+      apiBaseUrl: 'http://localhost:5051',
+      parcelsPath: '/api/v1/spatial/geojson/parcels',
+      mode: 'auto',
+    };
+    const writeMode: GisDataMode = data?.source === 'sample' ? 'sample' : effectiveConfig.mode;
+    const request = buildShapeSaveRequest(storedFeature, geometry);
+    try {
+      await updateParcelMetadata({ apiBaseUrl: effectiveConfig.apiBaseUrl, mode: writeMode, ...request });
+      setFeedbackNotice({
+        type: 'success',
+        message: writeMode === 'sample' ? 'Parcel shape updated locally (sample data).' : 'Parcel shape updated.',
+      });
+    } catch (err: any) {
+      applyShape(request.parcelId, storedFeature.geometry);
+      setRenderVersion((v) => v + 1);
+      setFeedbackNotice({
+        type: 'info',
+        message: `Failed to save parcel shape: ${err?.message ?? 'Unknown error'} The previous shape was restored.`,
+      });
+    }
   };
 
   const handleDrawerDiscard = () => {
@@ -445,6 +487,7 @@ function FieldMapView({
   const handleDrawerDelete = async () => {
     if (!selectedParcel || isSaving) return;
     const targetId = String(selectedParcel.properties?.id ?? selectedParcel.id);
+    if (!confirmParcelDelete(selectedParcel.properties?.name, (message) => window.confirm(message))) return;
     await deleteParcel(targetId);
   };
 

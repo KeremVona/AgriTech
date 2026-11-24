@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { DiagnosticPrediction, SeverityTier } from '../../types/diagnostics';
+import { formatConfidence, LOW_CONFIDENCE_THRESHOLD } from '../../services/diagnosticsService';
 
 export interface DiagnosticVerdictCardProps {
   verdict: DiagnosticPrediction;
@@ -25,14 +26,14 @@ export const DiagnosticVerdictCard: React.FC<DiagnosticVerdictCardProps> = ({
     };
   }, []);
 
-  const confidencePct = (verdict.confidenceScore * 100).toFixed(1);
+  const confidencePct = formatConfidence(verdict.confidenceScore);
   const isRescan = Boolean(verdict.requiresRescan);
   const treatments = verdict.agronomicAdvisory?.fungicideTreatments ?? [];
 
   const handleCopySummary = async () => {
     const sciSuffix = verdict.scientificName ? ` (${verdict.scientificName})` : '';
     const summary = `Ag-Intelligence Diagnosis: ${verdict.crop} — ${verdict.condition}${sciSuffix}
-Confidence: ${confidencePct}% | Severity: ${verdict.severityTier} (${verdict.severityIndex})
+Confidence: ${confidencePct} | Severity: ${verdict.severityTier} (${verdict.severityIndex})
 Immediate Action: ${verdict.agronomicAdvisory?.immediateAction || 'Inspect field foliage.'}
 Recommended Treatments: ${treatments.join(', ') || 'None required'}
 Environmental Risk: ${verdict.agronomicAdvisory?.environmentalRiskFactors || 'Standard conditions.'}`;
@@ -127,7 +128,7 @@ Environmental Risk: ${verdict.agronomicAdvisory?.environmentalRiskFactors || 'St
         <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-1 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl sm:text-3xl font-mono font-bold text-ag-ink ag-tabular-numeric">
-              {confidencePct}%
+              {confidencePct}
             </span>
           </div>
           <span className="text-xs font-mono text-ag-ink-secondary ag-tabular-numeric">
@@ -215,7 +216,7 @@ Environmental Risk: ${verdict.agronomicAdvisory?.environmentalRiskFactors || 'St
           </div>
           <p className="text-amber-800 leading-relaxed text-sm">
             {verdict.agronomicAdvisory?.immediateAction ||
-              `Classification confidence is below ${Math.round(verdict.confidenceScore * 100)}%. Please re-sample leaf.`}
+              `Classification confidence is below ${Math.round(LOW_CONFIDENCE_THRESHOLD * 100)}%. Please re-sample leaf.`}
           </p>
           {verdict.rescanInstructions && verdict.rescanInstructions.length > 0 && (
             <ul className="list-disc pl-5 space-y-1 text-amber-900 font-medium pt-1">

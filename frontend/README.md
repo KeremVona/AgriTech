@@ -105,13 +105,12 @@ Delivered in **TODO-207**, **TODO-208**, and **TODO-209**, the Field GIS Map pro
   - **Synchronized Interaction**: Clicking a centroid badge selects the parcel and opens the `<ParcelMetadataDrawer />` in edit mode.
 - **Spatial CRUD API & Offline Resilience (`farmMapService.ts`)**:
   - **Endpoints & Operations**:
-    - `saveParcel` — Creates new parcel boundary with metadata (`POST /api/v1/spatial/parcels`).
-    - `updateParcelMetadata` — Updates attributes of an existing parcel (`PUT /api/v1/spatial/parcels/:id`).
-    - `deleteParcelBoundary` — Deletes parcel boundary and metadata (`DELETE /api/v1/spatial/parcels/:id`).
+    - `saveParcel` — Creates new parcel boundary with metadata (`POST /api/v1/parcels`).
+    - `updateParcelMetadata` — Updates attributes and boundary of an existing parcel (`PUT /api/v1/parcels/:id`). Also called automatically when a saved parcel is reshaped or dragged; on failure the previous shape is restored.
+    - `deleteParcelBoundary` — Deletes parcel boundary and metadata (`DELETE /api/v1/parcels/:id`), always after an explicit confirmation.
   - **Resilient Policy Matrix**:
-    - `auto` (Default): Attempts live backend API calls. On HTTP 5xx, HTTP 404, or network timeout, automatically generates an optimistic RFC 7946 GeoJSON Feature, stores it locally, and alerts the user with an informational toast. Rejects 4xx client errors without fallback.
-    - `api`: Strict production mode with zero fallback; bubbles errors to user toast.
-    - `sample`: Immediate zero-latency local state mutation without network requests.
+    - Writes **never fall back**: in `auto` and `api` mode every create, update and delete goes to the live API, and any failure (network, timeout, HTTP error) is shown as an error notice with nothing saved.
+    - Writes stay local only when the map is showing sample data — `sample` mode, or `auto` mode after loading fell back to the bundled parcels — and the notice says so (*"not sent to the server"*).
 
 ---
 
@@ -214,6 +213,9 @@ Build output will be placed in `dist/`.
 The frontend employs unit test suites, static analysis, and type checking:
 
 ```powershell
+# Run every frontend test suite (all test:* scripts, including the referenced-asset check)
+npm test
+
 # Run GIS Field Map test suite (217 tests: geometry, bounds, service policies, routing, drawing topology, HUD policies, metadata policies, styling tokens, drawer state, and spatial CRUD)
 npm run test:map
 

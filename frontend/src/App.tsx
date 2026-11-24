@@ -1,10 +1,14 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
-import { DiseaseProgressionPage } from './pages/DiseaseProgressionPage';
-import { LeafDiagnosticsPage } from './pages/LeafDiagnosticsPage';
 
 const FieldMapPage = lazy(() => import('./pages/FieldMapPage').then((module) => ({ default: module.FieldMapPage })));
+const DiseaseProgressionPage = lazy(() => import('./pages/DiseaseProgressionPage').then((module) => ({ default: module.DiseaseProgressionPage })));
+const progressionRoute = <Suspense fallback={<div className="p-6 text-ag-ink" role="status">Loading disease progression studio…</div>}><DiseaseProgressionPage /></Suspense>;
+
+const LeafDiagnosticsPage = lazy(() => import('./pages/LeafDiagnosticsPage').then((module) => ({ default: module.LeafDiagnosticsPage })));
+const diagnosticsRoute = <Suspense fallback={<div className="p-6 text-ag-ink" role="status">Loading leaf diagnostics…</div>}><LeafDiagnosticsPage /></Suspense>;
+
 const fieldMapRoute = <Suspense fallback={<div className="p-6 text-ag-ink" role="status">Loading field map…</div>}><FieldMapPage /></Suspense>;
 
 const ParcelIrrigationPage = lazy(() => import('./pages/ParcelIrrigationPage').then((module) => ({ default: module.ParcelIrrigationPage })));
@@ -18,14 +22,14 @@ function App() {
         <Route path="/" element={<LandingPage />} />
 
         {/* Dedicated Disease Progression Studio (SPEC-UI-007) */}
-        <Route path="/disease-progression" element={<DiseaseProgressionPage />} />
+        <Route path="/disease-progression" element={progressionRoute} />
 
         {/* Deprecated Experimental Sandbox Route: Redirect to Canonical Production Studio */}
         <Route path="/disease-progression-experimental" element={<Navigate to="/disease-progression" replace />} />
 
         {/* Dedicated AI Leaf Diagnostics Workbench Routes (SPEC-UI-006) */}
-        <Route path="/diagnostics" element={<LeafDiagnosticsPage />} />
-        <Route path="/leaf-scanner" element={<LeafDiagnosticsPage />} />
+        <Route path="/diagnostics" element={diagnosticsRoute} />
+        <Route path="/leaf-scanner" element={diagnosticsRoute} />
 
         <Route path="/map" element={fieldMapRoute} />
         <Route path="/fields/:fieldId/parcels" element={fieldMapRoute} />
