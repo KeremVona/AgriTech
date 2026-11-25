@@ -15,4 +15,6 @@ public class SensorNode
     public decimal? BatteryLevelPct { get; set; }
     public DateTime InstalledAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastTelemetryAt { get; set; }
+
+    public ICollection<SensorTelemetry> TelemetryReadings { get; set; } = new List<SensorTelemetry>();
 }
