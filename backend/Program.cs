@@ -49,6 +49,9 @@ builder.Services.Configure<CropPhenologyOptions>(
 builder.Services.AddSingleton<ICropPhenologyService, CropPhenologyService>();
 builder.Services.AddScoped<IParcelPhenologyQueryService, ParcelPhenologyQueryService>();
 
+// BACK-303: Root-Zone Water Deficit & Actuation Trigger Engine
+builder.Services.AddScoped<IIrrigationSchedulingEngine, IrrigationSchedulingEngine>();
+
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
 builder.Services.AddHttpClient<IGeminiAdvisoryClient, GeminiAdvisoryClient>(client =>
 {

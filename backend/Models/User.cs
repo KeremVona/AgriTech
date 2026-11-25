@@ -13,4 +13,5 @@ public class User
 
     public ICollection<Field> Fields { get; set; } = new List<Field>();
     public ICollection<CropScan> UploadedCropScans { get; set; } = new List<CropScan>();
+    public ICollection<IrrigationEvent> TriggeredIrrigationEvents { get; set; } = new List<IrrigationEvent>();
 }
