@@ -21,6 +21,8 @@ public class AgriTechDbContext : DbContext
     public DbSet<CropScan> CropScans => Set<CropScan>();
     public DbSet<DiseaseAdvisory> DiseaseAdvisories => Set<DiseaseAdvisory>();
     public DbSet<WeatherCache> WeatherCaches => Set<WeatherCache>();
+    public DbSet<IrrigationEvent> IrrigationEvents => Set<IrrigationEvent>();
+    public DbSet<SensorTelemetry> SensorTelemetries => Set<SensorTelemetry>();
 
     // Keyless Query Results (BACK-203 Stored Procedures & Functions)
     public DbSet<ParcelCoordinateLookupResult> ParcelCoordinateLookups => Set<ParcelCoordinateLookupResult>();
@@ -291,7 +293,70 @@ public class AgriTechDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // 11. Keyless Entity Types for Spatial Functions & Stored Procedures (BACK-203)
+        // 11. IrrigationEvent Configuration (Module 6 / BACK-303: Actuation Events)
+        modelBuilder.Entity<IrrigationEvent>(entity =>
+        {
+            entity.ToTable("irrigation_events");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
+            entity.Property(e => e.ParcelId).HasColumnName("parcel_id").IsRequired();
+            entity.Property(e => e.TriggerType).HasColumnName("trigger_type").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.DeficitDepthMm).HasColumnName("deficit_depth_mm").HasPrecision(5, 2).IsRequired();
+            entity.Property(e => e.ScheduledStart).HasColumnName("scheduled_start").IsRequired();
+            entity.Property(e => e.ActualStart).HasColumnName("actual_start");
+            entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+            entity.Property(e => e.DurationMinutes).HasColumnName("duration_minutes").IsRequired();
+            entity.Property(e => e.WaterVolumeLiters).HasColumnName("water_volume_liters").HasPrecision(10, 2).IsRequired();
+            entity.Property(e => e.FlowRateLpm).HasColumnName("flow_rate_lpm").HasPrecision(8, 2).IsRequired();
+            entity.Property(e => e.Reason).HasColumnName("reason").HasMaxLength(150);
+            entity.Property(e => e.TriggeredByUserId).HasColumnName("triggered_by_user_id");
+            entity.Property(e => e.MadeAt).HasColumnName("made_at").HasDefaultValueSql("now()");
+
+            entity.HasIndex(e => e.ParcelId)
+                  .HasDatabaseName("idx_irrigation_events_parcel_id");
+
+            entity.HasOne(e => e.Parcel)
+                  .WithMany(p => p.IrrigationEvents)
+                  .HasForeignKey(e => e.ParcelId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.TriggeredByUser)
+                  .WithMany(u => u.TriggeredIrrigationEvents)
+                  .HasForeignKey(e => e.TriggeredByUserId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // 12. SensorTelemetry Configuration (Module 5: IoT Time-Series Readings)
+        modelBuilder.Entity<SensorTelemetry>(entity =>
+        {
+            entity.ToTable("sensor_telemetry");
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(t => t.ParcelId).HasColumnName("parcel_id").IsRequired();
+            entity.Property(t => t.NodeId).HasColumnName("node_id").IsRequired();
+            entity.Property(t => t.Timestamp).HasColumnName("timestamp").IsRequired();
+            entity.Property(t => t.SoilMoisturePct).HasColumnName("soil_moisture_pct").HasPrecision(5, 2).IsRequired();
+            entity.Property(t => t.SoilTempC).HasColumnName("soil_temp_c").HasPrecision(4, 2).IsRequired();
+            entity.Property(t => t.AmbientHumidityPct).HasColumnName("ambient_humidity_pct").HasPrecision(4, 1);
+            entity.Property(t => t.BatteryVoltage).HasColumnName("battery_voltage").HasPrecision(3, 2).IsRequired();
+
+            entity.HasIndex(t => new { t.ParcelId, t.Timestamp })
+                  .IsDescending(false, true)
+                  .HasDatabaseName("idx_sensor_telemetry_parcel_time");
+
+            entity.HasOne(t => t.Parcel)
+                  .WithMany(p => p.SensorTelemetries)
+                  .HasForeignKey(t => t.ParcelId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(t => t.Node)
+                  .WithMany(n => n.TelemetryReadings)
+                  .HasForeignKey(t => t.NodeId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // 13. Keyless Entity Types for Spatial Functions & Stored Procedures (BACK-203)
         modelBuilder.Entity<ParcelCoordinateLookupResult>(entity =>
         {
             entity.HasNoKey();
