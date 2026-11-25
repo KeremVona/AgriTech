@@ -23,6 +23,8 @@ public class Parcel
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<SensorNode> SensorNodes { get; set; } = new List<SensorNode>();
+    public ICollection<SensorTelemetry> SensorTelemetries { get; set; } = new List<SensorTelemetry>();
     public ICollection<CropScan> CropScans { get; set; } = new List<CropScan>();
     public ICollection<WeatherCache> WeatherCaches { get; set; } = new List<WeatherCache>();
+    public ICollection<IrrigationEvent> IrrigationEvents { get; set; } = new List<IrrigationEvent>();
 }
