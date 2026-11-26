@@ -30,9 +30,9 @@ const ZONE_LABELS: Record<DeficitZone, string> = {
 };
 
 const TONE_STYLES = {
-  green: { stroke: '#059669', pill: 'border-ag-risk-healthy-border bg-ag-risk-healthy-bg text-emerald-900' },
-  yellow: { stroke: '#D97706', pill: 'border-ag-risk-low-border bg-ag-risk-low-bg text-amber-900' },
-  red: { stroke: '#DC2626', pill: 'border-ag-risk-critical-border bg-ag-risk-critical-bg text-red-900 font-semibold' },
+  green: { stroke: '#10B981', pill: 'bg-emerald-50 text-emerald-800' },
+  yellow: { stroke: '#F59E0B', pill: 'bg-amber-50 text-amber-800' },
+  red: { stroke: '#EF4444', pill: 'bg-red-50 text-red-800' },
 } as const;
 
 const CX = 120;
@@ -69,7 +69,7 @@ function formatHours(hours: number): string {
 function triggerText(estimate: TriggerEstimate): string {
   switch (estimate.kind) {
     case 'hours': return `Automatic irrigation in ~${formatHours(estimate.hours)} h`;
-    case 'reached': return 'Trigger threshold reached';
+    case 'reached': return 'Refill point reached';
     case 'not-drying': return 'Not drying — no trigger expected';
     case 'unknown': return 'Not enough data to estimate';
   }
@@ -77,9 +77,9 @@ function triggerText(estimate: TriggerEstimate): string {
 
 function MissingState({ title, body }: { title: string; body?: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-dashed border-ag-border-field bg-ag-surface-muted p-4 text-sm">
-      <p className="font-semibold text-ag-ink">{title}</p>
-      {body && <p className="mt-1 text-ag-ink-secondary">{body}</p>}
+    <div className="rounded-xl border border-dashed border-ui-line bg-ui-warm p-4 text-sm">
+      <p className="font-medium text-ui-ink">{title}</p>
+      {body && <p className="mt-1 text-ui-ink-2">{body}</p>}
     </div>
   );
 }
@@ -101,7 +101,7 @@ export function DeficitGauge({
     return (
       <MissingState
         title="Soil profile not set"
-        body={<>Assign one on the <Link to="/map" className="font-semibold text-ag-brand underline underline-offset-2">field map</Link> to see the water budget.</>}
+        body={<>Assign one on the <Link to="/map" className="font-medium text-ui-accent-hover underline underline-offset-2">field map</Link> to see the water budget.</>}
       />
     );
   }
@@ -126,11 +126,11 @@ export function DeficitGauge({
         aria-valuemin={0}
         aria-valuemax={150}
         aria-valuenow={gaugeAriaValueNow(deficit.ratio)}
-        aria-valuetext={`${percentOfRaw} % of readily available water used — ${label.toLowerCase()}`}
+        aria-valuetext={`${percentOfRaw} % of the way to the refill point — ${label.toLowerCase()}`}
         className="relative w-full max-w-[260px]"
       >
         <svg viewBox="0 0 240 200" className="w-full" aria-hidden="true">
-          <path d={arcPath(-120, 120)} stroke="#E2E8F0" strokeWidth="20" fill="none" />
+          <path d={arcPath(-120, 120)} stroke="#EDEBE8" strokeWidth="20" fill="none" />
           <path d={arcPath(-120, -40)} stroke={TONE_STYLES.green.stroke} strokeWidth="16" fill="none" />
           <path d={arcPath(-40, 40)} stroke={TONE_STYLES.yellow.stroke} strokeWidth="16" fill="none" />
           <path d={arcPath(40, 120)} stroke={TONE_STYLES.red.stroke} strokeWidth="16" fill="none" />
@@ -140,35 +140,43 @@ export function DeficitGauge({
             return <line key={tick} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#FFFFFF" strokeWidth="3" />;
           })}
           <g className="ag-gauge-needle" style={{ transform: `rotate(${angle}deg)`, transformOrigin: `${CX}px ${CY}px` }}>
-            <line x1={CX} y1={CY} x2={CX} y2={CY - RADIUS + 14} stroke="#0F172A" strokeWidth="4" strokeLinecap="round" />
+            <line x1={CX} y1={CY} x2={CX} y2={CY - RADIUS + 14} stroke="#191918" strokeWidth="3.5" strokeLinecap="round" />
             <circle cx={CX} cy={CY - RADIUS} r="9" fill={tone.stroke} stroke="#FFFFFF" strokeWidth="3" />
           </g>
-          <circle cx={CX} cy={CY} r="7" fill="#0F172A" />
+          <circle cx={CX} cy={CY} r="6" fill="#191918" />
         </svg>
         <div className="pointer-events-none absolute inset-x-0 bottom-1 text-center">
-          <p className="font-mono text-[22px] font-bold leading-tight tracking-tight tabular-nums text-ag-ink">{percentOfRaw} %</p>
-          <p className="text-xs text-ag-ink-secondary">of readily available water used</p>
+          <p className="text-[28px] font-medium leading-tight tracking-tight tabular-nums text-ui-ink">{percentOfRaw}%</p>
+          <p className="text-xs text-ui-ink-3">of the way to the refill point</p>
         </div>
       </div>
 
-      <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm ${tone.pill}`}>
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${tone.pill}`}>
         <ZoneIcon zone={deficit.zone} />
         {label}
       </span>
 
-      <p className="text-center font-mono text-sm tabular-nums text-ag-ink-secondary">
-        <span className="whitespace-nowrap">Moisture {currentMoisture.toFixed(1)} %</span>
-        {' · '}
-        <span className="whitespace-nowrap">FC {fieldCapacity.toFixed(1)} %</span>
-        {' · '}
-        <span className="whitespace-nowrap">MAD {deficit.madThresholdPct.toFixed(1)} %</span>
-      </p>
-      <p className="text-center text-sm font-semibold text-ag-ink">{triggerText(estimate)}</p>
+      <p className="text-center text-[15px] font-medium text-ui-ink">{triggerText(estimate)}</p>
+
+      <dl className="mt-1 grid w-full grid-cols-3 gap-2 border-t border-ui-line pt-4 text-center">
+        <div>
+          <dt className="text-xs text-ui-ink-3">Moisture</dt>
+          <dd className="mt-0.5 text-[17px] font-medium tabular-nums text-ui-ink">{currentMoisture.toFixed(1)}%</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-ui-ink-3">Full at</dt>
+          <dd className="mt-0.5 text-[17px] font-medium tabular-nums text-ui-ink">{fieldCapacity.toFixed(1)}%</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-ui-ink-3">Refill at</dt>
+          <dd className="mt-0.5 text-[17px] font-medium tabular-nums text-ui-ink">{deficit.madThresholdPct.toFixed(1)}%</dd>
+        </div>
+      </dl>
 
       {stale && (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-ag-risk-low-border bg-ag-risk-low-bg px-2.5 py-0.5 text-xs font-semibold text-amber-900">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
-          {staleHours === null ? 'Stale · no recent reading' : `Stale · last reading ${staleHours} h ago`}
+          {staleHours === null ? 'No recent reading' : `Last reading ${staleHours} h ago`}
         </span>
       )}
     </div>

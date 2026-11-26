@@ -14,6 +14,7 @@ import { ErrorNotice } from './ErrorNotice.tsx';
 import { ManualIrrigationDialog } from './ManualIrrigationDialog.tsx';
 import { SampleTag } from './SampleTag.tsx';
 import { ValveStatusBadge } from './ValveStatusBadge.tsx';
+import { BUTTON } from '../Diagnostics/styles.ts';
 
 export interface IrrigationControlCardProps {
   parcelId: string;
@@ -24,22 +25,22 @@ export interface IrrigationControlCardProps {
   headingId?: string;
 }
 
-const PRESS = 'transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2';
+const PRESS = 'cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-offset-2';
 const closesAtFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
 
 function triggerReason(event: IrrigationEvent): string {
   const reason = event.triggerType === 'MANUAL_OVERRIDE' ? 'Manual override'
     : event.triggerType === 'SCHEDULED_RECIPE' ? 'Scheduled recipe'
-      : 'Automatic — MAD exceeded';
+      : 'Automatic — soil reached the refill point';
   const status = event.status === 'ABORTED' ? ' · stopped early' : event.status === 'COMPLETED' ? ' · completed' : '';
   return `${reason}${status}`;
 }
 
 function Readout({ label, value, hiddenValue }: { label: string; value: string; hiddenValue?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-ag-border py-2 text-sm last:border-b-0">
-      <dt className="text-ag-ink-secondary">{label}</dt>
-      <dd className="text-right font-mono font-medium tabular-nums text-ag-ink">
+    <div className="flex items-baseline justify-between gap-3 border-b border-ui-line py-2.5 text-sm last:border-b-0">
+      <dt className="text-ui-ink-3">{label}</dt>
+      <dd className="text-right font-medium tabular-nums text-ui-ink">
         <span aria-hidden={hiddenValue ? true : undefined}>{value}</span>
         {hiddenValue && <span className="sr-only">{hiddenValue}</span>}
       </dd>
@@ -78,15 +79,15 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 id={headingId} className="text-lg font-semibold tracking-tight">Valve control</h2>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h2 id={headingId} className="text-[17px] font-medium text-ui-ink">Valve</h2>
         {config.mode === 'sample' ? <SampleTag label="Simulated" /> : valve.source === 'sample' ? <SampleTag /> : null}
       </div>
 
       {server === null && valve.statusError ? (
         <ErrorNotice message={`Valve status unavailable: ${valve.statusError}`} onRetry={valve.refresh} />
       ) : server === null ? (
-        <div className="h-[180px] animate-pulse rounded-lg bg-ag-surface-muted motion-reduce:animate-none" role="status" aria-label="Loading valve status" />
+        <div className="h-[180px] animate-pulse rounded-xl bg-ui-warm motion-reduce:animate-none" role="status" aria-label="Loading valve status" />
       ) : (
         <>
           <ValveStatusBadge
@@ -111,7 +112,7 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
             {reasonEvent && <Readout label={active ? 'Trigger' : 'Last run'} value={triggerReason(reasonEvent)} />}
           </dl>
           {valve.statusError && (
-            <p role="alert" className="mt-3 rounded-lg border border-ag-risk-critical-border bg-ag-risk-critical-bg px-3 py-2 text-sm text-red-900">
+            <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
               Could not refresh valve status: {valve.statusError} The state above may be out of date.
             </p>
           )}
@@ -119,15 +120,17 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
       )}
 
       {!valve.controlsEnabled && server !== null && (
-        <p className="mt-3 rounded-lg border border-ag-risk-low-border bg-ag-risk-low-bg px-3 py-2 text-sm text-amber-900" role="note">
+        <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800" role="note">
           {display.startBlockedReason}
         </p>
       )}
 
       {state.error && (
-        <div role="alert" className="mt-3 flex items-start justify-between gap-3 rounded-lg border border-ag-risk-critical-border bg-ag-risk-critical-bg px-3 py-2 text-sm text-red-900">
+        <div role="alert" className="mt-3 flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           <p>{errorPrefix}{state.error}</p>
-          <button type="button" onClick={valve.dismissError} aria-label="Dismiss error" className={`min-h-8 min-w-8 rounded font-semibold focus-visible:outline-red-700 ${PRESS}`}>✕</button>
+          <button type="button" onClick={valve.dismissError} aria-label="Dismiss error" className={`grid min-h-11 min-w-11 place-items-center rounded-md hover:bg-red-100 focus-visible:outline-red-700 ${PRESS}`}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
         </div>
       )}
 
@@ -137,26 +140,26 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
           disabled={!display.canStart}
           onClick={() => setDialogOpen(true)}
           aria-describedby={display.canStart || !display.startBlockedReason ? undefined : 'water-now-blocked'}
-          className={`min-h-12 rounded-lg bg-ag-brand px-4 text-sm font-semibold text-white hover:bg-ag-brand-hover focus-visible:outline-ag-brand disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 md:min-h-10 ${PRESS}`}
+          className={`${BUTTON.dark} w-full disabled:bg-ui-warm-strong disabled:text-ui-ink-3 disabled:opacity-100`}
         >
           Water now
         </button>
         {!display.canStart && display.startBlockedReason && valve.controlsEnabled && (
-          <p id="water-now-blocked" className="text-xs text-ag-ink-secondary">{display.startBlockedReason}</p>
+          <p id="water-now-blocked" className="text-xs text-ui-ink-3">{display.startBlockedReason}</p>
         )}
 
         {display.canStop && !showConfirm && (
           <button
             type="button"
             onClick={() => setConfirmingStopFor(stoppableEventId(state))}
-            className={`min-h-12 rounded-lg border-2 border-red-600 px-4 text-sm font-semibold text-red-700 hover:bg-red-50 focus-visible:outline-red-700 md:min-h-10 ${PRESS}`}
+            className={`min-h-11 w-full rounded-full border border-red-300 px-5 text-[15px] font-medium text-red-700 hover:bg-red-50 focus-visible:outline-red-700 ${PRESS}`}
           >
             Emergency stop
           </button>
         )}
         {showConfirm && (
-          <div role="group" aria-label="Confirm emergency stop" className="flex flex-wrap items-center gap-2 rounded-lg border border-red-300 bg-red-50 p-2">
-            <p className="flex-1 text-sm font-semibold text-red-900">Stop the valve now?</p>
+          <div role="group" aria-label="Confirm emergency stop" className="flex flex-wrap items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3">
+            <p className="flex-1 text-sm font-medium text-red-800">Stop the valve now?</p>
             <button
               type="button"
               autoFocus
@@ -165,11 +168,11 @@ function ControlCardBody({ parcelId, config, onSourceChange, refreshToken = 0, h
                 setLastAction('stop');
                 void valve.stop();
               }}
-              className={`min-h-12 rounded-lg bg-red-600 px-3 text-sm font-semibold text-white hover:bg-red-700 focus-visible:outline-red-700 md:min-h-10 ${PRESS}`}
+              className={`min-h-11 rounded-full bg-red-600 px-4 text-sm font-medium text-white hover:bg-red-700 focus-visible:outline-red-700 ${PRESS}`}
             >
               Stop valve
             </button>
-            <button type="button" onClick={() => setConfirmingStopFor(null)} className={`min-h-12 rounded-lg border border-ag-border bg-white px-3 text-sm font-semibold focus-visible:outline-ag-brand md:min-h-10 ${PRESS}`}>
+            <button type="button" onClick={() => setConfirmingStopFor(null)} className={`min-h-11 rounded-full border border-ui-line bg-white px-4 text-sm font-medium text-ui-ink hover:bg-ui-warm focus-visible:outline-ui-accent ${PRESS}`}>
               Cancel
             </button>
           </div>

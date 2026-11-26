@@ -87,14 +87,14 @@ export function tooltipLines(row: ChartRow, madThresholdPct: number | null): str
   const lines: string[] = [];
   const moisture = row.moisture ?? row.moistureForecast;
   if (moisture !== null) lines.push(`Soil moisture ${one(moisture)} %`);
-  if (row.etcMm !== null) lines.push(`ETc ${one(row.etcMm)} mm`);
-  lines.push(`Effective rain ${one(row.effectiveRainMm)} mm`);
-  lines.push(`Irrigation ${one(row.irrigationMm)} mm`);
+  if (row.etcMm !== null) lines.push(`Crop water use ${one(row.etcMm)} mm`);
+  lines.push(`Rain ${one(row.effectiveRainMm)} mm`);
+  lines.push(`Watering ${one(row.irrigationMm)} mm`);
   for (const event of row.events) {
     const trigger = event.triggerType === 'MANUAL_OVERRIDE' ? 'Manual' : 'Automatic';
     lines.push(`Valve opened: ${event.durationMinutes} min (${trigger})`);
   }
-  if (moisture !== null && madThresholdPct !== null && moisture < madThresholdPct) lines.push('Below MAD threshold');
+  if (moisture !== null && madThresholdPct !== null && moisture < madThresholdPct) lines.push('Below refill point');
   if (row.isForecast) lines.push('Forecast');
   return lines;
 }
@@ -110,13 +110,13 @@ export function chartAriaLabel(rows: ChartRow[], window: TelemetryWindow, madThr
   const latest = latestHistory(rows);
   const parts = [`Soil moisture ${WINDOW_NAMES[window]} chart`];
   parts.push(latest?.moisture != null ? `latest ${one(latest.moisture)} %` : 'no readings');
-  if (madThresholdPct !== null) parts.push(`MAD threshold ${one(madThresholdPct)} %`);
+  if (madThresholdPct !== null) parts.push(`refill point ${one(madThresholdPct)} %`);
   return parts.join(', ');
 }
 
 export function latestValuesSummary(rows: ChartRow[]): string {
   const latest = latestHistory(rows);
   if (latest === null || latest.moisture === null) return 'No soil moisture readings in this window.';
-  const etc = latest.etcMm === null ? '' : `, ETc ${one(latest.etcMm)} mm`;
-  return `Latest reading: soil moisture ${one(latest.moisture)} %${etc}, effective rain ${one(latest.effectiveRainMm)} mm, irrigation ${one(latest.irrigationMm)} mm.`;
+  const etc = latest.etcMm === null ? '' : `, crop water use ${one(latest.etcMm)} mm`;
+  return `Latest reading: soil moisture ${one(latest.moisture)} %${etc}, rain ${one(latest.effectiveRainMm)} mm, watering ${one(latest.irrigationMm)} mm.`;
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { LeafMark } from '../components/Landing/primitives.tsx';
 import { FarmMapContainer } from '../components/FarmMap/FarmMapContainer.tsx';
 import { ParcelMetadataDrawer } from '../components/FarmMap/ParcelMetadataDrawer.tsx';
 import { useFarmMapData } from '../hooks/useFarmMapData.ts';
@@ -28,6 +29,12 @@ import {
 import type { FarmMapConfig } from '../utils/farmMapPage.ts';
 import { calculateParcelMetrics } from '../utils/parcelTopology.ts';
 import './fieldMapPage.css';
+
+const APP_LINKS = [
+  { to: '/map', label: 'Field map' },
+  { to: '/diagnostics', label: 'Leaf diagnostics' },
+  { to: '/disease-progression', label: 'Disease progression' },
+] as const;
 
 const configuration = resolveFarmMapConfig({
   VITE_GIS_API_BASE_URL: import.meta.env.VITE_GIS_API_BASE_URL,
@@ -506,13 +513,13 @@ function FieldMapView({
 
   const noticeTitle =
     feedbackNotice?.message.startsWith('Failed')
-      ? 'Action Failed'
+      ? 'Action failed'
       : feedbackNotice?.type === 'info'
-      ? 'Parcel Removed'
+      ? 'Parcel removed'
       : feedbackNotice?.message.includes('registered') || feedbackNotice?.message.includes('saved')
-      ? 'Parcel Registered'
+      ? 'Parcel saved'
       : feedbackNotice?.message.includes('updated')
-      ? 'Parcel Updated'
+      ? 'Parcel updated'
       : 'Parcel Boundary Recorded';
 
   return (
@@ -525,14 +532,17 @@ function FieldMapView({
       data-drawer-mode={isDrawerOpen ? drawerMode : undefined}
     >
       <header className="ag-field-map-header">
-        <Link to="/" className={`ag-field-map-button ag-field-map-home${explicitSample ? '' : ' ag-field-map-desktop-home'}`} aria-label="AgriTech home" title="Home">←</Link>
+        <Link to="/" className="ag-field-map-brand" aria-label="AgriTech home">
+          <LeafMark className="h-6 w-6" />
+          <span className="ag-field-map-brand-name">AgriTech</span>
+        </Link>
         {!explicitSample && <button type="button" className="ag-field-map-button ag-field-map-mobile-refresh" onClick={reload} disabled={loading} aria-label={retryLabel} title={retryLabel}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M20 7v5h-5" /><path d="M20 12a8 8 0 1 0-2.3 5.7M20 7l-2.3-2.3" />
           </svg>
         </button>}
         <div className="ag-field-map-heading">
-          <h1>Field GIS</h1>
+          <h1>Field map</h1>
           <span className="ag-field-map-mobile-source" role="status" aria-label={sourceDetail}>{loading && data ? 'Retrying…' : sourceDetail}</span>
           {data && <span className="ag-field-map-mobile-count">{activeCollection.features.length} loaded</span>}
         </div>
@@ -545,20 +555,31 @@ function FieldMapView({
           </select>
         </div>
         <div className="ag-field-map-desktop-status">{status}</div>
+        <nav className="ag-field-map-nav" aria-label="Main">
+          {APP_LINKS.map((link) => (
+            <Link key={link.to} to={link.to} aria-current={link.to === '/map' ? 'page' : undefined}>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
         <details ref={menuRef} className="ag-field-map-menu" onKeyDown={(event) => {
           if (event.key === 'Escape') {
             event.currentTarget.open = false;
             event.currentTarget.querySelector('summary')?.focus();
           }
         }}>
-          <summary className="ag-field-map-button" aria-label="Map information and navigation" title="Map information and navigation">⋯</summary>
+          <summary className="ag-field-map-button" aria-label="Map information and navigation" title="Map information and navigation">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+              <circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" />
+            </svg>
+          </summary>
           <div className="ag-field-map-menu-panel">
             <div className="ag-field-map-menu-data">{status}</div>
             {data?.source === 'sample' && <p className="ag-field-map-sample-info">Fictional demonstration parcels in rural Türkiye. Remote imagery requires a network connection.</p>}
-            <nav aria-label="Production modules">
+            <nav aria-label="Pages">
               <Link to="/">Home</Link>
-              <Link to="/diagnostics">AI Leaf Diagnostics</Link>
-              <Link to="/disease-progression">Disease Progression</Link>
+              <Link to="/diagnostics">Leaf diagnostics</Link>
+              <Link to="/disease-progression">Disease progression</Link>
             </nav>
           </div>
         </details>
@@ -604,7 +625,9 @@ function FieldMapView({
                   onClick={() => setFeedbackNotice(null)}
                   aria-label="Dismiss notification"
                 >
-                  ✕
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6 6 18" />
+                  </svg>
                 </button>
               </div>
             </section>

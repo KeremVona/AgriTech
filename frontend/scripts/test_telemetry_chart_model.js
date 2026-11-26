@@ -112,21 +112,21 @@ test('tooltip lines', () => {
     ...row, moisture: 21.5, etcMm: 4.8, effectiveRainMm: 3, irrigationMm: 12,
     events: [{ durationMinutes: 45, triggerType: 'AUTOMATED_DEFICIT' }],
   }, 22);
-  for (const expected of ['Soil moisture 21.5 %', 'ETc 4.8 mm', 'Effective rain 3.0 mm', 'Irrigation 12.0 mm',
-    'Valve opened: 45 min (Automatic)', 'Below MAD threshold']) {
+  for (const expected of ['Soil moisture 21.5 %', 'Crop water use 4.8 mm', 'Rain 3.0 mm', 'Watering 12.0 mm',
+    'Valve opened: 45 min (Automatic)', 'Below refill point']) {
     assert.ok(lines.includes(expected), expected);
   }
   assert.ok(tooltipLines({ ...row, isForecast: true, moistureForecast: 22.0 }, 22).includes('Forecast'));
   assert.ok(tooltipLines({ ...row, events: [{ durationMinutes: 30, triggerType: 'MANUAL_OVERRIDE' }] }, 22)
     .includes('Valve opened: 30 min (Manual)'));
-  assert.ok(!tooltipLines({ ...row, etcMm: null }, 22).some((l) => l.startsWith('ETc')));
-  assert.ok(!tooltipLines({ ...row, moisture: 10 }, null).includes('Below MAD threshold'));
+  assert.ok(!tooltipLines({ ...row, etcMm: null }, 22).some((l) => l.startsWith('Crop water use')));
+  assert.ok(!tooltipLines({ ...row, moisture: 10 }, null).includes('Below refill point'));
 });
 
 test('aria label and hidden summary', () => {
   assert.equal(
     chartAriaLabel(buildChartRows(fixture7d), '7d', 22),
-    'Soil moisture 7-day chart, latest 23.4 %, MAD threshold 22.0 %',
+    'Soil moisture 7-day chart, latest 23.4 %, refill point 22.0 %',
   );
   assert.equal(chartAriaLabel([], '24h', null), 'Soil moisture 24-hour chart, no readings');
   assert.ok(latestValuesSummary(buildChartRows(fixture7d)).startsWith('Latest reading: soil moisture 23.4 %'));

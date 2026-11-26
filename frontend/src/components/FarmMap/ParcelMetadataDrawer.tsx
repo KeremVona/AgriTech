@@ -9,6 +9,7 @@ import {
   formatAreaSummary,
   handleDrawerSubmit,
 } from '../../utils/parcelDrawerState.ts';
+import { BUTTON } from '../Diagnostics/styles.ts';
 import { CropSelector } from './CropSelector.tsx';
 import { SoilSelector } from './SoilSelector.tsx';
 import './farmMapDrawer.css';
@@ -163,6 +164,10 @@ export function ParcelMetadataDrawer({
     }
   };
 
+  const INPUT_BASE =
+    'ag-drawer-input w-full min-h-11 px-3.5 py-2.5 rounded-lg border bg-ui-bg text-ui-ink placeholder:text-ui-ink-3 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ui-accent disabled:opacity-50 disabled:bg-ui-warm';
+  const LABEL = 'block text-[13px] font-medium text-ui-ink-3';
+
   return (
     <>
       {/* Backdrop */}
@@ -175,7 +180,7 @@ export function ParcelMetadataDrawer({
       {/* Drawer Panel */}
       <aside
         ref={panelRef}
-        className="ag-drawer-panel"
+        className="ag-drawer-panel font-[family-name:var(--font-ui)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-title"
@@ -185,29 +190,14 @@ export function ParcelMetadataDrawer({
 
         {/* Header */}
         <header className="ag-drawer-header">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onDiscard}
-              disabled={isSaving}
-              className="p-1.5 -ml-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all disabled:opacity-50"
-              aria-label="Back to map"
-              title="Back"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </button>
-            <h2 id="drawer-title" className="text-base font-bold text-slate-900 leading-tight">
-              {mode === 'create' ? 'Parcel Setup' : 'Edit Parcel Metadata'}
-            </h2>
-          </div>
-
+          <h2 id="drawer-title" className="text-lg font-semibold text-ui-ink leading-tight">
+            {mode === 'create' ? 'New parcel' : 'Edit parcel'}
+          </h2>
           <button
             type="button"
             onClick={onDiscard}
             disabled={isSaving}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 transition-all disabled:opacity-50"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ui-ink-2 hover:bg-ui-warm hover:text-ui-ink transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent disabled:opacity-50"
             aria-label="Close drawer"
             title="Close drawer"
           >
@@ -219,55 +209,27 @@ export function ParcelMetadataDrawer({
 
         {/* Form Body */}
         <form id="parcel-metadata-form" onSubmit={handleSubmit} className="ag-drawer-body">
-          {/* Area Summary Banner */}
+          {/* Area summary */}
           <section className="ag-drawer-area-banner" aria-label="Parcel Geometry Summary">
-            <div className="flex items-center justify-between text-xs font-semibold text-teal-950">
-              <span className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-teal-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 20l-5.447-2.724A2 2 0 013 15.485V4.515a2 2 0 011.553-1.96L9 1m0 19l6-3m-6 3V1m6 16l5.447 2.724A2 2 0 0022 18.485V7.515a2 2 0 00-1.553-1.96L15 4m0 13V4m0 0L9 1"
-                  />
-                </svg>
-                Boundary Geometry
-              </span>
-              <span className="text-[11px] font-mono text-teal-800 bg-teal-100/90 font-medium px-2 py-0.5 rounded-full border border-teal-200">
-                {summary.verticesText}
-              </span>
+            <div className="text-[32px] font-semibold leading-none tabular-nums text-ui-ink">
+              {summary.areaText.split(' (')[0]}
             </div>
-
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <div className="bg-white/90 p-2.5 rounded-lg border border-teal-100 shadow-2xs">
-                <div className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
-                  Calculated Area
-                </div>
-                <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
-                  {summary.areaText}
-                </div>
-              </div>
-              <div className="bg-white/90 p-2.5 rounded-lg border border-teal-100 shadow-2xs">
-                <div className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
-                  Perimeter
-                </div>
-                <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
-                  {summary.perimeterText.replace(/^Perimeter:\s*/, '')}
-                </div>
-              </div>
+            <div className="mt-2 flex gap-4 text-[13px] text-ui-ink-2 tabular-nums">
+              <span>{summary.perimeterText.replace(/^Perimeter:\s*/, '')} around</span>
+              <span>{summary.verticesText.replace(/^Vertices:\s*/, '')} corners</span>
             </div>
           </section>
 
+          <p className="text-xs text-ui-ink-3">All fields are required.</p>
+
           {/* 1. Parcel Name Input */}
           <div>
-            <label
-              htmlFor="parcel-name-input"
-              className="block text-xs font-semibold text-slate-700 tracking-wide uppercase mb-1.5"
-            >
-              Parcel Name <span className="text-rose-500">*</span>
+            <label htmlFor="parcel-name-input" className={`${LABEL} mb-1.5`}>
+              Name
             </label>
             <input
               id="parcel-name-input"
+              aria-required="true"
               ref={nameInputRef}
               type="text"
               value={formData.name}
@@ -280,15 +242,11 @@ export function ParcelMetadataDrawer({
                   setErrors((prev) => ({ ...prev, name: undefined }));
                 }
               }}
-              placeholder="e.g., P-04 - East Valley Corn"
-              className={`ag-drawer-input w-full px-3.5 py-2.5 rounded-xl border bg-white text-slate-900 placeholder:text-slate-400 transition-colors focus:outline-none focus:ring-2 ${
-                errors.name
-                  ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-200'
-                  : 'border-slate-300 focus:border-teal-600 focus:ring-teal-100'
-              } disabled:opacity-50 disabled:bg-slate-50`}
+              placeholder="e.g. East field"
+              className={`${INPUT_BASE} ${errors.name ? 'border-red-500' : 'border-ui-line'}`}
             />
             {errors.name && (
-              <p id="parcel-name-error" className="mt-1.5 text-xs text-rose-600 font-medium" role="alert">
+              <p id="parcel-name-error" className="mt-1.5 text-[13px] text-red-700 font-medium" role="alert">
                 {errors.name}
               </p>
             )}
@@ -343,32 +301,25 @@ export function ParcelMetadataDrawer({
           {/* 4. Planting Date */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label
-                htmlFor="planting-date-input"
-                className="block text-xs font-semibold text-slate-700 tracking-wide uppercase"
-              >
-                Planting Date <span className="text-rose-500">*</span>
+              <label htmlFor="planting-date-input" className={LABEL}>
+                Planting date
               </label>
               {dapInfo && dapInfo.stage !== 'Unknown' && (
                 <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                     dapInfo.days < 0
                       ? 'bg-amber-50 text-amber-800 border-amber-200'
-                      : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-ui-accent-soft text-ui-accent-hover border-ui-accent-line'
                   }`}
                   title="Physiological Growth Stage & Days After Planting"
                 >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      dapInfo.days < 0 ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'
-                    }`}
-                  />
                   {dapInfo.formatted}
                 </span>
               )}
             </div>
             <input
               id="planting-date-input"
+              aria-required="true"
               type="date"
               value={formData.plantingDate}
               disabled={isSaving}
@@ -380,41 +331,26 @@ export function ParcelMetadataDrawer({
                   setErrors((prev) => ({ ...prev, plantingDate: undefined }));
                 }
               }}
-              className={`ag-drawer-input w-full px-3.5 py-2.5 rounded-xl border bg-white text-slate-900 transition-colors focus:outline-none focus:ring-2 ${
-                errors.plantingDate
-                  ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-200'
-                  : 'border-slate-300 focus:border-teal-600 focus:ring-teal-100'
-              } disabled:opacity-50 disabled:bg-slate-50`}
+              className={`${INPUT_BASE} ${errors.plantingDate ? 'border-red-500' : 'border-ui-line'}`}
             />
             {errors.plantingDate && (
-              <p id="planting-date-error" className="mt-1.5 text-xs text-rose-600 font-medium" role="alert">
+              <p id="planting-date-error" className="mt-1.5 text-[13px] text-red-700 font-medium" role="alert">
                 {errors.plantingDate}
               </p>
             )}
           </div>
 
-          {/* 5. Crop Palette Preview Bar */}
-          <div>
-            <div className="text-xs font-semibold text-slate-700 tracking-wide uppercase mb-1.5">
-              Live Map Styling Preview
-            </div>
-            <div className="ag-drawer-palette-preview">
-              <div className="flex items-center gap-2">
-                <div
-                  className="ag-drawer-palette-swatch flex items-center justify-center text-[10px] font-semibold"
-                  style={{
-                    backgroundColor: activePalette.fill,
-                    border: `2px solid ${activePalette.stroke}`,
-                  }}
-                />
-                <span className="text-slate-600 font-mono text-[11px]">
-                  Stroke: <strong className="text-slate-800">{activePalette.stroke}</strong> | Fill: 18%
-                </span>
-              </div>
-              <span className="text-[11px] text-slate-500 font-sans">
-                {formData.cropName || 'Default'}
-              </span>
-            </div>
+          {/* 5. Map colour preview */}
+          <div className="flex items-center gap-2.5 text-[13px] text-ui-ink-2">
+            <span
+              className="ag-drawer-palette-swatch"
+              style={{
+                backgroundColor: activePalette.fill,
+                border: `2px solid ${activePalette.stroke}`,
+              }}
+              aria-hidden="true"
+            />
+            <span>Colour on the map</span>
           </div>
         </form>
 
@@ -424,36 +360,28 @@ export function ParcelMetadataDrawer({
             type="submit"
             form="parcel-metadata-form"
             disabled={isSaving}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm text-white bg-[#0F766E] hover:bg-[#0D655E] active:scale-[0.99] transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`${BUTTON.dark} w-full`}
           >
             {isSaving ? (
               <>
                 <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  className="animate-spin h-4 w-4 text-white"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path
                     className="opacity-75"
                     fill="currentColor"
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Saving Parcel...
+                Saving...
               </>
-            ) : mode === 'create' ? (
-              'Save Parcel Boundary'
             ) : (
-              'Update Parcel Metadata'
+              'Save'
             )}
           </button>
 
@@ -461,9 +389,9 @@ export function ParcelMetadataDrawer({
             type="button"
             onClick={onDiscard}
             disabled={isSaving}
-            className="w-full py-2.5 px-4 rounded-xl font-medium text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`${BUTTON.light} w-full`}
           >
-            {mode === 'create' ? 'Discard Boundary' : 'Cancel'}
+            {mode === 'create' ? 'Discard' : 'Cancel'}
           </button>
 
           {mode === 'edit' && parcelId && (
@@ -473,7 +401,7 @@ export function ParcelMetadataDrawer({
                 cropName: formData.cropName,
                 soilProfileId: formData.soilProfileId,
               })}
-              className="w-full py-2.5 px-4 rounded-xl font-medium text-sm text-center text-[#0F766E] border border-[#0F766E] hover:bg-[#F0FDFA] active:scale-[0.99] transition-all"
+              className={`${BUTTON.outline} w-full`}
             >
               Open water dashboard
             </Link>
@@ -484,9 +412,9 @@ export function ParcelMetadataDrawer({
               type="button"
               onClick={onDelete}
               disabled={isSaving}
-              className="w-full py-2 px-4 rounded-xl font-medium text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-1"
+              className="w-full min-h-11 rounded-full px-4 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Delete Parcel
+              Delete parcel
             </button>
           )}
         </footer>
