@@ -52,6 +52,23 @@ builder.Services.AddScoped<IParcelPhenologyQueryService, ParcelPhenologyQuerySer
 // BACK-303: Root-Zone Water Deficit & Actuation Trigger Engine
 builder.Services.AddScoped<IIrrigationSchedulingEngine, IrrigationSchedulingEngine>();
 
+// BACK-304: Eclipse Mosquitto MQTT Client with Persistent Wildcard Subscription & Auto-Reconnect
+builder.Services.AddOptions<MqttOptions>()
+    .Bind(builder.Configuration.GetSection(MqttOptions.SectionName))
+    .Validate(opts =>
+        !opts.Enabled ||
+        (!string.IsNullOrWhiteSpace(opts.Host) &&
+         opts.Port is >= 1 and <= 65535 &&
+         !string.IsNullOrWhiteSpace(opts.ClientId) &&
+         !string.IsNullOrWhiteSpace(opts.TelemetryWildcardTopic) &&
+         opts.ReconnectInitialDelaySeconds >= 1 &&
+         opts.ReconnectMaxDelaySeconds >= opts.ReconnectInitialDelaySeconds),
+        "Invalid MqttOptions configuration: verify Host, Port (1-65535), ClientId, TelemetryWildcardTopic, and reconnect delay bounds.")
+    .ValidateOnStart();
+builder.Services.AddSingleton<MqttClientService>();
+builder.Services.AddSingleton<IMqttClientService>(sp => sp.GetRequiredService<MqttClientService>());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<MqttClientService>());
+
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
 builder.Services.AddHttpClient<IGeminiAdvisoryClient, GeminiAdvisoryClient>(client =>
 {
