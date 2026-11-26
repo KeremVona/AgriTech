@@ -120,5 +120,10 @@ Tomato early blight, potato late blight, corn common rust and apple scab match.
   The product you pick now changes the result. The spray-effect curve and damage line are still hand-tuned.
 - **Done — part of recommendation 5:** crop antibiotics removed (pepper, peach — these now show "no curative spray"),
   Inspire Super / difenoconazole slips fixed, "example products — follow the local label" note added.
-- **Open:** money in TRY / editable assumptions (4), Türkiye-registered product list (5), crop list aligned with the
-  diagnosis model (6), leaf-wetness hours from Open-Meteo (7).
+- **Done — recommendation 6 (linking part):** tomato early blight, potato late blight, corn common rust and apple scab
+  are marked as also detected by leaf diagnostics; a matching diagnosis shows "See how it develops" and opens
+  `/disease-progression?crop=…`. Grape (black rot), pepper, peach and squash are labelled simulation only.
+  `scripts/test_progression_links.js` checks the keys against ml-service. New disease images (e.g. grape downy mildew,
+  rice, cassava) would need the image pipeline and are not done.
+- **Open:** money in TRY / editable assumptions (4), Türkiye-registered product list (5), new progression images for the
+  remaining diagnosis classes (6), leaf-wetness hours from Open-Meteo (7).

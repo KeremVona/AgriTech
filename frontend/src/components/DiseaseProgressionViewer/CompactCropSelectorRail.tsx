@@ -7,6 +7,7 @@ import React, { useRef, useEffect } from 'react';
 import type { SupportedCropId } from '../../types/progression.ts';
 import type { CropSpecimenItem } from './types.ts';
 import { DEFAULT_CROP_SPECIMENS } from './types.ts';
+import { isScanDetectable } from '../../utils/progressionLinks.ts';
 
 export { DEFAULT_CROP_SPECIMENS };
 
@@ -88,10 +89,14 @@ export const CompactCropSelectorRail: React.FC<CompactCropSelectorRailProps> = (
               type="button"
               onClick={() => onSelectCrop(crop.id)}
               onKeyDown={(e) => handleKeyDown(e, idx)}
-              className={`flex w-28 shrink-0 cursor-pointer flex-col items-center rounded-2xl border px-2 pb-2.5 pt-2 text-center transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent lg:w-auto ${
+              aria-description={isScanDetectable(crop.id) ? 'Also detected by leaf diagnostics' : 'Simulation only'}
+              className={`relative flex w-28 shrink-0 cursor-pointer flex-col items-center rounded-2xl border px-2 pb-2.5 pt-2 text-center transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent lg:w-auto ${
                 isSelected ? 'border-ui-accent-line bg-ui-accent-soft' : 'border-ui-line bg-ui-bg hover:bg-ui-warm'
               }`}
             >
+              {isScanDetectable(crop.id) && (
+                <span aria-hidden="true" title="Also detected by leaf diagnostics" className="absolute right-2 top-2 h-2 w-2 rounded-full bg-ui-accent" />
+              )}
               <img
                 src={`/progression-experimental/${crop.id}/${crop.id}_stage0_healthy.webp`}
                 alt=""
