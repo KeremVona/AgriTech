@@ -52,6 +52,21 @@
   --color-agri-800: #166534;
   --color-agri-900: #14532d;
   --color-agri-950: #052e16;
+
+  /* Notion-style UI revamp tokens (docs/superpowers/specs/2026-11-26-landing-notion-redesign-design.md) */
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-ui-bg: #FFFFFF;
+  --color-ui-warm: #F6F5F4;
+  --color-ui-warm-strong: #EDEBE8;
+  --color-ui-line: rgba(0, 0, 0, 0.09);
+  --color-ui-line-strong: rgba(0, 0, 0, 0.16);
+  --color-ui-ink: #191918;
+  --color-ui-ink-2: #5F5E5B;
+  --color-ui-ink-3: #6F6E69;
+  --color-ui-accent: #0F766E;
+  --color-ui-accent-hover: #115E59;
+  --color-ui-accent-soft: #E7F3F1;
+  --color-ui-accent-line: #A8D5CC;
 }
 
 :root {
@@ -235,5 +250,38 @@ h1, h2, h3, h4, h5, h6 {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Notion-style UI revamp: page scope + scroll reveal
+   --------------------------------------------------------------------------- */
+.ui-page {
+  font-family: var(--font-ui);
+  background-color: var(--color-ui-bg);
+  color: var(--color-ui-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.ui-page :is(h1, h2, h3, h4) {
+  font-family: var(--font-ui);
+}
+
+.ui-reveal {
+  transition: opacity 700ms var(--ag-ease-out), transform 700ms var(--ag-ease-out);
+}
+
+.ui-reveal[data-hidden='true'] {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-reveal,
+  .ui-reveal[data-hidden='true'] {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
