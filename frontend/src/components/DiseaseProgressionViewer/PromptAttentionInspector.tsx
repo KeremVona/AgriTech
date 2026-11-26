@@ -122,11 +122,12 @@ export const PromptAttentionInspector: React.FC<PromptAttentionInspectorProps> =
   };
 
   return (
-    <div className={`space-y-5 ${className}`} role="region" aria-label="What the model changes">
+    <div className={`space-y-5 ${className}`} role="region" aria-label="How the pictures were made">
       <div>
-        <div className="text-[13px] font-medium text-ui-ink-3">What the model changes</div>
+        <div className="text-[13px] font-medium text-ui-ink-3">How the pictures were made</div>
         <p className="mt-1 text-sm text-ui-ink-2">
-          Highlighted words are the disease signs added to a healthy leaf description.
+          The stage images come from an image generator. Highlighted words are the disease signs added to the healthy-leaf
+          description. These settings describe that generator; they don’t change with the timeline.
         </p>
       </div>
 

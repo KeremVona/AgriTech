@@ -1,5 +1,5 @@
 /**
- * Right-hand rail: a "Right now" summary (stage, day, leaf affected) and four tabs —
+ * Right-hand rail: a "Right now" summary (stage, day, disease progress) and four tabs —
  * Weather, Treatment, Export, Model — with WAI-ARIA arrow-key navigation and roving tabindex.
  */
 
@@ -44,6 +44,8 @@ export interface StudioInspectorRailProps {
   onPinCurrentScrub: () => void;
   selectedCategory: FungicideCategory;
   onSelectCategory: (cat: FungicideCategory) => void;
+  keepSpraying: boolean;
+  onToggleKeepSpraying: (keep: boolean) => void;
   selectedProductId: string;
   onSelectProductId: (id: string) => void;
   efficacyResult: InterventionEfficacyResult;
@@ -77,6 +79,8 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
   onPinCurrentScrub,
   selectedCategory,
   onSelectCategory,
+  keepSpraying,
+  onToggleKeepSpraying,
   selectedProductId,
   onSelectProductId,
   efficacyResult,
@@ -134,12 +138,12 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
             <p className="mt-1 text-xs text-ui-ink-3">stage</p>
           </div>
           <div>
-            <p className="text-2xl font-medium tabular-nums leading-none text-ui-ink">{currentScrubDay.toFixed(0)}</p>
-            <p className="mt-1.5 text-xs text-ui-ink-3">days in</p>
+            <p className="text-2xl font-medium tabular-nums leading-none text-ui-ink">{dynamicOutput.microclimate.isStalled ? '—' : currentScrubDay.toFixed(0)}</p>
+            <p className="mt-1.5 text-xs text-ui-ink-3">{dynamicOutput.microclimate.isStalled ? 'no change in this weather' : 'days in'}</p>
           </div>
           <div>
             <p className="text-2xl font-medium tabular-nums leading-none text-ui-ink">{severity.toFixed(0)}%</p>
-            <p className="mt-1.5 text-xs text-ui-ink-3">of leaf affected</p>
+            <p className="mt-1.5 text-xs text-ui-ink-3">disease progress</p>
           </div>
         </div>
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-ui-warm-strong" aria-hidden="true">
@@ -233,6 +237,8 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
               onPinCurrentScrub={onPinCurrentScrub}
               selectedCategory={selectedCategory}
               onSelectCategory={onSelectCategory}
+              keepSpraying={keepSpraying}
+              onToggleKeepSpraying={onToggleKeepSpraying}
               selectedProductId={selectedProductId}
               onSelectProduct={onSelectProductId}
               efficacyResult={efficacyResult}
@@ -246,6 +252,9 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
               currentScrubDay={currentScrubDay}
               currentTreatedSeverity={treatedOutput.currentSeverityPct}
               plateauSeverity={treatedOutput.plateauSeverityPct}
+              spraysSoFar={treatedOutput.spraysSoFar}
+              protectionDays={treatedOutput.protectionDays}
+              keepSpraying={keepSpraying}
               yieldAnalytics={yieldAnalytics}
               efficacyResult={efficacyResult}
               selectedCategory={selectedCategory}

@@ -11,10 +11,11 @@ import type {
   YieldRetentionAnalyticsResult,
 } from '../../models/treatmentBranchingModel.ts';
 import {
+  CATEGORY_PROTECTION_DAYS,
   calculateInterventionEfficacy,
-  calculateTreatedSeverity,
   evaluateYieldRetention,
   getTreatmentProducts,
+  simulateTreatment,
 } from '../../models/treatmentBranchingModel.ts';
 import type { AgronomicFieldReportData } from '../../models/exportReportModel.ts';
 import {
@@ -57,7 +58,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
 
   // Microclimate state (initialized to crop-specific favorable norms)
   const [temperature, setTemperature] = useState<number>(profile.cardinals.opt);
-  const [humidity, setHumidity] = useState<number>(profile.humidity.crit);
+  const [humidity, setHumidity] = useState<number>(profile.humidity.opt);
   const [prevCropId, setPrevCropId] = useState<SupportedCropId>(cropId);
 
   // Treatment branching state
@@ -66,6 +67,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
   const [selectedCategory, setSelectedCategory] = useState<FungicideCategory>('systemic_curative');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [trajectoryView, setTrajectoryView] = useState<TrajectoryViewMode>('treated');
+  const [keepSpraying, setKeepSpraying] = useState<boolean>(true);
 
   // Foliar Viewport Modes
   const [viewMode, setViewMode] = useState<FoliarViewMode>('rgb');
@@ -78,21 +80,29 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
   const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
   const [assembledReport, setAssembledReport] = useState<AgronomicFieldReportData | null>(null);
 
+  // Bacterial diseases have no curative spray: fall back to the first category this crop has products for.
+  const activeCategory: FungicideCategory =
+    getTreatmentProducts(cropId, selectedCategory).length > 0
+      ? selectedCategory
+      : getTreatmentProducts(cropId)[0]?.category ?? selectedCategory;
+
   // Derive active product id based on crop and category during render
   const availableProducts = useMemo(
-    () => getTreatmentProducts(cropId, selectedCategory),
-    [cropId, selectedCategory]
+    () => getTreatmentProducts(cropId, activeCategory),
+    [cropId, activeCategory]
   );
   const effectiveProductId =
     selectedProductId && availableProducts.some((p) => p.id === selectedProductId)
       ? selectedProductId
       : availableProducts[0]?.id || '';
+  const protectionDays =
+    availableProducts.find((p) => p.id === effectiveProductId)?.protectionDays ?? CATEGORY_PROTECTION_DAYS[activeCategory];
 
   // Synchronize microclimate when crop changes
   if (prevCropId !== cropId) {
     setPrevCropId(cropId);
     setTemperature(profile.cardinals.opt);
-    setHumidity(profile.humidity.crit);
+    setHumidity(profile.humidity.opt);
   }
 
   const [sliderValue, setSliderValue] = useState<number>(initialPercentage);
@@ -209,28 +219,22 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
 
   // Compute treatment efficacy and outcome trajectory
   const efficacyResult: InterventionEfficacyResult = useMemo(() => {
-    return calculateInterventionEfficacy(cropId, interventionSeverity, selectedCategory);
-  }, [cropId, interventionSeverity, selectedCategory]);
+    return calculateInterventionEfficacy(cropId, interventionSeverity, activeCategory);
+  }, [cropId, interventionSeverity, activeCategory]);
 
-  const daysPostIntervention = Math.max(0, currentScrubDay - interventionDays);
+  // Same weather, product protection and re-spray choice drive the treated branch and the season outcome.
+  const scenario = useMemo(
+    () => ({ temperatureC: temperature, humidityPct: humidity, protectionDays, keepSpraying }),
+    [temperature, humidity, protectionDays, keepSpraying]
+  );
 
   const treatedOutput: TreatedSeverityTrajectoryResult = useMemo(() => {
-    return calculateTreatedSeverity(
-      cropId,
-      interventionSeverity,
-      daysPostIntervention,
-      selectedCategory
-    );
-  }, [cropId, interventionSeverity, daysPostIntervention, selectedCategory]);
+    return simulateTreatment(cropId, interventionSeverity, sliderValue, activeCategory, scenario);
+  }, [cropId, interventionSeverity, sliderValue, activeCategory, scenario]);
 
   const yieldAnalytics: YieldRetentionAnalyticsResult = useMemo(() => {
-    return evaluateYieldRetention(
-      cropId,
-      interventionSeverity,
-      treatmentActive,
-      selectedCategory
-    );
-  }, [cropId, interventionSeverity, treatmentActive, selectedCategory]);
+    return evaluateYieldRetention(cropId, interventionSeverity, treatmentActive, activeCategory, scenario);
+  }, [cropId, interventionSeverity, treatmentActive, activeCategory, scenario]);
 
   // Determine effective rendering severity
   const isPostTreatment = treatmentActive && sliderValue >= interventionSeverity;
@@ -351,7 +355,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
       treatmentActive,
       interventionSeverity,
       interventionDays,
-      selectedCategory,
+      selectedCategory: activeCategory,
       selectedProductId: effectiveProductId,
       efficacyResult,
       yieldAnalytics,
@@ -371,19 +375,21 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
     humidity,
     interventionDays,
     interventionSeverity,
-    selectedCategory,
+    activeCategory,
     temperature,
     treatmentActive,
     yieldAnalytics,
   ]);
 
   const isDualView = (compareMode && !treatmentActive) || (treatmentActive && trajectoryView === 'split');
+  const stalled = dynamicOutput.microclimate.isStalled;
+  const tooLate = treatmentActive && efficacyResult.windowTier === 'terminal';
   const treatedNow = treatmentActive && isPostTreatment && trajectoryView !== 'untreated';
 
   const VIEW_MODES: { id: FoliarViewMode; label: string; title: string }[] = [
     { id: 'rgb', label: 'Photo', title: 'The leaf as it looks' },
-    { id: 'attention', label: 'Heatmap', title: 'Where the model focuses' },
-    { id: 'mask', label: 'Changes', title: 'Areas that change between stages' },
+    { id: 'attention', label: 'Heatmap', title: 'Colours where the picture changes between stages' },
+    { id: 'mask', label: 'Changes', title: 'Black-and-white map of what changes between stages' },
   ];
   const TRAJECTORIES: { id: TrajectoryViewMode; label: string }[] = [
     { id: 'treated', label: 'Treated' },
@@ -464,14 +470,17 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
           {treatmentActive && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-accent-line bg-ui-accent-soft px-4 py-2.5">
               <p className="text-sm text-ui-ink">
-                {isPostTreatment ? (
+                {tooLate ? (
+                  <>Sprayed at {interventionSeverity.toFixed(0)}% — too late to change the outcome</>
+                ) : isPostTreatment ? (
                   <>
-                    Treated on day <span className="font-medium tabular-nums">{interventionDays.toFixed(0)}</span> · stops near{' '}
+                    {treatedOutput.spraysSoFar} {treatedOutput.spraysSoFar === 1 ? 'spray' : 'sprays'} so far · season end about{' '}
                     <span className="font-medium tabular-nums">{treatedOutput.plateauSeverityPct.toFixed(0)}%</span>
                   </>
                 ) : (
                   <>
-                    Treatment starts on day <span className="font-medium tabular-nums">{interventionDays.toFixed(0)}</span>
+                    Spray at <span className="font-medium tabular-nums">{interventionSeverity.toFixed(0)}%</span> progress
+                    {stalled ? '' : <> (day <span className="font-medium tabular-nums">{interventionDays.toFixed(0)}</span>)</>}
                   </>
                 )}
               </p>
@@ -576,8 +585,8 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
                 {treatedNow && <span className={`absolute left-3 top-3 ${chip} text-ui-accent-hover`}>Treated</span>}
 
                 <span className={`absolute bottom-3 right-3 ${chip}`}>
-                  <span className="font-medium tabular-nums text-ui-ink">{effectiveRenderSeverity.toFixed(0)}%</span> affected · Day{' '}
-                  <span className="tabular-nums">{dynamicOutput.elapsedDays.toFixed(0)}</span>
+                  <span className="font-medium tabular-nums text-ui-ink">{effectiveRenderSeverity.toFixed(0)}%</span> progress ·{' '}
+                  {stalled ? 'no change in this weather' : <>Day <span className="tabular-nums">{dynamicOutput.elapsedDays.toFixed(0)}</span></>}
                 </span>
               </div>
               {isDualView && (
@@ -618,7 +627,9 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
               interventionDays={interventionDays}
               onSetInterventionSeverity={setInterventionSeverity}
               onPinCurrentScrub={handlePinCurrentScrub}
-              selectedCategory={selectedCategory}
+              selectedCategory={activeCategory}
+              keepSpraying={keepSpraying}
+              onToggleKeepSpraying={setKeepSpraying}
               onSelectCategory={setSelectedCategory}
               selectedProductId={effectiveProductId}
               onSelectProductId={setSelectedProductId}

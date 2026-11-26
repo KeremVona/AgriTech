@@ -58,7 +58,9 @@ console.log('  [+] Test 2: Verifying Treatment Modalities & FRAC Classifications
 
 for (const crop of crops) {
   const curative = getTreatmentProducts(crop, 'systemic_curative');
-  assert(curative.length > 0, `${crop} must have at least one systemic curative fungicide product`);
+  // Bacterial spot (pepper, peach) has no curative spray; crop antibiotics are deliberately not offered.
+  if (crop === 'pepper' || crop === 'peach') assert.strictEqual(curative.length, 0, `${crop} must not list a curative product`);
+  else assert(curative.length > 0, `${crop} must have at least one systemic curative fungicide product`);
 
   const protectant = getTreatmentProducts(crop, 'protectant_contact');
   assert(protectant.length > 0, `${crop} must have at least one protectant product`);

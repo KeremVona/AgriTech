@@ -1,18 +1,26 @@
 import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import type { SupportedCropId } from '../models/agronomicTimelineModel.ts';
 import { DiseaseProgressionViewer } from '../components/DiseaseProgressionViewer/DiseaseProgressionViewer.tsx';
 import { CompactCropSelectorRail } from '../components/DiseaseProgressionViewer/CompactCropSelectorRail.tsx';
 import { DEFAULT_CROP_SPECIMENS } from '../components/DiseaseProgressionViewer/types.ts';
 import { AppHeader } from '../components/ui/AppHeader.tsx';
+import { isScanDetectable, readProgressionCrop } from '../utils/progressionLinks.ts';
 
 const HOW_IT_WORKS = [
-  { title: 'Real leaf photos', body: 'Each stage is a picture of the same leaf, from healthy to severe.' },
-  { title: 'Weather sets the pace', body: 'Warmer, wetter days make the disease move faster.' },
-  { title: 'Treat and compare', body: 'Pick a day to spray and see how far the disease still gets.' },
+  { title: 'Illustrated stages', body: 'Each stage is a generated picture of the same leaf, from healthy to severe.' },
+  { title: 'Weather sets the pace', body: 'Near the disease’s favourite temperature and humidity it moves faster; outside them it slows or stops.' },
+  { title: 'Treat and compare', body: 'Pick a moment to spray and compare it with no treatment. Numbers are rough estimates.' },
 ] as const;
 
 export function DiseaseProgressionPage() {
-  const [selectedCrop, setSelectedCrop] = useState<SupportedCropId>('tomato');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedCrop, setSelectedCrop] = useState<SupportedCropId>(() => readProgressionCrop(`?${searchParams.toString()}`) ?? 'tomato');
+  const selectCrop = (cropId: SupportedCropId) => {
+    setSelectedCrop(cropId);
+    setSearchParams({ crop: cropId }, { replace: true });
+  };
+  const scanDetectable = isScanDetectable(selectedCrop);
   const [currentProgress, setCurrentProgress] = useState<number>(0);
 
   return (
@@ -31,10 +39,24 @@ export function DiseaseProgressionPage() {
           <p className="mx-auto mt-3 max-w-lg text-balance text-[17px] leading-relaxed text-ui-ink-2">
             Pick a crop and drag the timeline to see how the leaf changes, day by day.
           </p>
+          <p className="mx-auto mt-4 inline-flex max-w-lg items-center gap-2 rounded-full bg-ui-warm px-3 py-1 text-[13px] text-ui-ink-2">
+            <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+            Illustrative simulation — not a forecast for your field
+          </p>
         </div>
 
         <section aria-label="Choose a crop" className="mt-10">
-          <CompactCropSelectorRail crops={DEFAULT_CROP_SPECIMENS} selectedCrop={selectedCrop} onSelectCrop={setSelectedCrop} />
+          <CompactCropSelectorRail crops={DEFAULT_CROP_SPECIMENS} selectedCrop={selectedCrop} onSelectCrop={selectCrop} />
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-ui-ink-3">
+            <span className="inline-flex items-center gap-1.5">
+              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-ui-accent" />
+              Also detected by{' '}
+              <Link to="/diagnostics" className="text-ui-accent-hover underline underline-offset-2 hover:text-ui-ink">
+                leaf diagnostics
+              </Link>
+            </span>
+            {!scanDetectable && <span>· This disease is simulation only — the leaf scan can’t detect it.</span>}
+          </p>
         </section>
 
         <section aria-label="Disease progression" className="mt-6">

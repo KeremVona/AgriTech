@@ -20,6 +20,8 @@ export interface TreatmentBranchingControlsProps {
   onPinCurrentScrub: () => void;
   selectedCategory: FungicideCategory;
   onSelectCategory: (cat: FungicideCategory) => void;
+  keepSpraying: boolean;
+  onToggleKeepSpraying: (keep: boolean) => void;
   selectedProductId: string;
   onSelectProduct: (productId: string) => void;
   efficacyResult: InterventionEfficacyResult;
@@ -43,6 +45,8 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
   onPinCurrentScrub,
   selectedCategory,
   onSelectCategory,
+  keepSpraying,
+  onToggleKeepSpraying,
   selectedProductId,
   onSelectProduct,
   efficacyResult,
@@ -101,11 +105,14 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
             <div className="grid grid-cols-3 gap-2">
               {(['systemic_curative', 'protectant_contact', 'bio_fungicide'] as FungicideCategory[]).map((cat) => {
                 const isSelected = selectedCategory === cat;
+                const unavailable = getTreatmentProducts(cropId, cat).length === 0;
                 return (
                   <button
                     key={cat}
                     type="button"
                     aria-pressed={isSelected}
+                    disabled={unavailable}
+                    title={unavailable ? 'No spray of this type works on this disease' : undefined}
                     onClick={() => {
                       onSelectCategory(cat);
                       const catProducts = getTreatmentProducts(cropId, cat);
@@ -118,6 +125,9 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
                 );
               })}
             </div>
+            {getTreatmentProducts(cropId, 'systemic_curative').length === 0 && (
+              <p className="mt-2 text-xs text-ui-ink-3">No spray cures bacterial spot; copper and biologicals only protect healthy leaves.</p>
+            )}
           </div>
 
           {/* Products */}
@@ -150,6 +160,7 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
                     </div>
                     <div className="mt-0.5 text-sm text-ui-ink-2">{p.activeIngredient}</div>
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs tabular-nums text-ui-ink-2">
+                      <span>Protects about <strong className="text-ui-ink">{p.protectionDays} days</strong></span>
                       <span>Rain-safe after <strong className="text-ui-ink">{p.rainfastnessHours}h</strong></span>
                       <span>Harvest wait <strong className="text-ui-ink">{p.preHarvestIntervalDays}d</strong></span>
                     </div>
@@ -158,6 +169,26 @@ export const TreatmentBranchingControls: React.FC<TreatmentBranchingControlsProp
               })}
             </div>
           </div>
+
+          <p className="text-xs text-ui-ink-3">Example products. Names, intervals and approvals differ by country — always follow the local label.</p>
+
+          {/* Re-spray */}
+          <label className="flex min-h-11 cursor-pointer select-none items-center justify-between gap-4 rounded-xl border border-ui-line px-4 py-3">
+            <span>
+              <span className="block text-sm font-medium text-ui-ink">Keep spraying</span>
+              <span className="block text-xs text-ui-ink-3">
+                {keepSpraying
+                  ? `Re-spray every ${activeProduct?.protectionDays ?? '—'} days, when protection runs out`
+                  : 'One spray only — protection wears off'}
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={keepSpraying}
+              onChange={(e) => onToggleKeepSpraying(e.target.checked)}
+              className="h-5 w-5 cursor-pointer accent-[var(--color-ui-accent)]"
+            />
+          </label>
 
           {/* Timing */}
           <div className="space-y-3 rounded-xl border border-ui-line bg-ui-warm p-4">

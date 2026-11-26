@@ -2,17 +2,21 @@
  * Agronomic Pathology Treatment & Intervention Branching Engine
  * Precision AgriTech Platform - P2P Experimental (Tier 1, Feature 3)
  *
- * Grounded in:
- * - Van der Plank (1963) plant disease epidemiology
- * - Generalized Logistic Decay efficacy curve eta(S_int)
- * - Latency buffer & biological incubation leakage model (omega_leak)
- * - Asymptotic continuous time relaxation post-intervention (k_arrest)
- * - Classical damage functions: Shtienberg (Tomato), James/Van der Zaag (Potato),
- *   Pataky (Corn), MacHardy (Apple)
- * - FRAC (Fungicide Resistance Action Committee) chemical modes of action
+ * ILLUSTRATIVE model for teaching, not a field forecast:
+ * - Spray effect: hand-tuned logistic curve — the later the spray, the smaller the effect.
+ * - Protection wears off: each spray protects for the product's typical re-spray interval; while protected the
+ *   disease runs at (1 - effect) of its normal speed. Re-spraying is optional.
+ * - Season outcome: simple threshold-and-slope yield damage line per crop and an example crop value / spray cost.
+ * - Product names, intervals and FRAC codes are examples; registrations and labels differ by country.
  */
 
 import type { SupportedCropId } from './agronomicTimelineModel.ts';
+import {
+  AGRONOMIC_CALIBRATION_REGISTRY,
+  calculateSliderFromDays,
+  evaluateMicroclimate,
+  getOptimalDaysForSlider,
+} from './agronomicTimelineModel.ts';
 
 export type FungicideCategory = 'systemic_curative' | 'protectant_contact' | 'bio_fungicide';
 
@@ -24,6 +28,8 @@ export interface ChemicalProductSpec {
   category: FungicideCategory;
   modeOfAction: string;
   curativeKickbackHours: number; // 0 for pure contact protectant
+  /** Typical days one spray keeps protecting before a re-spray is due (label interval; check the local label). */
+  protectionDays: number;
   rainfastnessHours: number;
   preHarvestIntervalDays: number;
   resistanceRisk: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -98,7 +104,8 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
     products: [
       {
         id: 'tomato-inspire',
-        tradeName: 'Inspire Super (Difenoconazole 25% EC)',
+        protectionDays: 10,
+        tradeName: 'Score 250 EC (Difenoconazole)',
         activeIngredient: 'Difenoconazole',
         fracCode: 'FRAC 3',
         category: 'systemic_curative',
@@ -112,6 +119,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'tomato-bravo',
+        protectionDays: 7,
         tradeName: 'Bravo Weather Stik (Chlorothalonil 720 SC)',
         activeIngredient: 'Chlorothalonil',
         fracCode: 'FRAC M05',
@@ -126,6 +134,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'tomato-doublenickel',
+        protectionDays: 5,
         tradeName: 'Double Nickel 55 WDG',
         activeIngredient: 'Bacillus amyloliquefaciens strain D747',
         fracCode: 'FRAC BM02',
@@ -171,6 +180,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
     products: [
       {
         id: 'potato-ridomil',
+        protectionDays: 14,
         tradeName: 'Ridomil Gold MZ (Mefenoxam + Mancozeb)',
         activeIngredient: 'Metalaxyl-M (Mefenoxam) + Mancozeb',
         fracCode: 'FRAC 4 + FRAC M03',
@@ -185,6 +195,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'potato-curzate',
+        protectionDays: 5,
         tradeName: 'Curzate 60DF (Cymoxanil 60%)',
         activeIngredient: 'Cymoxanil',
         fracCode: 'FRAC 27',
@@ -199,6 +210,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'potato-dithane',
+        protectionDays: 7,
         tradeName: 'Dithane F-45 (Mancozeb 80%)',
         activeIngredient: 'Mancozeb',
         fracCode: 'FRAC M03',
@@ -213,6 +225,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'potato-serenade',
+        protectionDays: 5,
         tradeName: 'Serenade Opti WDG',
         activeIngredient: 'Bacillus subtilis QST 713',
         fracCode: 'FRAC BM02',
@@ -258,6 +271,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
     products: [
       {
         id: 'corn-tilt',
+        protectionDays: 14,
         tradeName: 'Tilt (Propiconazole 25% EC)',
         activeIngredient: 'Propiconazole',
         fracCode: 'FRAC 3',
@@ -272,6 +286,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'corn-quilt',
+        protectionDays: 14,
         tradeName: 'Quilt Xcel (Azoxystrobin + Propiconazole)',
         activeIngredient: 'Azoxystrobin + Propiconazole',
         fracCode: 'FRAC 11 + FRAC 3',
@@ -286,6 +301,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'corn-dithane',
+        protectionDays: 7,
         tradeName: 'Dithane DF (Mancozeb 75% WDG)',
         activeIngredient: 'Mancozeb',
         fracCode: 'FRAC M03',
@@ -300,6 +316,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'corn-regalia',
+        protectionDays: 7,
         tradeName: 'Regalia Biofungicide',
         activeIngredient: 'Reynoutria sachalinensis extract (5%)',
         fracCode: 'FRAC P05',
@@ -345,6 +362,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
     products: [
       {
         id: 'apple-inspire',
+        protectionDays: 7,
         tradeName: 'Inspire Super (Difenoconazole + Cyprodinil)',
         activeIngredient: 'Difenoconazole + Cyprodinil',
         fracCode: 'FRAC 3 + FRAC 9',
@@ -359,6 +377,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'apple-captan',
+        protectionDays: 7,
         tradeName: 'Captan 80 WDG',
         activeIngredient: 'Captan (Phthalimide)',
         fracCode: 'FRAC M04',
@@ -373,6 +392,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'apple-armicarb',
+        protectionDays: 5,
         tradeName: 'Armicarb 100 / MilStop',
         activeIngredient: 'Potassium Bicarbonate (85%)',
         fracCode: 'FRAC NC',
@@ -418,9 +438,10 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
     products: [
       {
         id: 'grape-inspire',
+        protectionDays: 10,
         tradeName: 'Inspire Super (Difenoconazole + Cyprodinil)',
-        activeIngredient: 'Difenoconazole',
-        fracCode: 'FRAC 3',
+        activeIngredient: 'Difenoconazole + Cyprodinil',
+        fracCode: 'FRAC 3 + FRAC 9',
         category: 'systemic_curative',
         modeOfAction: 'Demethylation inhibitor (DMI); arrests sterol biosynthesis with 72-96h kick-back',
         curativeKickbackHours: 72,
@@ -432,6 +453,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'grape-dithane',
+        protectionDays: 7,
         tradeName: 'Dithane F-45 Rainshield',
         activeIngredient: 'Mancozeb',
         fracCode: 'FRAC M03',
@@ -446,6 +468,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'grape-doublenickel',
+        protectionDays: 5,
         tradeName: 'Double Nickel 55',
         activeIngredient: 'Bacillus amyloliquefaciens strain D747',
         fracCode: 'FRAC BM02',
@@ -490,21 +513,8 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
     },
     products: [
       {
-        id: 'pepper-kasumin',
-        tradeName: 'Kasumin 2L',
-        activeIngredient: 'Kasugamycin hydrochloride',
-        fracCode: 'FRAC 24',
-        category: 'systemic_curative',
-        modeOfAction: 'Hexopyranosyl antibiotic inhibiting bacterial 30S ribosomal protein synthesis',
-        curativeKickbackHours: 36,
-        rainfastnessHours: 2,
-        preHarvestIntervalDays: 1,
-        resistanceRisk: 'MEDIUM',
-        isOrganicCertified: false,
-        applicationNotes: 'Translaminar bactericide. Limit to 4 applications per season. Do not use in greenhouses.',
-      },
-      {
         id: 'pepper-kocide-mancozeb',
+        protectionDays: 7,
         tradeName: 'Kocide 3000 + Manzate Pro-Stick Tank Mix',
         activeIngredient: 'Copper Hydroxide + Mancozeb',
         fracCode: 'FRAC M01 + FRAC M03',
@@ -519,6 +529,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'pepper-agriphage',
+        protectionDays: 3,
         tradeName: 'AgriPhage',
         activeIngredient: 'Xanthomonas euvesicatoria-specific Bacteriophages',
         fracCode: 'Bacteriophage',
@@ -563,21 +574,8 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
     },
     products: [
       {
-        id: 'peach-firewall',
-        tradeName: 'FireWall 17 WP / Mycoshield',
-        activeIngredient: 'Oxytetracycline',
-        fracCode: 'FRAC 41',
-        category: 'systemic_curative',
-        modeOfAction: 'Tetracycline antibiotic binding 30S ribosomal subunit to arrest bacterial translation',
-        curativeKickbackHours: 24,
-        rainfastnessHours: 2,
-        preHarvestIntervalDays: 21,
-        resistanceRisk: 'HIGH',
-        isOrganicCertified: false,
-        applicationNotes: 'Apply from petal fall through cover sprays on a 7-10 day interval. 21-day PHI.',
-      },
-      {
         id: 'peach-kocide-micro',
+        protectionDays: 7,
         tradeName: 'Kocide 3000 (Low-Rate Foliar)',
         activeIngredient: 'Copper Hydroxide',
         fracCode: 'FRAC M01',
@@ -592,6 +590,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'peach-serenade',
+        protectionDays: 5,
         tradeName: 'Serenade ASO',
         activeIngredient: 'Bacillus subtilis QST 713',
         fracCode: 'FRAC BM02',
@@ -637,6 +636,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
     products: [
       {
         id: 'squash-rally',
+        protectionDays: 10,
         tradeName: 'Rally 40WSP',
         activeIngredient: 'Myclobutanil',
         fracCode: 'FRAC 3',
@@ -651,6 +651,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'squash-microthiol',
+        protectionDays: 7,
         tradeName: 'Microthiol Disperss (Micronized Sulfur)',
         activeIngredient: 'Sulfur (80%)',
         fracCode: 'FRAC M02',
@@ -665,6 +666,7 @@ export const AGRONOMIC_INTERVENTION_REGISTRY: Record<SupportedCropId, CropInterv
       },
       {
         id: 'squash-milstop',
+        protectionDays: 5,
         tradeName: 'MilStop / Kaligreen',
         activeIngredient: 'Potassium Bicarbonate (85%)',
         fracCode: 'FRAC NC',
@@ -755,48 +757,148 @@ export function calculateInterventionEfficacy(
 }
 
 export interface TreatedSeverityTrajectoryResult {
+  /** Disease progress (%) on the treated branch at the current moment. */
   currentSeverityPct: number;
+  /** Disease progress (%) at season end on the treated branch (name kept for existing callers). */
   plateauSeverityPct: number;
+  /** Extra progress after the first spray, until season end. */
   expansionDeltaPct: number;
   efficacyPct: number;
+  /** True when the current moment is already the season end. */
   isFullyArrested: boolean;
+  /** Sprays applied up to the current moment / over the whole season. */
+  spraysSoFar: number;
+  spraysSeason: number;
+  protectionDays: number;
+}
+
+export interface TreatmentScenarioOptions {
+  /** Air temperature (°C); defaults to the crop's best temperature for the pathogen. */
+  temperatureC?: number;
+  /** Relative humidity (%); defaults to the crop's best humidity for the pathogen. */
+  humidityPct?: number;
+  /** Days one spray protects; defaults to the selected product, else the category default. */
+  protectionDays?: number;
+  /** Re-spray every time protection runs out (default true). */
+  keepSpraying?: boolean;
+}
+
+/** Typical protection days when no product is chosen. */
+export const CATEGORY_PROTECTION_DAYS: Record<FungicideCategory, number> = {
+  systemic_curative: 10,
+  protectant_contact: 7,
+  bio_fungicide: 5,
+};
+
+interface ScenarioClock {
+  daysAt: (pct: number) => number;
+  pctAt: (days: number) => number;
+}
+
+function scenarioClock(cropId: SupportedCropId, temperatureC: number, humidityPct: number): ScenarioClock {
+  const factor = evaluateMicroclimate(cropId, temperatureC, humidityPct).compositeFactor;
+  return {
+    daysAt: (pct) => getOptimalDaysForSlider(cropId, pct) / factor,
+    pctAt: (days) => calculateSliderFromDays(cropId, days, temperatureC, humidityPct),
+  };
 }
 
 /**
- * 2. Calculates post-treatment branched severity at timeline day t:
- *    S_treated(t) = S_plateau - (S_plateau - S_int) * exp(-k_arrest * (t - t_int))
+ * Moves the disease "clock" from the first spray to `untilDays`.
+ * While a spray protects, the disease advances at (1 - efficacy) of its normal speed; efficacy is re-evaluated
+ * at every re-spray from the progress reached by then (so late sprays help less). Without re-spraying the
+ * disease runs at full speed once protection ends.
+ */
+function advanceTreatedClock(
+  cropId: SupportedCropId,
+  clock: ScenarioClock,
+  sprayAtPct: number,
+  untilDays: number,
+  category: FungicideCategory,
+  protectionDays: number,
+  keepSpraying: boolean,
+): { diseaseDays: number; sprays: number } {
+  const sprayDay = clock.daysAt(sprayAtPct);
+  if (untilDays <= sprayDay) return { diseaseDays: untilDays, sprays: 0 };
+  const segment = Math.max(0.5, protectionDays);
+  let elapsed = sprayDay;
+  let diseaseDays = sprayDay;
+  let progress = sprayAtPct;
+  let sprays = 0;
+  while (elapsed < untilDays) {
+    sprays += 1;
+    const step = Math.min(segment, untilDays - elapsed);
+    const efficacy = calculateInterventionEfficacy(cropId, progress, category).efficacy;
+    diseaseDays += step * (1 - efficacy);
+    elapsed += step;
+    progress = clock.pctAt(diseaseDays);
+    if (!keepSpraying) {
+      diseaseDays += untilDays - elapsed;
+      break;
+    }
+    if (sprays > 500) break; // safety for pathological inputs
+  }
+  return { diseaseDays, sprays };
+}
+
+function resolveOptions(cropId: SupportedCropId, modality: FungicideCategory, options: TreatmentScenarioOptions) {
+  const profile = AGRONOMIC_CALIBRATION_REGISTRY[cropId];
+  return {
+    temperatureC: options.temperatureC ?? profile.cardinals.opt,
+    humidityPct: options.humidityPct ?? profile.humidity.opt,
+    protectionDays: options.protectionDays ?? CATEGORY_PROTECTION_DAYS[modality],
+    keepSpraying: options.keepSpraying ?? true,
+  };
+}
+
+/**
+ * 2. Treated branch at a moment on the timeline.
+ * `currentPct` is the untreated progress shown by the main slider; the treated branch shares the same calendar.
+ */
+export function simulateTreatment(
+  cropId: SupportedCropId,
+  sprayAtPct: number,
+  currentPct: number,
+  modality: FungicideCategory = 'systemic_curative',
+  options: TreatmentScenarioOptions = {},
+): TreatedSeverityTrajectoryResult {
+  const o = resolveOptions(cropId, modality, options);
+  const clock = scenarioClock(cropId, o.temperatureC, o.humidityPct);
+  const sprayAt = Math.max(0, Math.min(100, sprayAtPct));
+  const nowDays = clock.daysAt(Math.max(0, Math.min(100, currentPct)));
+  const seasonDays = clock.daysAt(100);
+
+  const now = advanceTreatedClock(cropId, clock, sprayAt, nowDays, modality, o.protectionDays, o.keepSpraying);
+  const season = advanceTreatedClock(cropId, clock, sprayAt, seasonDays, modality, o.protectionDays, o.keepSpraying);
+  const currentSeverity = now.sprays === 0 ? Math.max(0, Math.min(100, currentPct)) : clock.pctAt(now.diseaseDays);
+  const seasonSeverity = season.sprays === 0 ? 100 : clock.pctAt(season.diseaseDays);
+
+  return {
+    currentSeverityPct: Math.round(currentSeverity * 10) / 10,
+    plateauSeverityPct: Math.round(seasonSeverity * 10) / 10,
+    expansionDeltaPct: Math.max(0, Math.round((seasonSeverity - sprayAt) * 10) / 10),
+    efficacyPct: calculateInterventionEfficacy(cropId, sprayAt, modality).efficacyPct,
+    isFullyArrested: nowDays >= seasonDays,
+    spraysSoFar: now.sprays,
+    spraysSeason: season.sprays,
+    protectionDays: o.protectionDays,
+  };
+}
+
+/**
+ * Treated branch `daysPostIntervention` days after the first spray (calendar days at the given weather).
  */
 export function calculateTreatedSeverity(
   cropId: SupportedCropId,
   sIntPct: number,
   daysPostIntervention: number,
-  modality: FungicideCategory = 'systemic_curative'
+  modality: FungicideCategory = 'systemic_curative',
+  options: TreatmentScenarioOptions = {},
 ): TreatedSeverityTrajectoryResult {
-  const cal = AGRONOMIC_INTERVENTION_REGISTRY[cropId];
-  const { efficacy, efficacyPct } = calculateInterventionEfficacy(cropId, sIntPct, modality);
-  const sInt = Math.max(0, Math.min(100, sIntPct));
-
-  // Latency buffer: uncurable latent expansion ratio omega_leak
-  const maxRoom = cal.carryingCapacity - sInt;
-  const deltaLeak = maxRoom * (1.0 - efficacy) * cal.leakageRatio;
-  const sPlateau = Math.min(cal.carryingCapacity, sInt + deltaLeak);
-
-  // Time relaxation asymptotic arrest
-  const dt = Math.max(0, daysPostIntervention);
-  const sTreated = sPlateau - (sPlateau - sInt) * Math.exp(-cal.arrestRateDay * dt);
-
-  const roundedTreated = Math.round(sTreated * 10) / 10;
-  const roundedPlateau = Math.round(sPlateau * 10) / 10;
-  const roundedDelta = Math.round((roundedPlateau - sInt) * 10) / 10;
-  const isFullyArrested = Math.abs(roundedPlateau - roundedTreated) <= 0.2;
-
-  return {
-    currentSeverityPct: roundedTreated,
-    plateauSeverityPct: roundedPlateau,
-    expansionDeltaPct: Math.max(0, roundedDelta),
-    efficacyPct,
-    isFullyArrested,
-  };
+  const o = resolveOptions(cropId, modality, options);
+  const clock = scenarioClock(cropId, o.temperatureC, o.humidityPct);
+  const untreatedPctThen = clock.pctAt(clock.daysAt(sIntPct) + Math.max(0, daysPostIntervention));
+  return simulateTreatment(cropId, sIntPct, untreatedPctThen, modality, o);
 }
 
 export interface YieldRetentionAnalyticsResult {
@@ -807,60 +909,60 @@ export interface YieldRetentionAnalyticsResult {
   grossSavedUSDPerHectare: number;
   netEconomicBenefitUSDPerHectare: number;
   returnOnInvestmentRatio: number;
+  /** Sprays over the season (0 when untreated). */
+  sprayCount: number;
+  sprayCostUSDPerHectare: number;
+}
+
+function yieldLossPct(cal: CropInterventionCalibration, severityPct: number): number {
+  return Math.min(cal.maxYieldLossCeiling, Math.max(0, severityPct - cal.yieldDamageThreshold) * cal.yieldSlopeFactor);
 }
 
 /**
- * 3. Evaluates Quantitative Yield Salvage / Retention and Financial Economics.
+ * 3. Season outcome: yield kept and a rough money example.
+ * "Season end" is when an untreated leaf would reach 100 % at the same weather. Losses use a simple
+ * threshold-and-slope damage line per crop; money uses one example crop value and spray cost per spray.
  */
 export function evaluateYieldRetention(
   cropId: SupportedCropId,
   sIntPct: number,
   isTreated: boolean,
-  modality: FungicideCategory = 'systemic_curative'
+  modality: FungicideCategory = 'systemic_curative',
+  options: TreatmentScenarioOptions = {},
 ): YieldRetentionAnalyticsResult {
   const cal = AGRONOMIC_INTERVENTION_REGISTRY[cropId];
-  const sFinalUntreated = cal.carryingCapacity; // 100% destruction in unchecked epidemic
-
-  // Untreated baseline loss
-  const effectiveUntreatedS = Math.max(0, sFinalUntreated - cal.yieldDamageThreshold);
-  const untreatedLossPct = Math.min(cal.maxYieldLossCeiling, effectiveUntreatedS * cal.yieldSlopeFactor);
-  const untreatedRetainedPct = Math.max(0, 100 - untreatedLossPct);
+  const untreatedLoss = yieldLossPct(cal, cal.carryingCapacity);
 
   if (!isTreated) {
     return {
-      retainedYieldPct: Math.round(untreatedRetainedPct * 10) / 10,
-      yieldLossPct: Math.round(untreatedLossPct * 10) / 10,
-      salvagedYieldPct: 0.0,
-      greenLeafAreaPct: 0.0,
+      retainedYieldPct: Math.round((100 - untreatedLoss) * 10) / 10,
+      yieldLossPct: Math.round(untreatedLoss * 10) / 10,
+      salvagedYieldPct: 0,
+      greenLeafAreaPct: 0,
       grossSavedUSDPerHectare: 0,
       netEconomicBenefitUSDPerHectare: 0,
       returnOnInvestmentRatio: 0,
+      sprayCount: 0,
+      sprayCostUSDPerHectare: 0,
     };
   }
 
-  // Treated scenario at full asymptotic maturity (dt = 30 days)
-  const { plateauSeverityPct } = calculateTreatedSeverity(cropId, sIntPct, 30.0, modality);
-  const effectiveTreatedS = Math.max(0, plateauSeverityPct - cal.yieldDamageThreshold);
-  const treatedLossPct = Math.min(cal.maxYieldLossCeiling, effectiveTreatedS * cal.yieldSlopeFactor);
-  const treatedRetainedPct = Math.max(0, 100 - treatedLossPct);
-
-  const salvagedYieldPct = Math.max(0, treatedRetainedPct - untreatedRetainedPct);
-  const greenLeafAreaPct = Math.max(0, 100 - plateauSeverityPct);
-
-  // Economic calculations
-  const grossSavedUSD = Math.round((salvagedYieldPct / 100.0) * cal.marketValuePerHectareUSD);
-  const sprayCost = cal.sprayCostPerHectareUSD;
-  const netSavedUSD = Math.round(grossSavedUSD - sprayCost);
-  const roi = sprayCost > 0 ? Math.round((grossSavedUSD / sprayCost) * 10) / 10 : 0;
+  const season = simulateTreatment(cropId, sIntPct, 100, modality, options);
+  const treatedLoss = yieldLossPct(cal, season.plateauSeverityPct);
+  const salvaged = Math.max(0, untreatedLoss - treatedLoss);
+  const gross = Math.round((salvaged / 100) * cal.marketValuePerHectareUSD);
+  const sprayCost = season.spraysSeason * cal.sprayCostPerHectareUSD;
 
   return {
-    retainedYieldPct: Math.round(treatedRetainedPct * 10) / 10,
-    yieldLossPct: Math.round(treatedLossPct * 10) / 10,
-    salvagedYieldPct: Math.round(salvagedYieldPct * 10) / 10,
-    greenLeafAreaPct: Math.round(greenLeafAreaPct * 10) / 10,
-    grossSavedUSDPerHectare: grossSavedUSD,
-    netEconomicBenefitUSDPerHectare: netSavedUSD,
-    returnOnInvestmentRatio: roi,
+    retainedYieldPct: Math.round((100 - treatedLoss) * 10) / 10,
+    yieldLossPct: Math.round(treatedLoss * 10) / 10,
+    salvagedYieldPct: Math.round(salvaged * 10) / 10,
+    greenLeafAreaPct: Math.round(Math.max(0, 100 - season.plateauSeverityPct) * 10) / 10,
+    grossSavedUSDPerHectare: gross,
+    netEconomicBenefitUSDPerHectare: Math.round(gross - sprayCost),
+    returnOnInvestmentRatio: sprayCost > 0 ? Math.round((gross / sprayCost) * 10) / 10 : 0,
+    sprayCount: season.spraysSeason,
+    sprayCostUSDPerHectare: sprayCost,
   };
 }
 

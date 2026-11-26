@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { AdvisorySource, DiagnosticPrediction } from '../../types/diagnostics';
+import { Link } from 'react-router-dom';
 import { formatConfidence, LOW_CONFIDENCE_THRESHOLD } from '../../services/diagnosticsService';
+import { progressionCropForDiagnosis, progressionPath } from '../../utils/progressionLinks.ts';
 import { AlertIcon, CameraIcon, CheckCircleIcon, ClipboardCheckIcon, CopyIcon } from './icons.tsx';
 import { SeverityPill } from './SeverityPill.tsx';
 import { BUTTON, severityWord } from './styles.ts';
@@ -63,6 +65,7 @@ export const DiagnosticVerdictCard: React.FC<DiagnosticVerdictCardProps> = ({ ve
   const isRescan = Boolean(verdict.requiresRescan);
   const treatments = advisory?.fungicideTreatments ?? [];
   const matches = (verdict.topProbabilities || []).slice(0, 3);
+  const progressionCrop = isRescan ? null : progressionCropForDiagnosis(verdict.crop, verdict.condition, verdict.classKey);
 
   const handleCopySummary = async () => {
     const sciSuffix = verdict.scientificName ? ` (${verdict.scientificName})` : '';
@@ -205,6 +208,11 @@ Risk factors: ${advisory?.environmentalRiskFactors || 'Standard conditions.'}`;
           {advisory?.source ? SOURCE_LABEL[advisory.source] : 'Advice: built-in knowledge base'}
         </p>
         <div className="flex flex-col gap-2 sm:flex-row">
+          {progressionCrop && (
+            <Link to={progressionPath(progressionCrop)} className={BUTTON.outline}>
+              See how it develops
+            </Link>
+          )}
           <button type="button" onClick={handleCopySummary} className={BUTTON.outline}>
             <CopyIcon className="h-4 w-4" />
             {copied ? 'Copied' : 'Copy summary'}
