@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
 import type {
   DiagnosticPrediction,
   DiagnosticUIState,
@@ -7,10 +6,13 @@ import type {
 } from "../types/diagnostics";
 import {
   LeafImageDropzone,
-  SamplingBestPracticesCard,
+  PhotoTips,
   DiagnosticVerdictCard,
   VerdictSkeletonLoader,
+  SamplePicker,
+  StepStrip,
 } from "../components/Diagnostics";
+import { AppHeader } from "../components/ui/AppHeader";
 import { validateLeafImage } from "../utils/imageValidation";
 import {
   classifyLeafImage,
@@ -171,88 +173,35 @@ export const LeafDiagnosticsPage: React.FC = () => {
     });
   };
 
+  const isBusy = uiState === "VALIDATING" || uiState === "INFERENCING";
+  const activeStep = verdict ? 2 : selectedImageUrl ? 1 : 0;
+
   return (
-    <div className="min-h-screen bg-ag-canvas text-ag-ink font-sans antialiased p-4 sm:p-6 lg:p-8 flex flex-col justify-between">
-      <div className="max-w-7xl mx-auto w-full space-y-6">
-        {/* Navigation Breadcrumbs & Top Utilities */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-ag-border">
-          <nav className="text-xs text-ag-ink-secondary flex items-center gap-1.5 flex-wrap">
-            <Link to="/" className="hover:text-ag-brand transition-colors">
-              Platform Home
-            </Link>
-            <span>/</span>
-            <span>Operations & Agronomy</span>
-            <span>/</span>
-            <span className="text-ag-ink font-semibold">
-              AI Leaf Diagnostics
-            </span>
-          </nav>
+    <div className="ui-page min-h-screen antialiased">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-ui-ink focus:px-3 focus:py-2 focus:text-white"
+      >
+        Skip to content
+      </a>
+      <AppHeader />
 
-          <div className="flex items-center gap-2">
-            <Link
-              to="/disease-progression"
-              className="px-3 py-1.5 rounded-md bg-white border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-ag-ink ag-interactive shadow-xs flex items-center gap-1.5"
-            >
-              <span>🔬</span>
-              <span>Progression Engine</span>
-            </Link>
-
-            {(selectedImageUrl || verdict) && (
-              <button
-                type="button"
-                onClick={handleReset}
-                className="px-3 py-1.5 rounded-md bg-white border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-ag-ink ag-interactive shadow-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <span>✕</span>
-                <span>Clear All</span>
-              </button>
-            )}
-          </div>
+      <main id="main" className="mx-auto max-w-6xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14">
+        <div className="text-center">
+          <h1 className="text-[36px] font-medium leading-[1.08] tracking-[-0.025em] text-ui-ink sm:text-5xl">
+            Scan a leaf
+          </h1>
+          <p className="mx-auto mt-3 max-w-lg text-balance text-[17px] leading-relaxed text-ui-ink-2">
+            Upload a photo of one leaf. Get a likely diagnosis and what to do today.
+          </p>
         </div>
 
-        {/* Page Title & Clinical Quick-Select Toolbar */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-ag-ink tracking-tight font-display">
-              AI Foliar Pathology & Vision Diagnostics
-            </h1>
-            <p className="text-xs sm:text-sm text-ag-ink-secondary max-w-2xl">
-              High-sunlight foliar diagnostic workbench. Ingest plant leaf
-              photos via camera or file upload to generate instant cellular
-              pathology classifications, dual-coded risk severity, and
-              actionable agronomic advisories.
-            </p>
-          </div>
-
-          {/* Quick-Test Clinical Specimen Pills (4 Target Staples) */}
-          <div className="space-y-1.5">
-            <span className="text-xs font-semibold text-ag-ink-secondary block">
-              Quick Test Clinical Specimens:
-            </span>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {CLINICAL_SAMPLE_PRESETS.map((preset) => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => handleSelectPreset(preset)}
-                  disabled={
-                    uiState === "VALIDATING" || uiState === "INFERENCING"
-                  }
-                  className="disabled:cursor-not-allowed disabled:opacity-50 px-3 py-2 min-h-[44px] touch-manipulation rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-300 hover:border-ag-brand text-ag-ink flex items-center gap-1.5 ag-interactive shadow-xs cursor-pointer"
-                  title={`Test ${preset.label} (${preset.severityTier})`}
-                >
-                  <span>{preset.icon}</span>
-                  <span>{preset.crop}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="mt-8">
+          <StepStrip active={activeStep} />
         </div>
 
-        {/* Focused 2-Column Responsive Workbench (SPEC-UI-006 §2.1: 5 Cols Left / 7 Cols Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
-          {/* Left Column: Image Ingestion, Dropzone & Sampling Guide (Cols 1-5, ~42% width) */}
-          <div className="lg:col-span-5 space-y-5">
+        <div className="mt-10 grid items-start gap-6 lg:grid-cols-2">
+          <div className="space-y-6">
             <LeafImageDropzone
               selectedImageUrl={selectedImageUrl}
               uiState={uiState}
@@ -263,12 +212,10 @@ export const LeafDiagnosticsPage: React.FC = () => {
               onAbortScan={handleAbortScan}
               onRetry={handleRetryScan}
             />
-
-            <SamplingBestPracticesCard />
+            {!verdict && <PhotoTips />}
           </div>
 
-          {/* Right Column: Diagnostic Verdict & Agronomic Advisory Card (Cols 6-12, ~58% width) */}
-          <div className="lg:col-span-7">
+          <div>
             {uiState === "INFERENCING" ? (
               <VerdictSkeletonLoader />
             ) : verdict ? (
@@ -278,38 +225,15 @@ export const LeafDiagnosticsPage: React.FC = () => {
                 onRetake={handleReset}
               />
             ) : (
-              /* IDLE / EMPTY STATE CONTAINER (SPEC-UI-006 §5 State 1) */
-              <div className="bg-ag-surface border border-ag-border rounded-xl p-8 sm:p-12 shadow-xs text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-ag-surface-muted border border-slate-200 text-slate-400 mx-auto flex items-center justify-center text-2xl shadow-inner">
-                  🔬
-                </div>
-                <div className="space-y-1.5 max-w-md mx-auto">
-                  <h3 className="text-base font-bold text-ag-ink">
-                    Diagnostic Engine Ready
-                  </h3>
-                  <p className="text-xs sm:text-sm text-ag-ink-secondary leading-relaxed">
-                    Select or photograph a single plant leaf from Tomato,
-                    Potato, Corn, Apple, Grape, Rice, or Cassava to run deep
-                    learning foliar diagnostics and view treatment
-                    recommendations.
-                  </p>
-                </div>
-              </div>
+              <SamplePicker
+                presets={CLINICAL_SAMPLE_PRESETS}
+                disabled={isBusy}
+                onSelect={handleSelectPreset}
+              />
             )}
           </div>
         </div>
-      </div>
-
-      {/* Footer System Status Bar */}
-      <footer className="max-w-7xl mx-auto w-full pt-10 pb-4 text-xs text-ag-ink-tertiary flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-ag-border mt-10">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span>Precision Ag-Intelligence v1.0.0-PROD</span>
-          <span className="text-slate-300">|</span>
-          <span>WCAG AAA Outdoor Hardened</span>
-        </div>
-        <p>FAO-56 Biological Mathematics & Foliar Computer Vision Platform</p>
-      </footer>
+      </main>
     </div>
   );
 };
