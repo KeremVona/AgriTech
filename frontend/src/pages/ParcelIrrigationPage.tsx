@@ -6,6 +6,7 @@ import { DEFAULT_IRRIGATION_CONFIG } from '../components/Irrigation/defaultIrrig
 import { ErrorNotice } from '../components/Irrigation/ErrorNotice.tsx';
 import { IrrigationControlCard } from '../components/Irrigation/IrrigationControlCard.tsx';
 import { ParcelTelemetryChart } from '../components/Irrigation/ParcelTelemetryChart.tsx';
+import { AppHeader } from '../components/ui/AppHeader.tsx';
 import { SampleTag } from '../components/Irrigation/SampleTag.tsx';
 import { useNow } from '../hooks/useNow.ts';
 import { usePolledResource } from '../hooks/usePolledResource.ts';
@@ -15,22 +16,34 @@ import type { Sourced } from '../types/irrigation.ts';
 import { combineSources, gaugeSamples } from '../utils/irrigationConfig.ts';
 import type { IrrigationConfig } from '../utils/irrigationConfig.ts';
 import { readDashboardHints } from '../utils/irrigationRoutes.ts';
+import { BUTTON } from '../components/Diagnostics/styles.ts';
 
-const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
 
 function PageFrame({ children }: { children: ReactNode }) {
-  return <div className="min-h-screen bg-ag-canvas text-ag-ink font-sans">{children}</div>;
+  return (
+    <div className="ui-page min-h-screen antialiased">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-ui-ink focus:px-3 focus:py-2 focus:text-white"
+      >
+        Skip to content
+      </a>
+      <AppHeader />
+      {children}
+    </div>
+  );
 }
 
 function CenteredNotice({ title, body }: { title: string; body: string }) {
   return (
     <PageFrame>
-      <main className="mx-auto max-w-xl px-4 py-16">
-        <section className="rounded-lg border border-ag-border bg-ag-surface p-6" role="alert">
-          <h1 className="text-lg font-semibold">{title}</h1>
-          <p className="mt-2 text-sm text-ag-ink-secondary">{body}</p>
-          <Link to="/map" className="mt-4 inline-flex min-h-12 items-center rounded-lg border border-ag-border-active px-4 text-sm font-semibold text-ag-brand hover:bg-ag-brand-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ag-brand">
-            ← Back to field map
+      <main id="main" className="mx-auto max-w-xl px-4 py-16">
+        <section className="rounded-2xl border border-ui-line bg-ui-bg p-6" role="alert">
+          <h1 className="text-xl font-medium text-ui-ink">{title}</h1>
+          <p className="mt-2 text-sm text-ui-ink-2">{body}</p>
+          <Link to="/map" className={`mt-5 ${BUTTON.outline}`}>
+            Back to field map
           </Link>
         </section>
       </main>
@@ -84,12 +97,12 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
   const now = useNow(60_000, true);
   const source = combineSources([budget.data, hourly.data, ...Object.values(childSources)], config.mode);
   const pill = source.label === 'Loading…' && budget.error
-    ? { label: 'Live data unavailable', icon: '✕', className: 'border-ag-risk-critical-border bg-ag-risk-critical-bg text-red-900' }
+    ? { label: 'Live data unavailable', dot: 'bg-red-600', className: 'bg-red-50 text-red-800' }
     : source.label === 'Loading…'
-      ? { label: source.label, icon: '○', className: 'border-ag-border bg-ag-surface-muted text-ag-ink-secondary' }
+      ? { label: source.label, dot: 'bg-ui-ink-3', className: 'bg-ui-warm text-ui-ink-2' }
       : source.anySample
-        ? { label: source.label, icon: '◐', className: 'border-ag-risk-low-border bg-ag-risk-low-bg text-amber-900' }
-        : { label: source.label, icon: '●', className: 'border-ag-risk-healthy-border bg-ag-risk-healthy-bg text-emerald-900' };
+        ? { label: source.label, dot: 'bg-amber-500', className: 'bg-amber-50 text-amber-800' }
+        : { label: source.label, dot: 'bg-emerald-600', className: 'bg-emerald-50 text-emerald-800' };
   const data = budget.data?.data ?? null;
   const parcelName = data?.parcelName ?? hints.parcelName ?? 'Parcel';
   const subtitle = [data?.cropName ?? hints.cropName, data?.soilProfileName ?? hints.soilProfileId].filter(Boolean).join(' · ');
@@ -100,85 +113,78 @@ function WaterDashboard({ parcelId, config, hints, hintsKey }: {
 
   return (
     <PageFrame>
-      <header className="sticky top-0 z-10 border-b border-ag-border bg-ag-surface">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-          <Link
-            to="/map"
-            className="inline-flex min-h-12 items-center rounded-lg border border-ag-border px-3 text-sm font-semibold text-ag-ink hover:bg-ag-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ag-brand md:min-h-10"
-          >
-            ← Field map
+      <main id="main" className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6">
+        <nav aria-label="Breadcrumb" className="text-sm text-ui-ink-3">
+          <Link to="/map" className="inline-flex min-h-11 items-center rounded hover:text-ui-ink focus-visible:outline-2 focus-visible:outline-ui-accent">
+            Field map
           </Link>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-semibold leading-tight tracking-tight">{parcelName}</h1>
-            <p className="truncate text-[13px] text-ag-ink-secondary">{subtitle || 'Parcel Water Dashboard'}</p>
+          <span aria-hidden="true" className="mx-2">/</span>
+          <span className="text-ui-ink-2">Water</span>
+        </nav>
+
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="truncate text-[32px] font-medium leading-tight tracking-[-0.02em] text-ui-ink sm:text-[40px]">{parcelName}</h1>
+            <p className="mt-1 truncate text-[15px] text-ui-ink-2">{subtitle || 'Water dashboard'}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <span
-              role="status"
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${pill.className}`}
-            >
-              <span aria-hidden="true">{pill.icon}</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span role="status" className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[13px] font-medium ${pill.className}`}>
+              <span aria-hidden="true" className={`h-2 w-2 rounded-full ${pill.dot}`} />
               {pill.label}
             </span>
             {budget.updatedAt !== null && (
-              <span className="hidden font-mono text-xs tabular-nums text-ag-ink-tertiary sm:inline">
-                Updated {timeFormat.format(budget.updatedAt)}
-              </span>
+              <span className="hidden text-[13px] tabular-nums text-ui-ink-3 sm:inline">Updated {timeFormat.format(budget.updatedAt)}</span>
             )}
-            <button
-              type="button"
-              onClick={refreshAll}
-              className="inline-flex min-h-12 items-center rounded-lg border border-ag-border px-3 text-sm font-semibold text-ag-ink transition-transform hover:bg-ag-surface-muted active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ag-brand md:min-h-10"
-            >
+            <button type="button" onClick={refreshAll} className={BUTTON.outline}>
               Refresh
             </button>
           </div>
         </div>
-      </header>
 
-      <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,35%)] lg:py-6">
-        <section aria-labelledby="water-budget-heading" className="rounded-lg border border-ag-border bg-ag-surface p-4 lg:col-start-2 lg:row-start-1">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 id="water-budget-heading" className="text-lg font-semibold tracking-tight">Water budget</h2>
-            {budget.data?.source === 'sample' && <SampleTag />}
-          </div>
-          {data ? (
-            <DeficitGauge
-              currentMoisture={data.currentMoisturePct}
-              fieldCapacity={data.fieldCapacityPct}
-              wiltingPoint={data.wiltingPointPct}
-              mad={data.madFraction}
-              hoursUntilTrigger={data.hoursUntilTrigger}
-              recentSamples={gaugeSamples(budget.data, hourly.data)}
-              latestReadingAt={data.latestReadingAt}
-              nowMs={now}
+        <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,35%)]">
+          <section aria-labelledby="water-budget-heading" className="rounded-2xl border border-ui-line bg-ui-bg p-5 lg:col-start-2 lg:row-start-1">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h2 id="water-budget-heading" className="text-[17px] font-medium text-ui-ink">Water budget</h2>
+              {budget.data?.source === 'sample' && <SampleTag />}
+            </div>
+            {data ? (
+              <DeficitGauge
+                currentMoisture={data.currentMoisturePct}
+                fieldCapacity={data.fieldCapacityPct}
+                wiltingPoint={data.wiltingPointPct}
+                mad={data.madFraction}
+                hoursUntilTrigger={data.hoursUntilTrigger}
+                recentSamples={gaugeSamples(budget.data, hourly.data)}
+                latestReadingAt={data.latestReadingAt}
+                nowMs={now}
+              />
+            ) : budget.error ? (
+              <ErrorNotice message={budget.error} onRetry={budget.refresh} />
+            ) : (
+              <div className="h-[300px] animate-pulse rounded-xl bg-ui-warm motion-reduce:animate-none" role="status" aria-label="Loading water budget" />
+            )}
+            {data && budget.error && <p className="mt-3 text-xs text-ui-ink-3" role="status">Could not refresh: {budget.error}</p>}
+          </section>
+          <section aria-labelledby="valve-control-heading" className="rounded-2xl border border-ui-line bg-ui-bg p-5 lg:col-start-2 lg:row-start-2">
+            <IrrigationControlCard
+              parcelId={parcelId}
+              config={config}
+              onSourceChange={reportValveSource}
+              refreshToken={refreshToken}
+              headingId="valve-control-heading"
             />
-          ) : budget.error ? (
-            <ErrorNotice message={budget.error} onRetry={budget.refresh} />
-          ) : (
-            <div className="h-[300px] animate-pulse rounded-lg bg-ag-surface-muted motion-reduce:animate-none" role="status" aria-label="Loading water budget" />
-          )}
-          {data && budget.error && <p className="mt-3 text-xs text-ag-ink-secondary" role="status">Could not refresh: {budget.error}</p>}
-        </section>
-        <section aria-labelledby="valve-control-heading" className="rounded-lg border border-ag-border bg-ag-surface p-4 lg:col-start-2 lg:row-start-2">
-          <IrrigationControlCard
-            parcelId={parcelId}
-            config={config}
-            onSourceChange={reportValveSource}
-            refreshToken={refreshToken}
-            headingId="valve-control-heading"
-          />
-        </section>
-        <section aria-labelledby="telemetry-heading" className="min-w-0 rounded-lg border border-ag-border bg-ag-surface p-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
-          <ParcelTelemetryChart
-            parcelId={parcelId}
-            config={config}
-            hints={hints}
-            onSourceChange={reportChartSource}
-            refreshToken={refreshToken}
-            headingId="telemetry-heading"
-          />
-        </section>
+          </section>
+          <section aria-labelledby="telemetry-heading" className="min-w-0 rounded-2xl border border-ui-line bg-ui-bg p-5 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-start">
+            <ParcelTelemetryChart
+              parcelId={parcelId}
+              config={config}
+              hints={hints}
+              onSourceChange={reportChartSource}
+              refreshToken={refreshToken}
+              headingId="telemetry-heading"
+            />
+          </section>
+        </div>
       </main>
     </PageFrame>
   );

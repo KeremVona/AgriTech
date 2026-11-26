@@ -2,9 +2,9 @@ import type { ValveDisplay } from '../../models/valveControlModel.ts';
 import './irrigation.css';
 
 const TONE_CLASSES: Record<ValveDisplay['tone'], string> = {
-  active: 'bg-emerald-100 text-emerald-900 border-emerald-400',
-  idle: 'bg-slate-100 text-slate-700 border-slate-300',
-  transition: 'bg-amber-50 text-amber-900 border-amber-300',
+  active: 'bg-emerald-50 text-emerald-800',
+  idle: 'bg-ui-warm text-ui-ink-2',
+  transition: 'bg-amber-50 text-amber-800',
 };
 
 function ValveIcon({ tone }: { tone: ValveDisplay['tone'] }) {
@@ -25,11 +25,11 @@ export function ValveStatusBadge({ label, tone, detail }: {
   detail?: string | null;
 }): React.JSX.Element {
   return (
-    <span role="status" aria-live="polite" className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${TONE_CLASSES[tone]}`}>
+    <span role="status" aria-live="polite" className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ${TONE_CLASSES[tone]}`}>
       <ValveIcon tone={tone} />
       <span>
         {label}
-        {detail && <span className="font-mono tabular-nums">: {detail}</span>}
+        {detail && <span className="tabular-nums">: {detail}</span>}
       </span>
     </span>
   );

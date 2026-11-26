@@ -12,7 +12,7 @@ export function TelemetryWindowToggle({ value, onChange, disabled = false }: {
   disabled?: boolean;
 }): React.JSX.Element {
   return (
-    <div role="group" aria-label="Chart time window" className="inline-flex rounded-lg border border-ag-border bg-ag-surface-muted p-0.5">
+    <div role="group" aria-label="Chart time window" className="inline-flex rounded-lg bg-ui-warm p-1">
       {OPTIONS.map((option) => {
         const selected = option.value === value;
         return (
@@ -22,7 +22,7 @@ export function TelemetryWindowToggle({ value, onChange, disabled = false }: {
             aria-pressed={selected}
             disabled={disabled}
             onClick={() => onChange(option.value)}
-            className={`min-h-12 min-w-14 rounded-md px-3 font-mono text-sm tabular-nums transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ag-brand disabled:cursor-not-allowed disabled:opacity-60 md:min-h-9 ${selected ? 'bg-ag-surface font-semibold text-ag-ink shadow-sm ring-1 ring-ag-border' : 'text-ag-ink-secondary hover:text-ag-ink'}`}
+            className={`min-h-11 min-w-14 cursor-pointer rounded-md px-3 text-sm tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ui-accent disabled:cursor-not-allowed disabled:opacity-60 md:min-h-9 ${selected ? 'bg-ui-bg font-medium text-ui-ink shadow-[0_1px_2px_rgba(0,0,0,0.08)]' : 'text-ui-ink-2 hover:text-ui-ink'}`}
           >
             {option.label}
           </button>

@@ -67,11 +67,11 @@ function ChartTooltip({ active, payload, madThresholdPct, resolution }: {
   const row = payload?.[0]?.payload as ChartRow | undefined;
   if (!active || !row) return null;
   return (
-    <div className="rounded-md border border-[#CBD5E1] bg-white px-3 py-2 text-xs shadow-md">
-      <p className="mb-1 font-semibold text-ag-ink">{rowLabel(row, resolution)}</p>
-      <ul className="space-y-0.5 font-mono tabular-nums text-ag-ink-secondary">
+    <div className="rounded-xl border border-ui-line bg-white px-3 py-2 text-xs shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+      <p className="mb-1 font-medium text-ui-ink">{rowLabel(row, resolution)}</p>
+      <ul className="space-y-0.5 tabular-nums text-ui-ink-2">
         {tooltipLines(row, madThresholdPct).map((line) => (
-          <li key={line} className={line.startsWith('Valve') || line === 'Below MAD threshold' ? 'font-semibold text-ag-ink' : undefined}>{line}</li>
+          <li key={line} className={line.startsWith('Valve') || line === 'Below refill point' ? 'font-medium text-ui-ink' : undefined}>{line}</li>
         ))}
       </ul>
     </div>
@@ -123,9 +123,9 @@ function TelemetryChartBody({ parcelId, config, hints, onSourceChange, refreshTo
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h2 id={headingId} className="text-lg font-semibold tracking-tight">Soil moisture &amp; water inputs</h2>
+          <h2 id={headingId} className="text-[17px] font-medium text-ui-ink">Soil moisture</h2>
           {resource.data?.source === 'sample' && <SampleTag />}
         </div>
         <TelemetryWindowToggle value={timeWindow} onChange={setTimeWindow} disabled={showingOldWindow && resource.loading} />
@@ -134,16 +134,16 @@ function TelemetryChartBody({ parcelId, config, hints, onSourceChange, refreshTo
       {response === null ? (
         resource.error
           ? <ErrorNotice message={resource.error} onRetry={resource.refresh} />
-          : <div className="h-[260px] animate-pulse rounded-lg bg-ag-surface-muted motion-reduce:animate-none sm:h-[320px]" role="status" aria-label="Loading chart" />
+          : <div className="h-[260px] animate-pulse rounded-xl bg-ui-warm motion-reduce:animate-none sm:h-[320px]" role="status" aria-label="Loading chart" />
       ) : !hasReadings ? (
-        <div className="flex h-[260px] items-center justify-center rounded-lg border border-dashed border-ag-border-field bg-ag-surface-muted text-sm text-ag-ink-secondary sm:h-[320px]">
+        <div className="flex h-[260px] items-center justify-center rounded-xl border border-dashed border-ui-line bg-ui-warm text-sm text-ui-ink-2 sm:h-[320px]">
           No sensor readings yet for this window
         </div>
       ) : (
         <>
-          <div className="mb-1 flex justify-between text-[11px] font-semibold" aria-hidden="true">
-            <span style={{ color: COLORS.moisture }}>Soil VWC (%)</span>
-            <span style={{ color: COLORS.axisRight }}>Precipitation &amp; Irrigation (mm)</span>
+          <div className="mb-1 flex justify-between text-xs text-ui-ink-3" aria-hidden="true">
+            <span>Moisture (%)</span>
+            <span>Rain &amp; watering (mm)</span>
           </div>
           <div
             role="img"
@@ -155,9 +155,9 @@ function TelemetryChartBody({ parcelId, config, hints, onSourceChange, refreshTo
                 <XAxis
                   dataKey="timestamp"
                   tickFormatter={(value: string) => formatBucketLabel(value, resolution)}
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: '#6F6E69' }}
                   tickLine={false}
-                  axisLine={{ stroke: '#CBD5E1' }}
+                  axisLine={{ stroke: 'rgba(0,0,0,0.09)' }}
                   minTickGap={16}
                 />
                 <YAxis
@@ -184,21 +184,21 @@ function TelemetryChartBody({ parcelId, config, hints, onSourceChange, refreshTo
                 {bands && (
                   <>
                     <ReferenceArea yAxisId="left" y1={bands.fieldCapacityPct} y2={bands.saturationPct} fill="rgb(100,116,139)" fillOpacity={0.06} ifOverflow="hidden"
-                      label={{ value: 'Drainage', position: 'insideTopLeft', fontSize: 10, fill: '#475569' }} />
+                      label={{ value: 'Too wet', position: 'insideTopLeft', fontSize: 10, fill: '#5F5E5B' }} />
                     <ReferenceArea yAxisId="left" y1={bands.madThresholdPct} y2={bands.fieldCapacityPct} fill="rgb(8,145,178)" fillOpacity={0.06}
-                      label={{ value: 'Readily available', position: 'insideTopLeft', fontSize: 10, fill: '#0E7490' }} />
+                      label={{ value: 'Comfortable', position: 'insideTopLeft', fontSize: 10, fill: '#0E7490' }} />
                     <ReferenceArea yAxisId="left" y1={0} y2={bands.madThresholdPct} fill="rgb(220,38,38)" fillOpacity={0.08}
-                      label={{ value: 'Stress', position: 'insideBottomLeft', fontSize: 10, fill: '#B91C1C' }} />
+                      label={{ value: 'Too dry', position: 'insideBottomLeft', fontSize: 10, fill: '#B91C1C' }} />
                     <ReferenceLine yAxisId="left" y={bands.saturationPct} stroke={COLORS.saturation} strokeDasharray="2 3" ifOverflow="hidden" />
                     <ReferenceLine yAxisId="left" y={bands.fieldCapacityPct} stroke={COLORS.fieldCapacity} strokeWidth={1.5}
-                      label={{ value: 'Field capacity θFC', position: 'insideTopRight', fontSize: 10, fill: COLORS.fieldCapacity }} />
+                      label={{ value: 'Full', position: 'insideTopRight', fontSize: 10, fill: COLORS.fieldCapacity }} />
                     <ReferenceLine yAxisId="left" y={bands.madThresholdPct} stroke={COLORS.mad} strokeWidth={1.5} strokeDasharray="4 4"
-                      label={{ value: 'MAD threshold', position: 'insideBottomRight', fontSize: 10, fill: '#B91C1C' }} />
+                      label={{ value: 'Refill point', position: 'insideBottomRight', fontSize: 10, fill: '#B91C1C' }} />
                   </>
                 )}
                 {forecastRows.length > 0 && (
                   <ReferenceArea yAxisId="left" x1={forecastRows[0].timestamp} x2={forecastRows[forecastRows.length - 1].timestamp}
-                    fill="rgb(15,23,42)" fillOpacity={0.05} label={{ value: 'Forecast', position: 'insideTop', fontSize: 10, fill: '#475569' }} />
+                    fill="rgb(15,23,42)" fillOpacity={0.05} label={{ value: 'Forecast', position: 'insideTop', fontSize: 10, fill: '#5F5E5B' }} />
                 )}
 
                 <Bar yAxisId="right" dataKey="effectiveRainMm" stackId="water" fill={COLORS.rain} maxBarSize={14} isAnimationActive={false} />
@@ -210,7 +210,7 @@ function TelemetryChartBody({ parcelId, config, hints, onSourceChange, refreshTo
                 <Line yAxisId="left" dataKey="moistureForecast" type="monotoneX" stroke={COLORS.moisture} strokeWidth={2.5} strokeDasharray="6 4" dot={false} connectNulls={false} isAnimationActive={false} />
 
                 <Tooltip
-                  cursor={{ stroke: '#94A3B8', strokeWidth: 1 }}
+                  cursor={{ stroke: 'rgba(0,0,0,0.2)', strokeWidth: 1 }}
                   content={({ active, payload }) => (
                     <ChartTooltip active={active} payload={payload} madThresholdPct={madThreshold} resolution={resolution} />
                   )}
@@ -219,15 +219,15 @@ function TelemetryChartBody({ parcelId, config, hints, onSourceChange, refreshTo
             </ResponsiveContainer>
           </div>
           <p className="sr-only">{latestValuesSummary(rows)}</p>
-          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ag-ink-secondary" aria-label="Chart legend">
+          <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ui-ink-2" aria-label="Chart legend">
             <LegendItem color={COLORS.moisture} label="Soil moisture" kind="line" />
             {forecastRows.length > 0 && <LegendItem color={COLORS.moisture} label="Forecast" kind="dashed" />}
-            {hasEtc && <LegendItem color={COLORS.etc} label="ETc" kind="dashed" />}
-            <LegendItem color={COLORS.rain} label="Effective rain" kind="bar" />
-            <LegendItem color={COLORS.irrigation} label="Irrigation" kind="bar" />
-            {bands && <LegendItem color={COLORS.mad} label="MAD threshold" kind="dashed" />}
+            {hasEtc && <LegendItem color={COLORS.etc} label="Crop water use" kind="dashed" />}
+            <LegendItem color={COLORS.rain} label="Rain" kind="bar" />
+            <LegendItem color={COLORS.irrigation} label="Watering" kind="bar" />
+            {bands && <LegendItem color={COLORS.mad} label="Refill point" kind="dashed" />}
           </ul>
-          {resource.error && <p className="mt-2 text-xs text-ag-ink-secondary" role="status">Could not refresh: {resource.error}</p>}
+          {resource.error && <p className="mt-2 text-xs text-ui-ink-3" role="status">Could not refresh: {resource.error}</p>}
         </>
       )}
     </div>
