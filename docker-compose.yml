@@ -15,6 +15,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init-extensions.sql:/docker-entrypoint-initdb.d/01-init-extensions.sql:ro
+    networks:
+      - agritech_internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d agritech_db"]
       interval: 5s
@@ -22,19 +24,44 @@ services:
       retries: 5
 
   # -------------------------------------------------------------
-  # 2. Eclipse Mosquitto MQTT Broker (IoT Sensor Simulation)
+  # 2. Eclipse Mosquitto 2.0 MQTT Broker (BACK-304 Authenticated)
   # -------------------------------------------------------------
   mosquitto:
     image: eclipse-mosquitto:2.0
     container_name: agritech_mqtt
     restart: unless-stopped
+    entrypoint: ["/bin/sh", "/mosquitto/entrypoint.sh"]
+    command: ["/usr/sbin/mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+    expose:
+      - "1883"
+      - "9001"
     ports:
-      - "1883:1883"  # MQTT protocol
-      - "9001:9001"  # MQTT over WebSockets
+      - "127.0.0.1:1883:1883"  # Loopback-only host binding for local ASP.NET Core dev
+      - "127.0.0.1:9001:9001"  # Authenticated MQTT over WebSockets (loopback-only)
+    environment:
+      MQTT_BACKEND_USER: ${MQTT_BACKEND_USER:-agritech_backend}
+      MQTT_BACKEND_PASSWORD: ${MQTT_BACKEND_PASSWORD:-agritech_backend_dev_pwd}
+      MQTT_SIMULATOR_USER: ${MQTT_SIMULATOR_USER:-agritech_simulator}
+      MQTT_SIMULATOR_PASSWORD: ${MQTT_SIMULATOR_PASSWORD:-agritech_simulator_dev_pwd}
     volumes:
+      - ./docker/mosquitto/entrypoint.sh:/mosquitto/entrypoint.sh:ro
       - ./docker/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./docker/mosquitto/config/acl.conf:/mosquitto/config/acl.conf:ro
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
+    networks:
+      - agritech_internal
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_pub -h 127.0.0.1 -p 1883 -u \"$$MQTT_BACKEND_USER\" -P \"$$MQTT_BACKEND_PASSWORD\" -t 'agri/health/check' -m 'ok' -q 0"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+networks:
+  agritech_internal:
+    name: agritech_internal
+    driver: bridge
 
 volumes:
   postgres_data:
