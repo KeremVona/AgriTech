@@ -1,0 +1,2 @@
+# Ensure shell scripts mounted into Linux Docker containers always use LF line endings
+docker/**/*.sh text eol=lf
