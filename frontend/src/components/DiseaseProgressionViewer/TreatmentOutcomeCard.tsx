@@ -5,7 +5,7 @@ import type {
   InterventionEfficacyResult,
   FungicideCategory,
 } from '../../models/treatmentBranchingModel.ts';
-import { AGRONOMIC_INTERVENTION_REGISTRY } from '../../models/treatmentBranchingModel.ts';
+import { AGRONOMIC_INTERVENTION_REGISTRY, evaluateYieldRetention } from '../../models/treatmentBranchingModel.ts';
 
 export interface TreatmentOutcomeCardProps {
   cropId: SupportedCropId;
@@ -30,6 +30,7 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
   currentTreatedSeverity,
   plateauSeverity,
   yieldAnalytics,
+  efficacyResult,
   selectedCategory,
   className = '',
 }) => {
@@ -47,12 +48,17 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
     ? yieldAnalytics.greenLeafAreaPct
     : Math.max(0, 100 - currentTreatedSeverity);
 
-  const branchLabel = treatmentActive
+  const tooLate = treatmentActive && efficacyResult.windowTier === 'terminal';
+  const branchLabel = tooLate
+    ? 'Too late to help'
+    : treatmentActive
     ? isPostTreatment
       ? 'Treated'
       : 'Before treatment'
     : 'No treatment';
-  const branchTone = treatmentActive
+  const branchTone = tooLate
+    ? 'bg-red-50 text-red-700 border-red-200'
+    : treatmentActive
     ? isPostTreatment
       ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
       : 'bg-ui-accent-soft text-ui-accent-hover border-ui-accent-line'
@@ -87,10 +93,12 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
         <div className="rounded-xl border border-ui-line bg-ui-warm p-3.5">
           <div className="text-[13px] font-medium text-ui-ink-3">Harvest kept</div>
           <div className="mt-0.5 text-3xl font-semibold tabular-nums text-ui-ink">
-            {yieldAnalytics.retainedYieldPct.toFixed(0)}%
+            {(tooLate ? evaluateYieldRetention(cropId, interventionSeverity, false, selectedCategory).retainedYieldPct : yieldAnalytics.retainedYieldPct).toFixed(0)}%
           </div>
           <div className="mt-2 text-sm tabular-nums text-ui-ink-2">
-            {treatmentActive
+            {tooLate
+              ? 'Nothing saved'
+              : treatmentActive
               ? `+${yieldAnalytics.salvagedYieldPct.toFixed(0)}% saved`
               : `${yieldAnalytics.yieldLossPct.toFixed(0)}% lost`}
           </div>
@@ -99,24 +107,34 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
         <div className="rounded-xl border border-ui-line bg-ui-warm p-3.5">
           <div className="text-[13px] font-medium text-ui-ink-3">Estimated gain</div>
           <div className="mt-0.5 text-3xl font-semibold tabular-nums text-ui-ink">
-            {treatmentActive
+            {treatmentActive && !tooLate
               ? `${yieldAnalytics.netEconomicBenefitUSDPerHectare < 0 ? '−' : ''}$${Math.abs(yieldAnalytics.netEconomicBenefitUSDPerHectare).toFixed(0)}`
               : '—'}
             <span className="text-sm font-normal text-ui-ink-2"> /ha</span>
           </div>
           <div className="mt-2 text-sm tabular-nums text-ui-ink-2">
-            {treatmentActive ? `After $${profile.sprayCostPerHectareUSD}/ha spray cost` : 'Turn on a treatment'}
+            {tooLate
+              ? 'Too late to pay off'
+              : treatmentActive
+              ? `Rough example, after $${profile.sprayCostPerHectareUSD}/ha spray cost`
+              : 'Turn on a treatment'}
           </div>
         </div>
       </div>
 
-      {treatmentActive && (
+      {tooLate && (
+        <p className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-sm text-red-800">
+          At {interventionSeverity.toFixed(0)}% the leaf damage is already done. Spray earlier to see a difference.
+        </p>
+      )}
+
+      {treatmentActive && !tooLate && (
         <div className="rounded-xl border border-ui-accent-line bg-ui-accent-soft p-3.5">
           <div className="text-sm text-ui-ink">
             Spray on day <strong className="tabular-nums">{interventionDay.toFixed(0)}</strong> at{' '}
-            <strong className="tabular-nums">{interventionSeverity.toFixed(0)}%</strong> affected. Now{' '}
-            <strong className="tabular-nums">{currentTreatedSeverity.toFixed(0)}%</strong>, levels off at{' '}
-            <strong className="tabular-nums">{plateauSeverity.toFixed(0)}%</strong>.
+            <strong className="tabular-nums">{interventionSeverity.toFixed(0)}%</strong> progress. Now{' '}
+            <strong className="tabular-nums">{currentTreatedSeverity.toFixed(0)}%</strong>, levels off near{' '}
+            <strong className="tabular-nums">{plateauSeverity.toFixed(0)}%</strong> if protection is kept up.
           </div>
           <p className="mt-1 text-sm text-ui-ink-2">{manifestationNarrative}</p>
         </div>

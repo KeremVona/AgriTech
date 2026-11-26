@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { SupportedCropId, ProgressionDynamicOutput } from '../../models/agronomicTimelineModel.ts';
-import { AGRONOMIC_CALIBRATION_REGISTRY } from '../../models/agronomicTimelineModel.ts';
+import { AGRONOMIC_CALIBRATION_REGISTRY, getOptimalDaysForSlider } from '../../models/agronomicTimelineModel.ts';
 
 /** Plain stage names for the three markers; the scientific milestone label stays in the tooltip. */
 const STAGE_NAMES = ['Healthy', 'Early', 'Severe'] as const;
@@ -118,7 +118,7 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(sliderPercentage * 10) / 10}
-            aria-valuetext={`${sliderPercentage.toFixed(0)}% of the leaf affected, day ${dynamicOutput.elapsedDays.toFixed(0)}`}
+            aria-valuetext={dynamicOutput.microclimate.isStalled ? `${sliderPercentage.toFixed(0)}% disease progress, no change in this weather` : `${sliderPercentage.toFixed(0)}% disease progress, day ${dynamicOutput.elapsedDays.toFixed(0)}`}
           />
           {treatmentActive && interventionSeverity !== undefined && (
             <div
@@ -132,8 +132,17 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
         </div>
 
         <p className="w-24 shrink-0 text-right">
-          <span className="block text-lg font-medium tabular-nums leading-tight text-ui-ink">Day {dynamicOutput.elapsedDays.toFixed(0)}</span>
-          <span className="block text-xs tabular-nums text-ui-ink-3">of ~{dynamicOutput.dayTimelineMax}</span>
+          {dynamicOutput.microclimate.isStalled ? (
+            <>
+              <span className="block text-lg font-medium leading-tight text-ui-ink">No change</span>
+              <span className="block text-xs text-ui-ink-3">in this weather</span>
+            </>
+          ) : (
+            <>
+              <span className="block text-lg font-medium tabular-nums leading-tight text-ui-ink">Day {dynamicOutput.elapsedDays.toFixed(0)}</span>
+              <span className="block text-xs tabular-nums text-ui-ink-3">of ~{dynamicOutput.dayTimelineMax}</span>
+            </>
+          )}
         </p>
       </div>
 
@@ -141,12 +150,8 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
         {profile.milestones.map((m, idx) => {
           const isCurrent = dynamicOutput.stageIndex === idx;
           const isPassed = sliderPercentage >= m.minSliderPct;
-          const baselineDay =
-            m.stageOrder === 0
-              ? 0
-              : m.stageOrder === 1
-                ? profile.baselineDays.stage0_incubation
-                : profile.baselineDays.totalOptimalDays;
+          // Day this stage starts under the current weather (same scaling as the live day readout).
+          const stageStartDay = getOptimalDaysForSlider(cropId, m.stageOrder === 0 ? 0 : m.minSliderPct) / dynamicOutput.microclimate.compositeFactor;
           return (
             <li key={m.stageOrder} className={idx === 1 ? 'text-center' : idx === 2 ? 'text-right' : ''}>
               <button
@@ -165,7 +170,7 @@ export const AgronomicTimelineSlider: React.FC<AgronomicTimelineSliderProps> = (
                   />
                   <span className={`text-sm ${isCurrent ? 'font-medium text-ui-ink' : 'text-ui-ink-2'}`}>{STAGE_NAMES[idx] ?? m.label}</span>
                 </span>
-                <span className="text-xs tabular-nums text-ui-ink-3">usually day {baselineDay.toFixed(0)}</span>
+                <span className="text-xs tabular-nums text-ui-ink-3">{dynamicOutput.microclimate.isStalled ? '—' : `day ${stageStartDay.toFixed(0)}`}</span>
               </button>
             </li>
           );

@@ -6,9 +6,9 @@ import { DEFAULT_CROP_SPECIMENS } from '../components/DiseaseProgressionViewer/t
 import { AppHeader } from '../components/ui/AppHeader.tsx';
 
 const HOW_IT_WORKS = [
-  { title: 'Real leaf photos', body: 'Each stage is a picture of the same leaf, from healthy to severe.' },
-  { title: 'Weather sets the pace', body: 'Warmer, wetter days make the disease move faster.' },
-  { title: 'Treat and compare', body: 'Pick a day to spray and see how far the disease still gets.' },
+  { title: 'Illustrated stages', body: 'Each stage is a generated picture of the same leaf, from healthy to severe.' },
+  { title: 'Weather sets the pace', body: 'Near the disease’s favourite temperature and humidity it moves faster; outside them it slows or stops.' },
+  { title: 'Treat and compare', body: 'Pick a moment to spray and compare it with no treatment. Numbers are rough estimates.' },
 ] as const;
 
 export function DiseaseProgressionPage() {
@@ -30,6 +30,10 @@ export function DiseaseProgressionPage() {
           <h1 className="text-[36px] font-medium leading-[1.08] tracking-[-0.025em] text-ui-ink sm:text-5xl">Watch a disease grow</h1>
           <p className="mx-auto mt-3 max-w-lg text-balance text-[17px] leading-relaxed text-ui-ink-2">
             Pick a crop and drag the timeline to see how the leaf changes, day by day.
+          </p>
+          <p className="mx-auto mt-4 inline-flex max-w-lg items-center gap-2 rounded-full bg-ui-warm px-3 py-1 text-[13px] text-ui-ink-2">
+            <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+            Illustrative simulation — not a forecast for your field
           </p>
         </div>
 
