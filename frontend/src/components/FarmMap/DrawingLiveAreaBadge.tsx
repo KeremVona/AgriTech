@@ -44,7 +44,7 @@ export function DrawingLiveAreaBadge({
       className={`ag-drawing-hud absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-auto transition-all duration-200 select-none ${
         isKink
           ? 'ag-map-control-card border-red-300 bg-red-50/95 ring-1 ring-red-400/40 text-red-900 shadow-lg px-4 py-2.5 rounded-lg flex items-center gap-3'
-          : 'ag-map-control-card border-slate-200/80 bg-white/95 backdrop-blur-md shadow-lg px-4 py-2 rounded-lg flex items-center gap-3 text-slate-800'
+          : 'ag-map-control-card border border-ui-line bg-white shadow-sm px-4 py-2 rounded-full flex items-center gap-3 text-ui-ink font-[family-name:var(--font-ui)]'
       }`}
       role={isKink ? 'alert' : 'status'}
       aria-live={isKink ? 'assertive' : 'polite'}
@@ -74,8 +74,8 @@ export function DrawingLiveAreaBadge({
               Self-intersecting polygon. Uncross boundary lines to complete parcel.
             </span>
             {metrics && metrics.vertexCount > 0 && (
-              <span className="text-[11px] text-red-700/80 font-mono tabular-nums">
-                {metrics.vertexCount} Vertices recorded
+              <span className="text-xs text-red-800 tabular-nums">
+                {metrics.vertexCount} corners so far
               </span>
             )}
           </div>
@@ -83,12 +83,12 @@ export function DrawingLiveAreaBadge({
       ) : (
         <div className="flex flex-col min-w-0">
           {/* Metrics display in tabular numerals */}
-          <div className="font-mono font-semibold text-xs text-slate-800 tabular-nums tracking-tight">
-            {metrics ? formatDrawingHudMetrics(metrics) : '0.00 ha (0.00 acres) • 0 Vertices • Perimeter: 0m'}
+          <div className="font-semibold text-sm text-ui-ink tabular-nums">
+            {metrics ? formatDrawingHudMetrics(metrics) : '0.00 ha'}
           </div>
           {/* Microcopy action instruction */}
           {prompt && (
-            <div className="text-[11px] text-slate-500 font-sans tracking-tight">
+            <div className="text-xs text-ui-ink-2">
               {prompt}
             </div>
           )}
@@ -100,15 +100,14 @@ export function DrawingLiveAreaBadge({
         <button
           type="button"
           onClick={onCancel}
-          className={`ml-2 text-xs px-2 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-1 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-1 ${
+          className={`ml-2 text-xs min-h-11 px-3 rounded-full transition-colors cursor-pointer flex items-center gap-1 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent ${
             isKink
               ? 'border border-red-300 bg-red-100/70 text-red-800 hover:bg-red-200/80'
-              : 'border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+              : 'border border-ui-line text-ui-ink-2 hover:bg-ui-warm hover:text-ui-ink'
           }`}
           title="Cancel drawing (Esc)"
           aria-label="Cancel drawing"
         >
-          <kbd className="font-mono text-[10px] opacity-75 uppercase tracking-wider">[ESC]</kbd>
           <span>Cancel</span>
         </button>
       )}

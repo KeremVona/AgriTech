@@ -3,6 +3,32 @@ import L from 'leaflet';
 import { Marker, useMap } from 'react-leaflet';
 import type { ParcelFeatureCollection } from '../../types/farmMap.ts';
 import { extractParcelCentroidData } from '../../utils/parcelStyling.ts';
+import { calculateParcelMetrics } from '../../utils/parcelTopology.ts';
+
+function ringAreaHa(ring: unknown): number {
+  if (!Array.isArray(ring) || ring.length < 3) return 0;
+  return calculateParcelMetrics(ring as [number, number][]).areaHa;
+}
+
+/**
+ * Area in hectares: the stored value, or computed from the outline when none is stored yet
+ * (outer rings minus holes, summed over every part of a MultiPolygon). Odd geometry falls back to the stored value.
+ */
+function resolveAreaHa(storedHa: number, feature: GeoJSON.Feature | null | undefined): number {
+  if (storedHa > 0 || !feature?.geometry) return storedHa;
+  const geometry = feature.geometry;
+  const polygons =
+    geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.type === 'MultiPolygon' ? geometry.coordinates : [];
+  try {
+    const total = polygons.reduce(
+      (sum, [outer, ...holes]) => sum + ringAreaHa(outer) - holes.reduce((h, hole) => h + ringAreaHa(hole), 0),
+      0,
+    );
+    return total > 0 ? total : storedHa;
+  } catch {
+    return storedHa;
+  }
+}
 
 export interface ParcelCentroidLabelsLayerProps {
   collection: ParcelFeatureCollection;
@@ -89,13 +115,17 @@ export function ParcelCentroidLabelsLayer({
 
         const cropColor = isSelected ? item.palette.selected : item.palette.stroke;
 
+        const areaHa = resolveAreaHa(item.areaHa, item.feature as GeoJSON.Feature | undefined);
+        const title = item.cropName === 'Unassigned' ? item.name : `${item.name} · ${item.cropName}`;
+        const subtitle = item.soilName === 'Unspecified' ? `${areaHa.toFixed(2)} ha` : `${areaHa.toFixed(2)} ha · ${item.soilName}`;
+
         const html = isExpanded
           ? `<div class="ag-parcel-tooltip ${isSelected ? 'ag-parcel-tooltip-selected' : ''}" role="tooltip">` +
             `<div class="ag-parcel-tooltip-header">` +
             `<span class="ag-parcel-crop-dot w-2 h-2 rounded-full inline-block" style="background-color: ${cropColor};"></span>` +
-            `<span class="ag-parcel-tooltip-title">${escapeHtml(item.name)} • ${escapeHtml(item.cropName)}</span>` +
+            `<span class="ag-parcel-tooltip-title">${escapeHtml(title)}</span>` +
             `</div>` +
-            `<div class="ag-parcel-tooltip-subtitle">${item.areaHa.toFixed(2)} ha • ${escapeHtml(item.soilName)}</div>` +
+            `<div class="ag-parcel-tooltip-subtitle">${escapeHtml(subtitle)}</div>` +
             `</div>`
           : `<div class="ag-parcel-dot-badge w-2.5 h-2.5 rounded-full border border-white shadow-sm ${isSelected ? 'ag-parcel-dot-badge-selected' : ''}" style="background-color: ${cropColor};"></div>`;
 
