@@ -1,6 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { DiagnosticUIState } from '../../types/diagnostics';
-import { TelemetryScanBeam } from './TelemetryScanBeam';
+import { CameraIcon, LeafIcon, RetryIcon, UploadIcon } from './icons.tsx';
+import { BUTTON } from './styles.ts';
 
 export interface LeafImageDropzoneProps {
   selectedImageUrl: string | null;
@@ -12,6 +13,21 @@ export interface LeafImageDropzoneProps {
   onAbortScan?: () => void;
   onRetry?: () => void;
   className?: string;
+}
+
+/** Calm overlay shown on the photo while the model runs. */
+function ScanOverlay({ label, onAbort }: { label: string; onAbort?: () => void }) {
+  return (
+    <div role="status" aria-live="polite" className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-white/75 backdrop-blur-[2px]">
+      <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-ui-accent border-t-transparent" aria-hidden="true" />
+      <span className="text-[15px] font-medium text-ui-ink">{label}</span>
+      {onAbort && (
+        <button type="button" onClick={onAbort} className={BUTTON.outline}>
+          Cancel
+        </button>
+      )}
+    </div>
+  );
 }
 
 export const LeafImageDropzone: React.FC<LeafImageDropzoneProps> = ({
@@ -32,7 +48,14 @@ export const LeafImageDropzone: React.FC<LeafImageDropzoneProps> = ({
   const isInferencing = uiState === 'INFERENCING';
   const isValidating = uiState === 'VALIDATING';
   const isRejected = uiState === 'REJECTED' || uiState === 'ERROR';
-  const isActionsLocked = isInferencing || isValidating;
+  const isLocked = isInferencing || isValidating;
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const hasPhoto = Boolean(selectedImageUrl);
+
+  // The upload buttons unmount when a photo appears: move focus to the photo so keyboard users are not dropped on <body>.
+  useEffect(() => {
+    if (hasPhoto && document.activeElement === document.body) previewRef.current?.focus();
+  }, [hasPhoto]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -51,27 +74,24 @@ export const LeafImageDropzone: React.FC<LeafImageDropzoneProps> = ({
       e.preventDefault();
       e.stopPropagation();
       setIsDragOver(false);
-
+      if (isLocked) return;
       const files = e.dataTransfer.files;
-      if (files && files.length > 0) {
-        onImageSelected(files[0]);
-      }
+      if (files && files.length > 0) onImageSelected(files[0]);
     },
-    [onImageSelected]
+    [onImageSelected, isLocked],
   );
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       onImageSelected(files[0]);
-      // Reset input value so re-selecting same file triggers change
+      // Reset so picking the same file again still fires change.
       e.target.value = '';
     }
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Hidden Native File Inputs */}
+    <div className={className}>
       <input
         ref={fileInputRef}
         type="file"
@@ -79,6 +99,7 @@ export const LeafImageDropzone: React.FC<LeafImageDropzoneProps> = ({
         onChange={handleFileInputChange}
         className="sr-only"
         id="desktop-leaf-upload"
+        tabIndex={-1}
         aria-label="Upload leaf photo"
       />
       <input
@@ -89,189 +110,89 @@ export const LeafImageDropzone: React.FC<LeafImageDropzoneProps> = ({
         onChange={handleFileInputChange}
         className="sr-only"
         id="mobile-camera-capture"
-        aria-label="Capture leaf photo with device camera"
+        tabIndex={-1}
+        aria-label="Take leaf photo with camera"
       />
 
-      {/* Main Container Card (SPEC-UI-006: 12px rounded-xl) */}
-      <div className="bg-ag-surface border border-ag-border rounded-xl p-5 sm:p-6 shadow-xs relative overflow-hidden transition-all duration-200">
-        {!selectedImageUrl ? (
-          /* IDLE / DRAG-OVER DROPZONE CONTAINER (role="region" avoids W3C nested interactive violation) */
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            role="region"
-            aria-label="Leaf photo ingestion dropzone"
-            className={`flex flex-col items-center justify-center p-6 sm:p-10 border-2 border-dashed rounded-xl transition-all duration-200 text-center select-none ${
-              isDragOver
-                ? 'border-ag-brand bg-ag-brand-subtle/80'
-                : isRejected
-                ? 'border-red-300 bg-red-50/40'
-                : 'border-slate-300 bg-white'
+      {!selectedImageUrl ? (
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          role="region"
+          aria-label="Leaf photo drop area"
+          className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors duration-200 sm:py-16 ${
+            isDragOver
+              ? 'border-ui-accent bg-ui-accent-soft'
+              : isRejected
+                ? 'border-red-300 bg-red-50/50'
+                : 'border-ui-line bg-ui-warm'
+          }`}
+        >
+          <span
+            className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-ui-line bg-ui-bg text-ui-accent transition-transform duration-150 ${
+              isDragOver ? 'scale-110' : ''
             }`}
           >
-            {/* Authentic Foliar Botanical Leaf SVG Icon with 1.08x scale transition (SPEC-UI-006 §3.1) */}
-            <div
-              className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-transform duration-150 ease-out ${
-                isDragOver ? 'scale-[1.08] bg-teal-100 text-ag-brand' : 'bg-slate-100 text-slate-400'
-              }`}
-            >
-              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.75}
-                  d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.75}
-                  d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"
-                />
-              </svg>
-            </div>
+            <LeafIcon className="h-8 w-8" />
+          </span>
+          <p className="mt-5 text-lg font-medium text-ui-ink">{isDragOver ? 'Drop to scan' : 'Drop a leaf photo here'}</p>
+          <p className="mt-1 text-sm text-ui-ink-3">JPEG or PNG, up to 10 MB</p>
 
-            <p className="text-base font-semibold text-ag-ink">
-              {isDragOver ? 'Release Leaf Photo to Scan' : 'Upload or Drag Leaf Photo'}
-            </p>
-            <p className="text-xs text-ag-ink-secondary mt-1 max-w-xs">
-              Supports JPEG or PNG format up to 10MB (min 224×224 px)
-            </p>
-
-            {/* Interactive Action Triggers with Mandatory 48px+ / 52px Touch Targets (SPEC-DES-005 §2.1) */}
-            <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto">
-              {/* Primary Mobile Camera CTA (Full-width on mobile viewports per SPEC-UI-006 §3.1) */}
-              <button
-                type="button"
-                onClick={() => cameraInputRef.current?.click()}
-                disabled={isActionsLocked}
-                className="w-full sm:w-auto min-h-[52px] sm:min-h-[48px] px-6 py-3 rounded-lg bg-ag-brand hover:bg-ag-brand-hover text-white text-sm font-semibold shadow-xs ag-interactive flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                  />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>Take Leaf Photo</span>
-              </button>
-
-              {/* Desktop File Picker Trigger */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isActionsLocked}
-                className="w-full sm:w-auto min-h-[48px] px-5 py-3 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-ag-ink text-sm font-medium shadow-xs ag-interactive flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span>Choose File</span>
-              </button>
-            </div>
+          <div className="mt-7 flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row">
+            <button type="button" onClick={() => cameraInputRef.current?.click()} disabled={isLocked} className={BUTTON.dark}>
+              <CameraIcon className="h-[18px] w-[18px]" />
+              Take photo
+            </button>
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isLocked} className={BUTTON.outline}>
+              <UploadIcon className="h-[18px] w-[18px]" />
+              Choose file
+            </button>
           </div>
-        ) : (
-          /* ACTIVE PREVIEW & SCANNING VIEWPORT */
-          <div className="space-y-4">
-            <div className="relative aspect-square w-full rounded-xl overflow-hidden border border-ag-border bg-slate-950 flex items-center justify-center shadow-inner">
-              <img
-                src={selectedImageUrl}
-                alt="Foliar Specimen Preview"
-                className="w-full h-full object-contain"
-              />
-
-              {/* In-Flight Scanning Telemetry Laser Beam Overlay */}
-              {isInferencing && <TelemetryScanBeam onAbort={onAbortScan} />}
-
-              {/* In-Memory Validating Spinner State */}
-              {isValidating && (
-                <div className="absolute inset-0 bg-slate-950/70 flex flex-col items-center justify-center gap-3 z-30" role="status">
-                  <div className="w-10 h-10 border-3 border-teal-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs font-semibold text-white tracking-wide">Validating image resolution & format...</span>
-                </div>
-              )}
-            </div>
-
-            {/* File Metadata Chip (Tabular Numerals) */}
-            {fileMetadata && (
-              <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg bg-ag-surface-muted border border-ag-border text-xs text-ag-ink-secondary ag-tabular-numeric">
-                <span className="font-semibold text-ag-ink truncate max-w-[200px]" title={fileMetadata.name}>
-                  {fileMetadata.name}
-                </span>
-                <div className="flex items-center gap-3">
-                  <span>{fileMetadata.sizeMb} MB</span>
-                  {fileMetadata.width && fileMetadata.height && (
-                    <span>
-                      {fileMetadata.width}×{fileMetadata.height} px
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons (Minimum 48px Touch Targets) */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isActionsLocked}
-                className="w-full sm:flex-1 min-h-[48px] py-3 px-4 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-ag-ink text-xs font-semibold ag-interactive disabled:opacity-50 cursor-pointer shadow-xs text-center flex items-center justify-center gap-1.5"
-              >
-                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span>Upload New Photo</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onRetake}
-                disabled={isActionsLocked}
-                className="w-full sm:flex-1 min-h-[48px] py-3 px-4 rounded-lg bg-ag-brand hover:bg-ag-brand-hover text-white text-xs font-semibold ag-interactive disabled:opacity-50 cursor-pointer shadow-xs text-center flex items-center justify-center gap-1.5"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span>Retake Scan</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Client Validation & Network Error Banner */}
-        {errorMessage && (
+        </div>
+      ) : (
+        <div className="space-y-3">
           <div
-            role="alert"
-            className="mt-4 p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-900 text-xs flex flex-col gap-2"
-          >
-            <div className="flex items-start gap-2.5">
-              <span className="text-base shrink-0 leading-none" aria-hidden="true">⚠️</span>
-              <div className="space-y-0.5">
-                <p className="font-semibold text-red-950">
-                  {uiState === 'ERROR' ? 'Diagnostic Vision Service Notice' : 'Pre-flight Validation Notice'}
-                </p>
-                <p className="text-red-800 leading-relaxed">{errorMessage}</p>
-              </div>
-            </div>
-            {uiState === 'ERROR' && onRetry && (
-              <button
-                type="button"
-                onClick={onRetry}
-                className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-950 text-xs font-semibold rounded-md border border-red-300 cursor-pointer ag-interactive transition-colors"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span>Retry Diagnostic Scan</span>
-              </button>
-            )}
+            ref={previewRef}
+            tabIndex={-1}
+            className="relative flex aspect-square w-full items-center outline-none justify-center overflow-hidden rounded-2xl border border-ui-line bg-ui-warm">
+            <img src={selectedImageUrl} alt="Leaf photo being diagnosed" className="h-full w-full object-contain" />
+            {isInferencing && <ScanOverlay label="Reading the leaf…" onAbort={onAbortScan} />}
+            {isValidating && <ScanOverlay label="Checking the photo…" />}
           </div>
-        )}
-      </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {fileMetadata ? (
+              <p className="min-w-0 truncate text-sm text-ui-ink-3" title={fileMetadata.name}>
+                <span className="text-ui-ink-2">{fileMetadata.name}</span> · {fileMetadata.sizeMb} MB
+              </p>
+            ) : (
+              <span />
+            )}
+            <button type="button" onClick={onRetake} disabled={isLocked} className={BUTTON.light}>
+              <RetryIcon className="h-4 w-4" />
+              Use another photo
+            </button>
+          </div>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm">
+          <p className="font-medium text-red-800">{uiState === 'ERROR' ? 'The diagnosis service did not answer' : 'This photo can’t be used'}</p>
+          <p className="mt-1 leading-relaxed text-red-700">{errorMessage}</p>
+          {uiState === 'ERROR' && onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full bg-white px-4 text-sm font-medium text-red-800 ring-1 ring-red-200 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-red-700"
+            >
+              <RetryIcon className="h-4 w-4" />
+              Try again
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

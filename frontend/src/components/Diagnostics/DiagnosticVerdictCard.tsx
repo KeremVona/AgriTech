@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import type { DiagnosticPrediction, SeverityTier } from '../../types/diagnostics';
+import React, { useEffect, useRef, useState } from 'react';
+import type { AdvisorySource, DiagnosticPrediction } from '../../types/diagnostics';
 import { formatConfidence, LOW_CONFIDENCE_THRESHOLD } from '../../services/diagnosticsService';
+import { AlertIcon, CameraIcon, CheckCircleIcon, ClipboardCheckIcon, CopyIcon } from './icons.tsx';
+import { SeverityPill } from './SeverityPill.tsx';
+import { BUTTON, severityWord } from './styles.ts';
 
 export interface DiagnosticVerdictCardProps {
   verdict: DiagnosticPrediction;
@@ -9,34 +12,65 @@ export interface DiagnosticVerdictCardProps {
   className?: string;
 }
 
-export const DiagnosticVerdictCard: React.FC<DiagnosticVerdictCardProps> = ({
-  verdict,
-  onNewScan,
-  onRetake,
-  className = '',
-}) => {
+const SOURCE_LABEL: Record<AdvisorySource, string> = {
+  database_cache: 'Advice: AI (saved)',
+  llm_generated: 'Advice: AI (Gemini)',
+  knowledge_base: 'Advice: built-in knowledge base',
+  sample: 'Sample result',
+};
+
+/** Confidence as a ring: the number is the headline, the ring is the picture. */
+function ConfidenceRing({ score, low }: { score: number; low: boolean }) {
+  const radius = 26;
+  const circumference = 2 * Math.PI * radius;
+  const value = Math.min(1, Math.max(0, score));
+  return (
+    <div className="relative h-[72px] w-[72px] shrink-0">
+      <svg viewBox="0 0 64 64" className="h-full w-full -rotate-90" aria-hidden="true">
+        <circle cx="32" cy="32" r={radius} fill="none" stroke="var(--color-ui-warm-strong)" strokeWidth="6" />
+        <circle
+          cx="32"
+          cy="32"
+          r={radius}
+          fill="none"
+          stroke={low ? 'var(--color-ag-risk-low)' : 'var(--color-ui-accent)'}
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - value)}
+          className="transition-[stroke-dashoffset] duration-500"
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-[15px] font-semibold tabular-nums text-ui-ink">
+        {Math.round(value * 100)}%
+      </span>
+    </div>
+  );
+}
+
+export const DiagnosticVerdictCard: React.FC<DiagnosticVerdictCardProps> = ({ verdict, onNewScan, onRetake, className = '' }) => {
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
-      }
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     };
   }, []);
 
+  const advisory = verdict.agronomicAdvisory;
   const confidencePct = formatConfidence(verdict.confidenceScore);
   const isRescan = Boolean(verdict.requiresRescan);
-  const treatments = verdict.agronomicAdvisory?.fungicideTreatments ?? [];
+  const treatments = advisory?.fungicideTreatments ?? [];
+  const matches = (verdict.topProbabilities || []).slice(0, 3);
 
   const handleCopySummary = async () => {
     const sciSuffix = verdict.scientificName ? ` (${verdict.scientificName})` : '';
-    const summary = `Ag-Intelligence Diagnosis: ${verdict.crop} — ${verdict.condition}${sciSuffix}
-Confidence: ${confidencePct} | Severity: ${verdict.severityTier} (${verdict.severityIndex})
-Immediate Action: ${verdict.agronomicAdvisory?.immediateAction || 'Inspect field foliage.'}
-Recommended Treatments: ${treatments.join(', ') || 'None required'}
-Environmental Risk: ${verdict.agronomicAdvisory?.environmentalRiskFactors || 'Standard conditions.'}`;
+    const summary = `AgriTech diagnosis: ${verdict.crop} — ${verdict.condition}${sciSuffix}
+Confidence: ${confidencePct} | Severity: ${severityWord(verdict.severityTier)} (${verdict.severityTier}, ${verdict.severityIndex})
+Do today: ${advisory?.immediateAction || 'Inspect field foliage.'}
+Treatments: ${treatments.join(', ') || 'None required'}
+Risk factors: ${advisory?.environmentalRiskFactors || 'Standard conditions.'}`;
 
     try {
       await navigator.clipboard.writeText(summary);
@@ -44,268 +78,144 @@ Environmental Risk: ${verdict.agronomicAdvisory?.environmentalRiskFactors || 'St
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
       copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback if clipboard API is restricted
-    }
-  };
-
-  /**
-   * Dual-Coded Severity Badge helper adhering to SPEC-UI-006 & FOUNDATIONS.md §1.2
-   * Contract: Color Fill/Stroke + Distinct Icon Glyph + Explicit Text Label
-   */
-  const renderSeverityBadge = (tier: SeverityTier) => {
-    switch (tier) {
-      case 'Tier 0':
-        return (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-ag-risk-healthy-bg border border-ag-risk-healthy-border text-ag-risk-healthy shadow-xs text-xs font-bold tracking-wide">
-            {/* CheckCircle Glyph */}
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>TIER 0: HEALTHY / NORMAL</span>
-          </div>
-        );
-      case 'Tier 1':
-        return (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-ag-risk-low-bg border border-ag-risk-low-border text-ag-risk-low shadow-xs text-xs font-bold tracking-wide">
-            {/* AlertTriangle Glyph */}
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            <span>{isRescan ? 'TIER 1: RESCAN ADVISORY' : 'TIER 1: LOW / WATCH'}</span>
-          </div>
-        );
-      case 'Tier 2':
-        return (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-ag-risk-moderate-bg border border-ag-risk-moderate-border text-ag-risk-moderate shadow-xs text-xs font-bold tracking-wide">
-            {/* AlertCircle Glyph */}
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>TIER 2: MODERATE ALERT</span>
-          </div>
-        );
-      case 'Tier 3':
-      default:
-        return (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-ag-risk-critical-bg border border-ag-risk-critical-border text-ag-risk-critical shadow-xs text-xs font-bold tracking-wide">
-            {/* OctagonAlert Glyph */}
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.2}
-                d="M12 8v4m0 4h.01M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z"
-              />
-            </svg>
-            <span>TIER 3: CRITICAL OUTBREAK</span>
-          </div>
-        );
+      // Clipboard can be blocked (permissions, insecure origin); the button simply does nothing.
     }
   };
 
   return (
-    <div
-      className={`bg-ag-surface border border-ag-border rounded-xl p-6 sm:p-7 shadow-xs space-y-6 animate-verdict-entrance ${className}`}
-    >
-      {/* 1. Header Section: Crop, Condition, Binomial Name, Confidence and Latency */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-ag-border">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h2 className="text-xl sm:text-2xl font-bold text-ag-ink tracking-tight font-sans">
-              {verdict.crop} — {verdict.condition}
-            </h2>
+    <article aria-labelledby="verdict-title" className={`animate-verdict-entrance rounded-2xl border border-ui-line bg-ui-bg ${className}`}>
+      {/* 1. What it is, how bad, how sure */}
+      <header className="flex items-start justify-between gap-4 p-5 sm:p-6">
+        <div className="min-w-0">
+          <p className="text-[13px] font-medium text-ui-ink-3">{verdict.crop}</p>
+          <h2 id="verdict-title" className="mt-0.5 text-2xl font-medium leading-tight tracking-[-0.01em] text-ui-ink sm:text-[28px]">
+            {isRescan ? 'Not sure yet' : verdict.condition}
+          </h2>
+          {isRescan && <p className="mt-1 text-sm text-ui-ink-2">Possibly {verdict.condition.toLowerCase()}</p>}
+          {verdict.scientificName && !isRescan && <p className="mt-1 text-sm italic text-ui-ink-3">{verdict.scientificName}</p>}
+          <div className="mt-3">
+            <SeverityPill tier={isRescan ? 'Tier 1' : verdict.severityTier} label={isRescan ? 'Retake photo' : undefined} />
           </div>
-          {verdict.scientificName && (
-            <p className="text-sm italic text-ag-ink-secondary">{verdict.scientificName}</p>
-          )}
         </div>
+        <div className="flex flex-col items-center gap-1">
+          <ConfidenceRing score={verdict.confidenceScore} low={isRescan} />
+          <span className="text-xs text-ui-ink-3">confidence</span>
+        </div>
+      </header>
 
-        <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-1 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-2xl sm:text-3xl font-mono font-bold text-ag-ink ag-tabular-numeric">
-              {confidencePct}
-            </span>
+      {/* 2. Do today / retake */}
+      <div className="px-5 sm:px-6">
+        {isRescan ? (
+          <div role="alert" className="rounded-xl border border-ag-risk-low-border bg-ag-risk-low-bg p-4">
+            <p className="flex items-center gap-2 text-sm font-medium text-amber-800">
+              <AlertIcon className="h-[18px] w-[18px]" />
+              Retake the photo
+            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-amber-900">
+              {advisory?.immediateAction || `The model is less than ${Math.round(LOW_CONFIDENCE_THRESHOLD * 100)}% sure about this leaf.`}
+            </p>
+            {verdict.rescanInstructions && verdict.rescanInstructions.length > 0 && (
+              <ul role="list" className="mt-2 space-y-1 text-sm text-amber-900">
+                {verdict.rescanInstructions.map((instruction) => (
+                  <li key={instruction} className="flex gap-2">
+                    <span aria-hidden="true">·</span>
+                    {instruction}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          <span className="text-xs font-mono text-ag-ink-secondary ag-tabular-numeric">
-            LATENCY: {verdict.executionTimeMs} ms
-          </span>
-        </div>
+        ) : (
+          <div className="rounded-xl border border-ui-accent-line bg-ui-accent-soft p-4">
+            <p className="flex items-center gap-2 text-sm font-medium text-ui-accent-hover">
+              <ClipboardCheckIcon className="h-[18px] w-[18px]" />
+              Do today
+            </p>
+            <p className="mt-1.5 text-[15px] leading-relaxed text-ui-ink">{advisory?.immediateAction || 'Inspect the field for the same symptoms.'}</p>
+          </div>
+        )}
       </div>
 
-      {/* 2. Dual-Coded Agronomic Severity Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {renderSeverityBadge(verdict.severityTier)}
-        <div className="flex items-center gap-2">
-          {verdict.agronomicAdvisory?.source && (
-            <span
-              className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-slate-50 border-slate-200 text-ag-ink-secondary"
-              title={verdict.agronomicAdvisory.llmModel ? `Model: ${verdict.agronomicAdvisory.llmModel}` : undefined}
-            >
-              {verdict.agronomicAdvisory.source === 'database_cache'
-                ? 'DB Cached Advice'
-                : verdict.agronomicAdvisory.source === 'llm_generated'
-                ? 'Gemini AI Advice'
-                : verdict.agronomicAdvisory.source === 'sample'
-                ? 'Sample Preset'
-                : 'Knowledge Base'}
-            </span>
-          )}
-          <span className="text-xs text-ag-ink-secondary font-mono">ID: {verdict.inferenceId.slice(0, 16)}</span>
-        </div>
-      </div>
-
-      {/* 3. Top-3 Class Probability Distribution Bars (6px tracks per SPEC-UI-006 §3.3) */}
-      <div className="space-y-3 pt-1">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-ag-ink-secondary uppercase tracking-wider">
-            Top Classifications (CNN Output)
+      {/* 3. Treatments + risk factors */}
+      <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
+        <section aria-labelledby="treatments-title">
+          <h3 id="treatments-title" className="text-[13px] font-medium text-ui-ink-3">
+            Treatments
           </h3>
-          <span className="text-[11px] text-ag-ink-tertiary">Softmax Probability</span>
-        </div>
-
-        <div className="space-y-3">
-          {(verdict.topProbabilities || []).slice(0, 3).map((prob) => {
-            const pct = (prob.probability * 100).toFixed(1);
-            const valNum = Math.round(Number(pct));
-            return (
-              <div key={prob.label} className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="font-medium text-ag-ink truncate mr-2 font-sans">
-                    {prob.displayName || prob.label}
-                  </span>
-                  <span className="font-mono font-semibold text-ag-ink-secondary shrink-0 ag-tabular-numeric">
-                    {pct}%
-                  </span>
-                </div>
-                <div
-                  className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden"
-                  role="progressbar"
-                  aria-valuenow={valNum}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={`${prob.displayName || prob.label} probability`}
-                >
-                  <div
-                    className="h-full bg-ag-brand rounded-full transition-[width] duration-[400ms]"
-                    style={{
-                      width: `${Math.max(2, Number(pct))}%`,
-                      transitionTimingFunction: 'var(--ag-ease-out)',
-                    }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 4. Immediate Agronomic Action / Rescan Advisory Box (Guaranteed Display) */}
-      {isRescan ? (
-        <div
-          role="alert"
-          className="p-4 rounded-lg bg-amber-50 border border-amber-300 text-amber-950 space-y-2 text-xs"
-        >
-          <div className="flex items-center gap-2 font-bold text-amber-900 text-sm">
-            <span aria-hidden="true">⚠️</span>
-            <span>Low-Confidence Re-sampling Protocol Recommended</span>
-          </div>
-          <p className="text-amber-800 leading-relaxed text-sm">
-            {verdict.agronomicAdvisory?.immediateAction ||
-              `Classification confidence is below ${Math.round(LOW_CONFIDENCE_THRESHOLD * 100)}%. Please re-sample leaf.`}
-          </p>
-          {verdict.rescanInstructions && verdict.rescanInstructions.length > 0 && (
-            <ul className="list-disc pl-5 space-y-1 text-amber-900 font-medium pt-1">
-              {verdict.rescanInstructions.map((instruction, idx) => (
-                <li key={idx}>{instruction}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ) : (
-        <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-sm space-y-1.5">
-          <p className="font-bold text-amber-950 flex items-center gap-1.5 text-xs uppercase tracking-wider">
-            <span aria-hidden="true">🚨</span>
-            <span>IMMEDIATE CROP ACTION:</span>
-          </p>
-          <p className="text-amber-900 leading-relaxed text-sm">
-            {verdict.agronomicAdvisory?.immediateAction || 'Inspect field foliage for symptom confirmation.'}
-          </p>
-        </div>
-      )}
-
-      {/* 5. Recommended Treatments & Environmental Factors */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-        {/* Fungicide Interventions */}
-        <div className="p-3.5 rounded-lg bg-ag-surface-muted border border-ag-border space-y-2">
-          <h4 className="text-xs font-semibold text-ag-ink uppercase tracking-wider flex items-center gap-1.5">
-            <span aria-hidden="true">🧪</span>
-            <span>Recommended Treatments</span>
-          </h4>
           {treatments.length > 0 ? (
-            <ul className="space-y-1.5 text-xs text-ag-ink-secondary">
-              {treatments.map((treatment, idx) => (
-                <li key={idx} className="flex items-start gap-1.5">
-                  <span className="text-ag-brand font-bold">•</span>
-                  <span>{treatment}</span>
+            <ul role="list" className="mt-2 space-y-2 text-sm leading-snug text-ui-ink-2">
+              {treatments.map((treatment) => (
+                <li key={treatment} className="flex gap-2">
+                  <CheckCircleIcon className="mt-px h-4 w-4 shrink-0 text-ui-accent" />
+                  {treatment}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-ag-ink-tertiary italic">No chemical interventions indicated.</p>
+            <p className="mt-2 text-sm text-ui-ink-3">No treatment listed.</p>
           )}
-        </div>
-
-        {/* Environmental Risk Factors */}
-        <div className="p-3.5 rounded-lg bg-ag-surface-muted border border-ag-border space-y-2">
-          <h4 className="text-xs font-semibold text-ag-ink uppercase tracking-wider flex items-center gap-1.5">
-            <span aria-hidden="true">🌤️</span>
-            <span>Microclimate Risk</span>
-          </h4>
-          <p className="text-xs text-ag-ink-secondary leading-relaxed">
-            {verdict.agronomicAdvisory?.environmentalRiskFactors || 'Standard crop growing conditions.'}
-          </p>
-        </div>
+        </section>
+        <section aria-labelledby="risk-title">
+          <h3 id="risk-title" className="text-[13px] font-medium text-ui-ink-3">
+            Risk factors
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-ui-ink-2">{advisory?.environmentalRiskFactors || 'Normal growing conditions.'}</p>
+        </section>
       </div>
 
-      {/* 6. Action Button Toolbar (48px Touch Targets per SPEC-DES-005 §2.1) */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-ag-border">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
-          <button
-            type="button"
-            onClick={onRetake}
-            className="min-h-[48px] px-5 py-3 rounded-lg bg-ag-brand hover:bg-ag-brand-hover text-white text-xs font-semibold ag-interactive cursor-pointer shadow-xs flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            </svg>
-            <span>Scan Another Leaf</span>
-          </button>
+      {/* 4. Other matches the model considered */}
+      {matches.length > 0 && (
+        <section aria-labelledby="matches-title" className="border-t border-ui-line p-5 sm:p-6">
+          <h3 id="matches-title" className="text-[13px] font-medium text-ui-ink-3">
+            Closest matches
+          </h3>
+          <ul role="list" className="mt-3 space-y-2.5">
+            {matches.map((match, index) => {
+              const pct = match.probability * 100;
+              const name = match.displayName || match.label;
+              return (
+                <li key={match.label}>
+                  <div className="flex justify-between gap-3 text-sm">
+                    <span className={`truncate ${index === 0 ? 'font-medium text-ui-ink' : 'text-ui-ink-2'}`}>{name}</span>
+                    <span className="shrink-0 tabular-nums text-ui-ink-3">{pct.toFixed(1)}%</span>
+                  </div>
+                  <div
+                    className="mt-1 h-1.5 overflow-hidden rounded-full bg-ui-warm-strong"
+                    role="progressbar"
+                    aria-valuenow={Math.round(pct)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${name} probability`}
+                  >
+                    <div
+                      className={`h-full rounded-full transition-[width] duration-500 ${index === 0 ? 'bg-ui-accent' : 'bg-ui-ink-3/50'}`}
+                      style={{ width: `${Math.max(2, pct)}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
-          <button
-            type="button"
-            onClick={onNewScan}
-            className="min-h-[48px] px-5 py-3 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-ag-ink text-xs font-semibold ag-interactive cursor-pointer shadow-xs flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            <span>Upload New Photo</span>
+      {/* 5. Actions */}
+      <footer className="flex flex-col gap-3 border-t border-ui-line p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <p className="text-xs text-ui-ink-3" title={advisory?.llmModel ? `Model: ${advisory.llmModel}` : undefined}>
+          {advisory?.source ? SOURCE_LABEL[advisory.source] : 'Advice: built-in knowledge base'}
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button type="button" onClick={handleCopySummary} className={BUTTON.outline}>
+            <CopyIcon className="h-4 w-4" />
+            {copied ? 'Copied' : 'Copy summary'}
+          </button>
+          <span role="status" className="sr-only">{copied ? 'Summary copied' : ''}</span>
+          <button type="button" onClick={isRescan ? onRetake : onNewScan} className={BUTTON.dark}>
+            <CameraIcon className="h-[18px] w-[18px]" />
+            {isRescan ? 'Retake photo' : 'Scan another leaf'}
           </button>
         </div>
-
-        <button
-          type="button"
-          onClick={handleCopySummary}
-          className="min-h-[48px] px-5 py-3 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-ag-ink text-xs font-medium ag-interactive cursor-pointer shadow-xs flex items-center justify-center gap-2"
-        >
-          <span>{copied ? '✓ Copied' : '📋 Copy Summary'}</span>
-        </button>
-      </div>
-    </div>
+      </footer>
+    </article>
   );
 };

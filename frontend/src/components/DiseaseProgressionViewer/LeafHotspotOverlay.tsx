@@ -1,12 +1,3 @@
-/**
- * LeafHotspotOverlay (SPEC-UI-007, Section 4.3).
- * Precision Ag-Intelligence light-mode foliar symptom hotspot overlay with:
- * - 24 registered anatomical pins (3 per crop specimen)
- * - Dynamic active window detection with pulsating halo rings
- * - Accessible popover card with microscopic manifestation descriptions
- * - Click-outside and Escape key dismissal
- */
-
 import React, { useState, useEffect, useRef } from 'react';
 import type { SupportedCropId } from '../../types/progression.ts';
 import type { SymptomHotspot } from '../../models/hotspotRegistry.ts';
@@ -68,55 +59,57 @@ export const LeafHotspotOverlay: React.FC<LeafHotspotOverlayProps> = ({
     switch (color) {
       case 'emerald':
         return {
-          pin: 'bg-emerald-600 text-white border-white',
-          glow: 'ring-4 ring-emerald-500/30',
-          badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+          pin: 'bg-emerald-700 text-white border-white',
+          glow: 'ring-4 ring-emerald-500/25',
+          badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          word: 'Mild',
         };
       case 'amber':
         return {
-          pin: 'bg-amber-600 text-white border-white',
-          glow: 'ring-4 ring-amber-500/30',
-          badge: 'bg-amber-50 text-amber-800 border-amber-200',
+          pin: 'bg-amber-700 text-white border-white',
+          glow: 'ring-4 ring-amber-500/25',
+          badge: 'bg-amber-50 text-amber-700 border-amber-200',
+          word: 'Watch',
         };
       case 'red':
         return {
-          pin: 'bg-rose-600 text-white border-white',
-          glow: 'ring-4 ring-rose-500/30',
-          badge: 'bg-rose-50 text-rose-800 border-rose-200',
+          pin: 'bg-red-700 text-white border-white',
+          glow: 'ring-4 ring-red-500/25',
+          badge: 'bg-red-50 text-red-700 border-red-200',
+          word: 'Serious',
         };
       case 'purple':
       default:
         return {
-          pin: 'bg-purple-600 text-white border-white',
-          glow: 'ring-4 ring-purple-500/30',
-          badge: 'bg-purple-50 text-purple-800 border-purple-200',
+          pin: 'bg-ui-ink text-white border-white',
+          glow: 'ring-4 ring-black/15',
+          badge: 'bg-ui-warm text-ui-ink-2 border-ui-line',
+          word: 'Note',
         };
     }
   };
 
   return (
-    <div className={`absolute inset-0 pointer-events-none z-20 ${className}`}>
-      {/* Top Floating Controls: Toggle & Count Badge */}
-      <div className="absolute top-3 right-3 pointer-events-auto flex items-center gap-2">
+    <div className={`pointer-events-none absolute inset-0 z-20 ${className}`}>
+      <div className="pointer-events-auto absolute right-3 top-3 flex items-center gap-2">
         {onToggleEnabled && (
           <button
             type="button"
             onClick={() => onToggleEnabled(!enabled)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all duration-150 active:scale-95 shadow-xs flex items-center gap-1.5 cursor-pointer border ${
+            className={`inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border px-4 text-sm font-medium shadow-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent ${
               enabled
-                ? 'bg-white border-teal-700 text-teal-800 shadow-teal-900/10'
-                : 'bg-white/90 border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                ? 'border-ui-accent-line bg-ui-accent-soft text-ui-accent-hover'
+                : 'border-ui-line bg-white text-ui-ink-2 hover:bg-ui-warm'
             }`}
             title="Toggle anatomical symptom hotspot pins"
             aria-pressed={enabled}
           >
-            <span>🔬</span>
-            <span>Hotspots ({activeHotspots.length})</span>
+            Spots
+            <span className="tabular-nums">{activeHotspots.length}</span>
           </button>
         )}
       </div>
 
-      {/* Render Hotspot Pins when enabled */}
       {enabled &&
         activeHotspots.map((hotspot) => {
           const isSelected = selectedHotspot?.id === hotspot.id;
@@ -125,7 +118,7 @@ export const LeafHotspotOverlay: React.FC<LeafHotspotOverlayProps> = ({
           return (
             <div
               key={hotspot.id}
-              className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-200 ease-out"
+              className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ease-out"
               style={{
                 left: `${hotspot.xPct}%`,
                 top: `${hotspot.yPct}%`,
@@ -135,22 +128,16 @@ export const LeafHotspotOverlay: React.FC<LeafHotspotOverlayProps> = ({
                 type="button"
                 data-hotspot-pin={hotspot.id}
                 onClick={() => setSelectedHotspotId(isSelected ? null : hotspot.id)}
-                className={`relative group w-7 h-7 rounded-full border-2 flex items-center justify-center font-mono text-[11px] font-bold transition-transform duration-150 active:scale-90 cursor-pointer shadow-md after:content-[''] after:absolute after:-inset-2 after:rounded-full ${
+                className={`group relative flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-2 text-xs font-semibold shadow-sm transition-transform duration-150 after:absolute after:-inset-2 after:rounded-full after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent ${
                   styling.pin
-                } ${isSelected ? 'scale-125 ring-4 ring-teal-600 shadow-lg z-30' : styling.glow}`}
+                } ${isSelected ? 'z-30 scale-110 ring-4 ring-ui-accent' : styling.glow}`}
                 aria-label={`Hotspot: ${hotspot.title}`}
                 aria-expanded={isSelected}
                 aria-haspopup="dialog"
               >
-                {/* Pulsing ring animation */}
-                <span
-                  className={`absolute inset-0 rounded-full animate-ping opacity-40 ${styling.pin}`}
-                  aria-hidden="true"
-                />
                 <span className="relative z-10">{hotspot.badgeColor === 'red' ? '!' : '•'}</span>
 
-                {/* Floating tooltip on hover */}
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-900 text-white whitespace-nowrap shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-40">
+                <span className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg border border-ui-line bg-white px-2 py-1 text-xs font-medium text-ui-ink opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                   {hotspot.title}
                 </span>
               </button>
@@ -158,58 +145,41 @@ export const LeafHotspotOverlay: React.FC<LeafHotspotOverlayProps> = ({
           );
         })}
 
-      {/* Selected Hotspot Popover Detail Card */}
       {enabled && selectedHotspot && (
         <div
           ref={detailCardRef}
-          className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl p-4 shadow-xl pointer-events-auto z-40 animate-in fade-in slide-in-from-bottom-2 duration-150"
+          className="pointer-events-auto absolute bottom-4 left-4 right-4 z-40 rounded-2xl border border-ui-line bg-white p-4 shadow-md animate-in fade-in slide-in-from-bottom-2 duration-150 sm:left-auto sm:w-[calc(100%-2rem)] sm:max-w-80"
           role="dialog"
           aria-label={`Hotspot Details: ${selectedHotspot.title}`}
         >
-          <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-100">
+          <div className="flex items-start justify-between gap-2">
             <div>
               <span
-                className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border font-semibold inline-block mb-1 ${
+                className={`mb-1 inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${
                   getPinColorClasses(selectedHotspot.badgeColor).badge
                 }`}
               >
-                Stage {selectedHotspot.stageOrder} • {selectedHotspot.badgeColor.toUpperCase()}
+                {getPinColorClasses(selectedHotspot.badgeColor).word}
               </span>
-              <h4 className="text-xs font-bold text-slate-900 leading-tight">
-                {selectedHotspot.title}
-              </h4>
+              <h4 className="text-base font-semibold leading-tight text-ui-ink">{selectedHotspot.title}</h4>
             </div>
 
             <button
               type="button"
               onClick={() => setSelectedHotspotId(null)}
-              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 text-xs cursor-pointer"
+              className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-ui-ink-2 hover:bg-ui-warm focus-visible:outline-2 focus-visible:outline-ui-accent"
               aria-label="Close hotspot popover"
             >
-              ✕
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
             </button>
           </div>
 
-          <div className="space-y-1.5 mt-2.5">
-            <p className="text-xs text-slate-700 leading-relaxed">
-              {selectedHotspot.anatomicalDescription}
-            </p>
-            <p className="text-[11px] text-slate-500 italic">
-              <strong>Impact:</strong> {selectedHotspot.physiologicalImpact}
-            </p>
-          </div>
-
-          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] font-mono tabular-nums text-slate-500">
-            <span>
-              Threshold:{' '}
-              <strong className="text-teal-700">
-                {selectedHotspot.minSliderPct}%+
-              </strong>
-            </span>
-            <span>
-              Coords: ({selectedHotspot.xPct}%, {selectedHotspot.yPct}%)
-            </span>
-          </div>
+          <p className="mt-2 text-sm leading-snug text-ui-ink-2">{selectedHotspot.anatomicalDescription}</p>
+          <p className="mt-2 text-sm text-ui-ink">
+            <span className="font-medium">Effect:</span> {selectedHotspot.physiologicalImpact}
+          </p>
         </div>
       )}
     </div>

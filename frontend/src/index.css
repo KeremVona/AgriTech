@@ -52,6 +52,21 @@
   --color-agri-800: #166534;
   --color-agri-900: #14532d;
   --color-agri-950: #052e16;
+
+  /* Notion-style UI revamp tokens (docs/superpowers/specs/2026-11-26-landing-notion-redesign-design.md) */
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-ui-bg: #FFFFFF;
+  --color-ui-warm: #F6F5F4;
+  --color-ui-warm-strong: #EDEBE8;
+  --color-ui-line: rgba(0, 0, 0, 0.09);
+  --color-ui-line-strong: rgba(0, 0, 0, 0.16);
+  --color-ui-ink: #191918;
+  --color-ui-ink-2: #5F5E5B;
+  --color-ui-ink-3: #6F6E69;
+  --color-ui-accent: #0F766E;
+  --color-ui-accent-hover: #115E59;
+  --color-ui-accent-soft: #E7F3F1;
+  --color-ui-accent-line: #A8D5CC;
 }
 
 :root {
@@ -116,35 +131,6 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-mono, 'Geist Mono', 'JetBrains Mono', monospace);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1, 'cv01' 1, 'zero' 1;
-}
-
-/* Telemetry Laser Scan Beam Animation */
-@keyframes telemetryScanBeam {
-  0% {
-    top: 0%;
-    opacity: 0.9;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    top: 100%;
-    opacity: 0.9;
-  }
-}
-
-.ag-telemetry-scan-beam {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: var(--ag-scan-beam, #38BDF8);
-  box-shadow: 0 0 12px 2px rgba(56, 189, 248, 0.75);
-  animation: telemetryScanBeam 1.6s ease-in-out infinite alternate;
-  will-change: top, opacity;
-  pointer-events: none;
-  z-index: 10;
 }
 
 /* Diagnostic Verdict Card Non-Zero Scale Entrance (SPEC-UI-006 §4.3) */
@@ -225,15 +211,43 @@ h1, h2, h3, h4, h5, h6 {
     scroll-behavior: auto !important;
   }
 
-  .ag-telemetry-scan-beam {
-    animation: none !important;
-    top: 50% !important;
-    opacity: 0.8 !important;
-  }
 
   .animate-verdict-entrance {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Notion-style UI revamp: page scope + scroll reveal
+   --------------------------------------------------------------------------- */
+.ui-page {
+  font-family: var(--font-ui);
+  background-color: var(--color-ui-bg);
+  color: var(--color-ui-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.ui-page :is(h1, h2, h3, h4) {
+  font-family: var(--font-ui);
+}
+
+.ui-reveal {
+  transition: opacity 700ms var(--ag-ease-out), transform 700ms var(--ag-ease-out);
+}
+
+.ui-reveal[data-hidden='true'] {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-reveal,
+  .ui-reveal[data-hidden='true'] {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

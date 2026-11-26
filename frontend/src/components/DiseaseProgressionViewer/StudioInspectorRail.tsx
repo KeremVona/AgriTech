@@ -1,8 +1,6 @@
 /**
- * StudioInspectorRail (SPEC-UI-007, Section 4.5).
- * Precision Ag-Intelligence light-mode parameter inspector rail featuring:
- * - 4 tactile segmented tabs: Pathology & Prompts, Microclimate, Treatment Branch, Export & Reports
- * - Full WAI-ARIA arrow key navigation, roving tabindex, and zero overflow leakage
+ * Right-hand rail: a "Right now" summary (stage, day, leaf affected) and four tabs —
+ * Weather, Treatment, Export, Model — with WAI-ARIA arrow-key navigation and roving tabindex.
  */
 
 import React, { useState, useRef } from 'react';
@@ -19,6 +17,8 @@ import { MicroclimateControlPanel } from './MicroclimateControlPanel.tsx';
 import { TreatmentBranchingControls } from './TreatmentBranchingControls.tsx';
 import { TreatmentOutcomeCard } from './TreatmentOutcomeCard.tsx';
 import { ExportToolbar } from './ExportToolbar.tsx';
+
+const STAGE_NAMES = ['Healthy', 'Early', 'Severe'] as const;
 
 export type InspectorTab = 'prompts' | 'climate' | 'treatment' | 'export';
 
@@ -61,6 +61,7 @@ export interface StudioInspectorRailProps {
 export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
   cropId,
   activeStage,
+  effectiveRenderSeverity,
   sliderValue,
   currentScrubDay,
   temperature,
@@ -88,15 +89,19 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
   onSnapImage,
   className = '',
 }) => {
-  const [activeTab, setActiveTab] = useState<InspectorTab>('prompts');
+  const [activeTab, setActiveTab] = useState<InspectorTab>('climate');
   const tabButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const tabs: { id: InspectorTab; label: string; icon: string }[] = [
-    { id: 'prompts', label: 'Pathology & Prompts', icon: '🧬' },
-    { id: 'climate', label: 'Microclimate', icon: '🌡️' },
-    { id: 'treatment', label: 'Treatment Branch', icon: '🧪' },
-    { id: 'export', label: 'Export & Reports', icon: '📤' },
+  const tabs: { id: InspectorTab; label: string }[] = [
+    { id: 'climate', label: 'Weather' },
+    { id: 'treatment', label: 'Treatment' },
+    { id: 'export', label: 'Export' },
+    { id: 'prompts', label: 'Model' },
   ];
+
+  const severity = effectiveRenderSeverity ?? sliderValue;
+  const stageOrder = activeStage?.stage_order ?? 0;
+  const stageTone = ['bg-emerald-50 text-emerald-700', 'bg-amber-50 text-amber-700', 'bg-red-50 text-red-700'][stageOrder] ?? 'bg-red-50 text-red-700';
 
   const handleTabKeyDown = (e: React.KeyboardEvent, index: number) => {
     let nextIndex = index;
@@ -118,19 +123,31 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
   };
 
   return (
-    <div
-      className={`bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs flex flex-col space-y-4 ${className}`}
-      role="region"
-      aria-label="Studio Parameter Inspector"
-    >
-      {/* =========================================================================
-          1. SEGMENTED TAB SWITCHER (WAI-ARIA Compliant Roving Tabindex)
-          ========================================================================= */}
-      <div
-        className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 bg-slate-100 rounded-2xl border border-slate-200/80"
-        role="tablist"
-        aria-label="Inspector Panels"
-      >
+    <div className={`flex flex-col rounded-2xl border border-ui-line bg-ui-bg ${className}`} role="region" aria-label="Details">
+      <section aria-labelledby="now-title" className="p-5">
+        <h2 id="now-title" className="text-[13px] font-medium text-ui-ink-3">
+          Right now
+        </h2>
+        <div className="mt-3 grid grid-cols-3 gap-3">
+          <div>
+            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[13px] font-medium ${stageTone}`}>{STAGE_NAMES[stageOrder] ?? 'Severe'}</span>
+            <p className="mt-1 text-xs text-ui-ink-3">stage</p>
+          </div>
+          <div>
+            <p className="text-2xl font-medium tabular-nums leading-none text-ui-ink">{currentScrubDay.toFixed(0)}</p>
+            <p className="mt-1.5 text-xs text-ui-ink-3">days in</p>
+          </div>
+          <div>
+            <p className="text-2xl font-medium tabular-nums leading-none text-ui-ink">{severity.toFixed(0)}%</p>
+            <p className="mt-1.5 text-xs text-ui-ink-3">of leaf affected</p>
+          </div>
+        </div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-ui-warm-strong" aria-hidden="true">
+          <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-600" style={{ width: `${Math.max(2, severity)}%` }} />
+        </div>
+      </section>
+
+      <div className="flex gap-1 border-y border-ui-line px-3" role="tablist" aria-label="Detail panels">
         {tabs.map((tab, idx) => {
           const isActive = activeTab === tab.id;
           return (
@@ -139,21 +156,19 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
               ref={(el) => {
                 tabButtonRefs.current[idx] = el;
               }}
+              type="button"
               role="tab"
               aria-selected={isActive}
-              aria-controls={`panel-${tab.id}`}
+              aria-controls={isActive ? `panel-${tab.id}` : undefined}
               id={`tab-${tab.id}`}
               tabIndex={isActive ? 0 : -1}
               onClick={() => setActiveTab(tab.id)}
               onKeyDown={(e) => handleTabKeyDown(e, idx)}
-              className={`py-2 px-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-700 focus:ring-offset-1 ${
-                isActive
-                  ? 'bg-white text-teal-800 shadow-xs border border-slate-200/60 font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              className={`-mb-px min-h-11 cursor-pointer border-b-2 px-2.5 text-sm transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ui-accent ${
+                isActive ? 'border-ui-ink font-medium text-ui-ink' : 'border-transparent text-ui-ink-2 hover:text-ui-ink'
               }`}
             >
-              <span className="text-sm">{tab.icon}</span>
-              <span className="truncate">{tab.label}</span>
+              {tab.label}
             </button>
           );
         })}
@@ -162,7 +177,7 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
       {/* =========================================================================
           2. ACTIVE TAB PANEL CONTENT
           ========================================================================= */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 p-5">
         {/* TAB 1: Pathology & Prompts */}
         {activeTab === 'prompts' && (
           <div
@@ -204,7 +219,7 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
             id="panel-treatment"
             role="tabpanel"
             aria-labelledby="tab-treatment"
-            className="space-y-4 animate-in fade-in duration-150"
+            className="space-y-4"
           >
             <TreatmentBranchingControls
               cropId={cropId}
@@ -244,7 +259,7 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
             id="panel-export"
             role="tabpanel"
             aria-labelledby="tab-export"
-            className="space-y-4 animate-in fade-in duration-150"
+            className="space-y-4"
           >
             <ExportToolbar
               isRecording={isRecording}
@@ -254,24 +269,6 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
               onSnapImage={onSnapImage}
             />
 
-            {/* Quick Export Summary Card */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs space-y-2">
-              <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                <span>📋</span>
-                <span>Export Capabilities Specification</span>
-              </span>
-              <ul className="space-y-1.5 text-slate-600 list-disc list-inside">
-                <li>
-                  <strong className="text-slate-800">60 FPS WebM/MP4 Sweep:</strong> Sweeps timeline 0% to 100% and captures Canvas 2D/WebGL buffer at 60 frames per second.
-                </li>
-                <li>
-                  <strong className="text-slate-800">Field PDF Advisory:</strong> Complete official extension print report with current foliar state, microclimate diagnostics, and FRAC chemical guidelines.
-                </li>
-                <li>
-                  <strong className="text-slate-800">PNG Viewport Snapshot:</strong> Lossless 800x800 snapshot of active leaf specimen with applied view mode and cross-attention overlays.
-                </li>
-              </ul>
-            </div>
           </div>
         )}
       </div>

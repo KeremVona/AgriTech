@@ -1,14 +1,9 @@
-/**
- * PromptAttentionInspector (SPEC-UI-007, Section 4.6).
- * Inspects Prompt-to-Prompt cross-attention parameters, displays sequence token
- * alignment diffs with Bio-Teal badges, and provides payload/tensor export.
- */
-
 import React, { useState } from 'react';
 import type { SupportedCropId } from '../../types/progression.ts';
 import type { ProgressionStage } from '../../types/progression.ts';
 import { AGRONOMIC_CALIBRATION_REGISTRY } from '../../models/agronomicTimelineModel.ts';
 import { serializeNpyTensor } from '../../utils/npySerializer.ts';
+import { BUTTON } from '../Diagnostics/styles.ts';
 
 export interface PromptAttentionInspectorProps {
   cropId: SupportedCropId;
@@ -65,7 +60,7 @@ export const PromptAttentionInspector: React.FC<PromptAttentionInspectorProps> =
 
   const handleCopyPayload = async () => {
     const payload = {
-      architecture: 'Prompt-to-Prompt Cross-Attention Diffusion (SPEC-UI-007)',
+      architecture: 'Prompt-to-Prompt Cross-Attention Diffusion',
       cropId,
       cropName: profile.cropName,
       diseaseName: profile.diseaseName,
@@ -127,176 +122,37 @@ export const PromptAttentionInspector: React.FC<PromptAttentionInspectorProps> =
   };
 
   return (
-    <div
-      className={`bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5 ${className}`}
-      role="region"
-      aria-label="Prompt-to-Prompt Attention Inspector"
-    >
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 text-sm shadow-2xs">
-            🧬
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              Cross-Attention & Prompt Inspector
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200 font-semibold">
-                P2P-DIFFUSION
-              </span>
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Latent attention weights & token steering for structural leaf integrity.
-            </p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleCopyPayload}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all duration-150 active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-2xs"
-            title="Copy prompt payload JSON to clipboard"
-          >
-            <span>{copied ? '✓' : '📋'}</span>
-            <span>{copied ? 'Copied' : 'Copy Payload'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleDownloadTensor}
-            disabled={downloading}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-teal-700 hover:bg-teal-800 text-white border border-teal-800 transition-all duration-150 active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-            title="Download 64x64 raw cross-attention map tensor (.npy)"
-          >
-            <span>{downloading ? '⏳' : '📥'}</span>
-            <span>{downloading ? 'Exporting...' : '.npy Tensor'}</span>
-          </button>
-        </div>
+    <div className={`space-y-5 ${className}`} role="region" aria-label="What the model changes">
+      <div>
+        <div className="text-[13px] font-medium text-ui-ink-3">What the model changes</div>
+        <p className="mt-1 text-sm text-ui-ink-2">
+          Highlighted words are the disease signs added to a healthy leaf description.
+        </p>
       </div>
 
-      {/* Cross-Attention Hyperparameters */}
+      {/* Prompt comparison */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-            Attention Steering Hyperparameters
-          </label>
-          <span className="text-[11px] text-slate-400 font-mono">Seed: 42109</span>
+        <div className="rounded-xl border border-ui-line bg-ui-warm p-3.5">
+          <div className="mb-1.5 flex items-center justify-between text-[13px] font-medium text-ui-ink-3">
+            <span>Healthy leaf</span>
+            <span className="tabular-nums">{baseTokens.length} words</span>
+          </div>
+          <p className="text-sm leading-relaxed text-ui-ink-2">{basePrompt}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Tau Cross */}
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-700">Cross-Attention (τ_cross)</span>
-              <span className="text-xs font-bold font-mono text-teal-700 tabular-nums">
-                {params.tauCross.toFixed(2)}
-              </span>
-            </div>
-            <input
-              type="range"
-              min={0.1}
-              max={1.0}
-              step={0.05}
-              value={params.tauCross}
-              onChange={(e) => setParams({ ...params, tauCross: parseFloat(e.target.value) })}
-              className="w-full accent-teal-700 bg-slate-200 rounded-lg h-1.5 cursor-pointer"
-              aria-label="Cross-Attention threshold"
-            />
-            <p className="text-[10px] text-slate-400 leading-tight">
-              Replacement steps for background venation structure.
-            </p>
+        <div className="rounded-xl border border-ui-accent-line bg-ui-accent-soft p-3.5">
+          <div className="mb-1.5 flex items-center justify-between text-[13px] font-medium text-ui-ink-3">
+            <span>With disease</span>
+            <span className="tabular-nums">{stageName} · {Math.round(sliderValue)}%</span>
           </div>
-
-          {/* Tau Self */}
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-700">Self-Attention (τ_self)</span>
-              <span className="text-xs font-bold font-mono text-teal-700 tabular-nums">
-                {params.tauSelf.toFixed(2)}
-              </span>
-            </div>
-            <input
-              type="range"
-              min={0.1}
-              max={1.0}
-              step={0.05}
-              value={params.tauSelf}
-              onChange={(e) => setParams({ ...params, tauSelf: parseFloat(e.target.value) })}
-              className="w-full accent-teal-700 bg-slate-200 rounded-lg h-1.5 cursor-pointer"
-              aria-label="Self-Attention threshold"
-            />
-            <p className="text-[10px] text-slate-400 leading-tight">
-              Leaf contour and cellular geometry preservation.
-            </p>
-          </div>
-
-          {/* Tau Blend */}
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-700">Blend Step (τ_blend)</span>
-              <span className="text-xs font-bold font-mono text-teal-700 tabular-nums">
-                {params.tauBlend.toFixed(2)}
-              </span>
-            </div>
-            <input
-              type="range"
-              min={0.05}
-              max={0.8}
-              step={0.05}
-              value={params.tauBlend}
-              onChange={(e) => setParams({ ...params, tauBlend: parseFloat(e.target.value) })}
-              className="w-full accent-teal-700 bg-slate-200 rounded-lg h-1.5 cursor-pointer"
-              aria-label="Blend step threshold"
-            />
-            <p className="text-[10px] text-slate-400 leading-tight">
-              Spatial mask blending boundary dampening.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Pathological Token Alignment & Sequence Comparison */}
-      <div className="space-y-3 pt-1">
-        <label className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold block">
-          Pathological Token Alignment & Sequence Comparison
-        </label>
-
-        {/* Base Prompt */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              Source Prompt (Baseline Healthy):
-            </span>
-            <span className="text-[10px] font-mono text-slate-400">{baseTokens.length} tokens</span>
-          </div>
-          <div className="text-xs text-slate-700 font-mono leading-relaxed p-2 bg-white rounded-lg border border-slate-200/60">
-            {basePrompt}
-          </div>
-        </div>
-
-        {/* Target Prompt with Highlighted Diffs */}
-        <div className="bg-teal-50/40 border border-teal-200/70 rounded-xl p-3 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-teal-900 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-teal-700 animate-pulse" />
-              Target Prompt (Symptom Guided Injection):
-            </span>
-            <span className="text-[10px] font-mono text-teal-700 font-medium">
-              Active Focus: {stageName} ({Math.round(sliderValue)}%)
-            </span>
-          </div>
-          <div className="text-xs leading-relaxed p-2.5 bg-white rounded-lg border border-teal-100 flex flex-wrap gap-1.5 items-center font-mono">
+          <div className="flex flex-wrap items-center gap-1 text-sm leading-relaxed">
             {targetTokens.map((tok, i) => {
               const isDiff = isPathologicalToken(tok);
               return (
                 <span
                   key={i}
-                  className={`px-1.5 py-0.5 rounded text-[11px] transition-colors ${
-                    isDiff
-                      ? 'bg-teal-100/90 text-teal-800 font-bold border border-teal-300 shadow-2xs'
-                      : 'text-slate-700'
+                  className={`rounded px-1 py-0.5 ${
+                    isDiff ? 'bg-ui-accent text-white font-medium' : 'text-ui-ink-2'
                   }`}
                 >
                   {tok}
@@ -305,6 +161,84 @@ export const PromptAttentionInspector: React.FC<PromptAttentionInspectorProps> =
             })}
           </div>
         </div>
+      </div>
+
+      {/* Sliders */}
+      <div>
+        <div className="mb-2 text-[13px] font-medium text-ui-ink-3">Fine tuning</div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="space-y-1.5 rounded-xl border border-ui-line bg-ui-warm p-3.5">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm font-medium text-ui-ink">Keep background</span>
+              <span className="text-xl font-semibold tabular-nums text-ui-ink">{params.tauCross.toFixed(2)}</span>
+            </div>
+            <input
+              type="range"
+              min={0.1}
+              max={1.0}
+              step={0.05}
+              value={params.tauCross}
+              onChange={(e) => setParams({ ...params, tauCross: parseFloat(e.target.value) })}
+              className="h-6 w-full cursor-pointer accent-[var(--color-ui-accent)] focus-visible:outline-2 focus-visible:outline-ui-accent"
+              aria-label="Cross-Attention threshold"
+            />
+          </div>
+
+          <div className="space-y-1.5 rounded-xl border border-ui-line bg-ui-warm p-3.5">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm font-medium text-ui-ink">Keep leaf shape</span>
+              <span className="text-xl font-semibold tabular-nums text-ui-ink">{params.tauSelf.toFixed(2)}</span>
+            </div>
+            <input
+              type="range"
+              min={0.1}
+              max={1.0}
+              step={0.05}
+              value={params.tauSelf}
+              onChange={(e) => setParams({ ...params, tauSelf: parseFloat(e.target.value) })}
+              className="h-6 w-full cursor-pointer accent-[var(--color-ui-accent)] focus-visible:outline-2 focus-visible:outline-ui-accent"
+              aria-label="Self-Attention threshold"
+            />
+          </div>
+
+          <div className="space-y-1.5 rounded-xl border border-ui-line bg-ui-warm p-3.5">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm font-medium text-ui-ink">Smooth edges</span>
+              <span className="text-xl font-semibold tabular-nums text-ui-ink">{params.tauBlend.toFixed(2)}</span>
+            </div>
+            <input
+              type="range"
+              min={0.05}
+              max={0.8}
+              step={0.05}
+              value={params.tauBlend}
+              onChange={(e) => setParams({ ...params, tauBlend: parseFloat(e.target.value) })}
+              className="h-6 w-full cursor-pointer accent-[var(--color-ui-accent)] focus-visible:outline-2 focus-visible:outline-ui-accent"
+              aria-label="Blend step threshold"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleCopyPayload}
+          className={BUTTON.outline}
+          title="Copy prompt payload JSON to clipboard"
+        >
+          {copied ? 'Copied' : 'Copy settings'}
+        </button>
+        <button
+          type="button"
+          onClick={handleDownloadTensor}
+          disabled={downloading}
+          className={BUTTON.light}
+          title="Download 64x64 raw cross-attention map tensor (.npy)"
+        >
+          {downloading ? 'Saving...' : 'Download map'}
+        </button>
       </div>
     </div>
   );

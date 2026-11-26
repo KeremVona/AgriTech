@@ -87,7 +87,7 @@ const pagePath = path.resolve(__dirname, '../src/pages/DiseaseProgressionPage.ts
 const pageSource = fs.readFileSync(pagePath, 'utf8');
 
 assert(
-  pageSource.includes('bg-[#F8FAFC]') || pageSource.includes('bg-slate-50'),
+  pageSource.includes('bg-[#F8FAFC]') || pageSource.includes('bg-slate-50') || pageSource.includes('ui-page'),
   'DiseaseProgressionPage must use light-mode canvas background'
 );
 assert(
