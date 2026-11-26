@@ -1,26 +1,26 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import type {
   DiagnosticPrediction,
   DiagnosticUIState,
   ClinicalSamplePreset,
-} from '../types/diagnostics';
+} from "../types/diagnostics";
 import {
   LeafImageDropzone,
   SamplingBestPracticesCard,
   DiagnosticVerdictCard,
   VerdictSkeletonLoader,
-} from '../components/Diagnostics';
-import { validateLeafImage } from '../utils/imageValidation';
+} from "../components/Diagnostics";
+import { validateLeafImage } from "../utils/imageValidation";
 import {
   classifyLeafImage,
   CLINICAL_SAMPLE_PRESETS,
   presetToPrediction,
-} from '../services/diagnosticsService';
+} from "../services/diagnosticsService";
 
 export const LeafDiagnosticsPage: React.FC = () => {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const [uiState, setUiState] = useState<DiagnosticUIState>('IDLE');
+  const [uiState, setUiState] = useState<DiagnosticUIState>("IDLE");
   const [verdict, setVerdict] = useState<DiagnosticPrediction | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fileMetadata, setFileMetadata] = useState<{
@@ -36,7 +36,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
   // Clean up object URLs when selectedImageUrl changes or on unmount
   useEffect(() => {
     return () => {
-      if (selectedImageUrl && selectedImageUrl.startsWith('blob:')) {
+      if (selectedImageUrl && selectedImageUrl.startsWith("blob:")) {
         URL.revokeObjectURL(selectedImageUrl);
       }
     };
@@ -56,14 +56,14 @@ export const LeafDiagnosticsPage: React.FC = () => {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    if (selectedImageUrl && selectedImageUrl.startsWith('blob:')) {
+    if (selectedImageUrl && selectedImageUrl.startsWith("blob:")) {
       URL.revokeObjectURL(selectedImageUrl);
     }
     setSelectedImageUrl(null);
     setVerdict(null);
     setErrorMessage(null);
     setFileMetadata(null);
-    setUiState('IDLE');
+    setUiState("IDLE");
     activeFileRef.current = null;
   };
 
@@ -72,25 +72,29 @@ export const LeafDiagnosticsPage: React.FC = () => {
     setVerdict(null);
 
     // 1. Instant preview URL & validating state
-    if (selectedImageUrl && selectedImageUrl.startsWith('blob:')) {
+    if (selectedImageUrl && selectedImageUrl.startsWith("blob:")) {
       URL.revokeObjectURL(selectedImageUrl);
     }
     const previewUrl = URL.createObjectURL(file);
     setSelectedImageUrl(previewUrl);
     activeFileRef.current = file;
-    setUiState('VALIDATING');
+    setUiState("VALIDATING");
 
     // 2. Client-Side Pre-Flight Validation
     const validation = await validateLeafImage(file);
     if (!validation.valid) {
-      setErrorMessage(validation.error || 'Invalid leaf image. Please check format and dimensions.');
-      setUiState('REJECTED');
+      setErrorMessage(
+        validation.error ||
+          "Invalid leaf image. Please check format and dimensions.",
+      );
+      setUiState("REJECTED");
       return;
     }
 
     setFileMetadata({
       name: file.name,
-      sizeMb: validation.fileSizeMb || Number((file.size / (1024 * 1024)).toFixed(2)),
+      sizeMb:
+        validation.fileSizeMb || Number((file.size / (1024 * 1024)).toFixed(2)),
       width: validation.width,
       height: validation.height,
     });
@@ -106,7 +110,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    setUiState('INFERENCING');
+    setUiState("INFERENCING");
     setErrorMessage(null);
 
     // A run that was cancelled or replaced (Retake, Abort, sample preset) must not touch the page.
@@ -117,19 +121,21 @@ export const LeafDiagnosticsPage: React.FC = () => {
       if (!isCurrentRun()) return;
       setVerdict(prediction);
       if (prediction.requiresRescan) {
-        setUiState('LOW_CONFIDENCE');
+        setUiState("LOW_CONFIDENCE");
       } else {
-        setUiState('SUCCESS');
+        setUiState("SUCCESS");
       }
     } catch (err: unknown) {
       if (!isCurrentRun()) return;
       const error = err as Error;
-      if (error?.name === 'AbortError' || controller.signal.aborted) {
-        setUiState('IDLE');
+      if (error?.name === "AbortError" || controller.signal.aborted) {
+        setUiState("IDLE");
         return;
       }
-      setErrorMessage(error.message || 'Vision service error occurred during classification.');
-      setUiState('ERROR');
+      setErrorMessage(
+        error.message || "Vision service error occurred during classification.",
+      );
+      setUiState("ERROR");
     } finally {
       if (isCurrentRun()) abortControllerRef.current = null;
     }
@@ -140,7 +146,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    setUiState('IDLE');
+    setUiState("IDLE");
   };
 
   const handleRetryScan = () => {
@@ -153,7 +159,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
     handleReset();
     const prediction = presetToPrediction(preset);
     setVerdict(prediction);
-    setUiState(preset.severityTier === 'Tier 1' ? 'LOW_CONFIDENCE' : 'SUCCESS');
+    setUiState(preset.severityTier === "Tier 1" ? "LOW_CONFIDENCE" : "SUCCESS");
     if (preset.sampleImageUrl) {
       setSelectedImageUrl(preset.sampleImageUrl);
     }
@@ -177,7 +183,9 @@ export const LeafDiagnosticsPage: React.FC = () => {
             <span>/</span>
             <span>Operations & Agronomy</span>
             <span>/</span>
-            <span className="text-ag-ink font-semibold">AI Leaf Diagnostics</span>
+            <span className="text-ag-ink font-semibold">
+              AI Leaf Diagnostics
+            </span>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -205,15 +213,14 @@ export const LeafDiagnosticsPage: React.FC = () => {
         {/* Page Title & Clinical Quick-Select Toolbar */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-ag-brand-subtle border border-emerald-300 text-teal-800 text-[11px] font-semibold tracking-wide uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse" />
-              <span>MobileNetV3-Large Dual-Head ONNX Engine</span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-ag-ink tracking-tight font-display">
               AI Foliar Pathology & Vision Diagnostics
             </h1>
             <p className="text-xs sm:text-sm text-ag-ink-secondary max-w-2xl">
-              High-sunlight foliar diagnostic workbench. Ingest plant leaf photos via camera or file upload to generate instant cellular pathology classifications, dual-coded risk severity, and actionable agronomic advisories.
+              High-sunlight foliar diagnostic workbench. Ingest plant leaf
+              photos via camera or file upload to generate instant cellular
+              pathology classifications, dual-coded risk severity, and
+              actionable agronomic advisories.
             </p>
           </div>
 
@@ -228,7 +235,9 @@ export const LeafDiagnosticsPage: React.FC = () => {
                   key={preset.id}
                   type="button"
                   onClick={() => handleSelectPreset(preset)}
-                  disabled={uiState === 'VALIDATING' || uiState === 'INFERENCING'}
+                  disabled={
+                    uiState === "VALIDATING" || uiState === "INFERENCING"
+                  }
                   className="disabled:cursor-not-allowed disabled:opacity-50 px-3 py-2 min-h-[44px] touch-manipulation rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-300 hover:border-ag-brand text-ag-ink flex items-center gap-1.5 ag-interactive shadow-xs cursor-pointer"
                   title={`Test ${preset.label} (${preset.severityTier})`}
                 >
@@ -260,7 +269,7 @@ export const LeafDiagnosticsPage: React.FC = () => {
 
           {/* Right Column: Diagnostic Verdict & Agronomic Advisory Card (Cols 6-12, ~58% width) */}
           <div className="lg:col-span-7">
-            {uiState === 'INFERENCING' ? (
+            {uiState === "INFERENCING" ? (
               <VerdictSkeletonLoader />
             ) : verdict ? (
               <DiagnosticVerdictCard
@@ -275,25 +284,15 @@ export const LeafDiagnosticsPage: React.FC = () => {
                   🔬
                 </div>
                 <div className="space-y-1.5 max-w-md mx-auto">
-                  <h3 className="text-base font-bold text-ag-ink">Diagnostic Engine Ready</h3>
+                  <h3 className="text-base font-bold text-ag-ink">
+                    Diagnostic Engine Ready
+                  </h3>
                   <p className="text-xs sm:text-sm text-ag-ink-secondary leading-relaxed">
-                    Select or photograph a single plant leaf from Tomato, Potato, Corn, Apple, Grape, Rice, or Cassava to run deep learning foliar diagnostics and view treatment recommendations.
+                    Select or photograph a single plant leaf from Tomato,
+                    Potato, Corn, Apple, Grape, Rice, or Cassava to run deep
+                    learning foliar diagnostics and view treatment
+                    recommendations.
                   </p>
-                </div>
-
-                <div className="pt-3 max-w-sm mx-auto grid grid-cols-2 gap-3 text-left">
-                  <div className="p-3 rounded-lg bg-ag-surface-muted border border-ag-border space-y-1">
-                    <span className="text-xs font-semibold text-ag-ink flex items-center gap-1.5">
-                      <span>⚡</span> Sub-85ms
-                    </span>
-                    <p className="text-[11px] text-ag-ink-secondary">Real-time CPU ONNX inference</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-ag-surface-muted border border-ag-border space-y-1">
-                    <span className="text-xs font-semibold text-ag-ink flex items-center gap-1.5">
-                      <span>🛡️</span> Dual Coded
-                    </span>
-                    <p className="text-[11px] text-ag-ink-secondary">4-Tier Agronomic Severity Ramp</p>
-                  </div>
                 </div>
               </div>
             )}
