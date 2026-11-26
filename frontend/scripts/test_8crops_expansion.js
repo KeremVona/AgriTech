@@ -142,14 +142,21 @@ for (const cropId of ALL_8_CROPS) {
   const txProfile = AGRONOMIC_INTERVENTION_REGISTRY[cropId];
   assert.ok(txProfile, `Missing treatment profile for ${cropId}`);
   assert.strictEqual(txProfile.cropId, cropId);
-  assert.ok(txProfile.products.length >= 3, `${cropId} has fewer than 3 chemical products`);
+  // Bacterial spot has no curative spray, and crop antibiotics are not offered, so those crops list 2 products.
+  const bacterial = /bacterial/i.test(txProfile.diseaseName);
+  assert.ok(txProfile.products.length >= (bacterial ? 2 : 3), `${cropId} has too few products`);
+  for (const product of txProfile.products) {
+    assert.ok(product.protectionDays > 0, `${product.id} needs protectionDays`);
+    assert.ok(!/tetracycline|kasugamycin|streptomycin/i.test(product.activeIngredient), `${product.id} is a crop antibiotic`);
+  }
 
   // Product categories
   const systemic = getTreatmentProducts(cropId, 'systemic_curative');
   const protectant = getTreatmentProducts(cropId, 'protectant_contact');
   const bio = getTreatmentProducts(cropId, 'bio_fungicide');
 
-  assert.ok(systemic.length >= 1, `${cropId} missing systemic_curative product`);
+  if (bacterial) assert.strictEqual(systemic.length, 0, `${cropId}: no curative spray exists for bacterial spot`);
+  else assert.ok(systemic.length >= 1, `${cropId} missing systemic_curative product`);
   assert.ok(protectant.length >= 1, `${cropId} missing protectant_contact product`);
   assert.ok(bio.length >= 1, `${cropId} missing bio_fungicide product`);
 
@@ -236,8 +243,9 @@ console.log('  [*] Test 6: Verifying agronomic PDF report assembly for all 8 cro
 for (const cropId of ALL_8_CROPS) {
   const profile = AGRONOMIC_CALIBRATION_REGISTRY[cropId];
   const dynamicOutput = calculateElapsedDays(cropId, 35, profile.cardinals.opt, profile.humidity.crit);
-  const efficacyResult = calculateInterventionEfficacy(cropId, 35, 'systemic_curative');
-  const yieldAnalytics = evaluateYieldRetention(cropId, 35, true, 'systemic_curative');
+  const category = getTreatmentProducts(cropId)[0].category;
+  const efficacyResult = calculateInterventionEfficacy(cropId, 35, category);
+  const yieldAnalytics = evaluateYieldRetention(cropId, 35, true, category);
 
   const report = assembleFieldReportData({
     cropId,
@@ -254,7 +262,7 @@ for (const cropId of ALL_8_CROPS) {
     treatmentActive: true,
     interventionSeverity: 35,
     interventionDays: 10,
-    selectedCategory: 'systemic_curative',
+    selectedCategory: category,
     selectedProductId: '',
     efficacyResult,
     yieldAnalytics,

@@ -5,7 +5,7 @@ import type {
   InterventionEfficacyResult,
   FungicideCategory,
 } from '../../models/treatmentBranchingModel.ts';
-import { AGRONOMIC_INTERVENTION_REGISTRY, evaluateYieldRetention } from '../../models/treatmentBranchingModel.ts';
+import { evaluateYieldRetention } from '../../models/treatmentBranchingModel.ts';
 
 export interface TreatmentOutcomeCardProps {
   cropId: SupportedCropId;
@@ -18,6 +18,9 @@ export interface TreatmentOutcomeCardProps {
   yieldAnalytics: YieldRetentionAnalyticsResult;
   efficacyResult: InterventionEfficacyResult;
   selectedCategory: FungicideCategory;
+  spraysSoFar?: number;
+  protectionDays?: number;
+  keepSpraying?: boolean;
   className?: string;
 }
 
@@ -32,17 +35,12 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
   yieldAnalytics,
   efficacyResult,
   selectedCategory,
+  spraysSoFar = 0,
+  protectionDays,
+  keepSpraying = true,
   className = '',
 }) => {
-  const profile = AGRONOMIC_INTERVENTION_REGISTRY[cropId] || AGRONOMIC_INTERVENTION_REGISTRY.tomato;
   const isPostTreatment = treatmentActive && currentScrubDay > interventionDay;
-
-  const manifestationNarrative =
-    selectedCategory === 'systemic_curative'
-      ? profile.manifestation.haloChlorosisEffect
-      : selectedCategory === 'protectant_contact'
-        ? profile.manifestation.sporulationSuppressionEffect
-        : profile.manifestation.necroticDesiccationEffect;
 
   const displayGLA = treatmentActive
     ? yieldAnalytics.greenLeafAreaPct
@@ -116,7 +114,7 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
             {tooLate
               ? 'Too late to pay off'
               : treatmentActive
-              ? `Rough example, after $${profile.sprayCostPerHectareUSD}/ha spray cost`
+              ? `Rough example: ${yieldAnalytics.sprayCount} ${yieldAnalytics.sprayCount === 1 ? 'spray' : 'sprays'}, $${yieldAnalytics.sprayCostUSDPerHectare}/ha`
               : 'Turn on a treatment'}
           </div>
         </div>
@@ -133,10 +131,10 @@ export const TreatmentOutcomeCard: React.FC<TreatmentOutcomeCardProps> = ({
           <div className="text-sm text-ui-ink">
             Spray on day <strong className="tabular-nums">{interventionDay.toFixed(0)}</strong> at{' '}
             <strong className="tabular-nums">{interventionSeverity.toFixed(0)}%</strong> progress. Now{' '}
-            <strong className="tabular-nums">{currentTreatedSeverity.toFixed(0)}%</strong>, levels off near{' '}
-            <strong className="tabular-nums">{plateauSeverity.toFixed(0)}%</strong> if protection is kept up.
+            <strong className="tabular-nums">{currentTreatedSeverity.toFixed(0)}%</strong> after {spraysSoFar}{' '}
+            {spraysSoFar === 1 ? 'spray' : 'sprays'}; about <strong className="tabular-nums">{plateauSeverity.toFixed(0)}%</strong> by
+            season end{keepSpraying ? ` if you re-spray every ${protectionDays ?? '—'} days` : ' after one spray wears off'}.
           </div>
-          <p className="mt-1 text-sm text-ui-ink-2">{manifestationNarrative}</p>
         </div>
       )}
     </div>

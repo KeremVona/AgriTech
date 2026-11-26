@@ -12,6 +12,7 @@ import {
   calculateTreatedSeverity,
   evaluateYieldRetention,
   getTreatmentProducts,
+  simulateTreatment,
 } from '../src/models/treatmentBranchingModel.ts';
 
 console.log('[+] Starting Agronomic Treatment Branching Unit Tests...\n');
@@ -89,64 +90,60 @@ for (const cropId of stapleCrops) {
 console.log('  [✓] Test 2 Passed: Generalized logistic decay curve, window tiers, and modality hierarchy validated');
 
 // ----------------------------------------------------------------------------
-// Test 3: Asymptotic Branching Trajectory and Latency Buffer
+// Test 3: Protection wears off; re-spraying keeps the disease lower
 // ----------------------------------------------------------------------------
 for (const cropId of stapleCrops) {
-  const sInt = 25.0; // Intervene at 25%
+  const sInt = 25.0;
 
-  // Day 0 post intervention
   const t0 = calculateTreatedSeverity(cropId, sInt, 0.0, 'systemic_curative');
-  assert.strictEqual(t0.currentSeverityPct, sInt, `At dt=0, severity must equal sInt (${cropId})`);
-  assert(t0.plateauSeverityPct >= sInt, `Plateau must be >= sInt (${cropId})`);
-  assert(!t0.isFullyArrested, `At dt=0, should not be fully arrested yet (${cropId})`);
+  assert(Math.abs(t0.currentSeverityPct - sInt) <= 0.2, `At the spray moment severity equals sInt (${cropId})`);
 
-  // Day 1 post intervention (partial arrest)
   const t1 = calculateTreatedSeverity(cropId, sInt, 1.0, 'systemic_curative');
+  const t5 = calculateTreatedSeverity(cropId, sInt, 5.0, 'systemic_curative');
   assert(t1.currentSeverityPct >= t0.currentSeverityPct, `Severity must be non-decreasing (${cropId})`);
-  assert(t1.currentSeverityPct <= t1.plateauSeverityPct, `Severity must not overshoot plateau (${cropId})`);
+  assert(t5.currentSeverityPct >= t1.currentSeverityPct, `Severity must be non-decreasing (${cropId})`);
 
-  // Day 15 post intervention (full asymptotic plateau reached)
-  const t15 = calculateTreatedSeverity(cropId, sInt, 15.0, 'systemic_curative');
-  assert(t15.isFullyArrested, `At dt=15, progression must be fully arrested (${cropId})`);
-  assert(
-    Math.abs(t15.currentSeverityPct - t15.plateauSeverityPct) <= 0.2,
-    `At dt=15, severity should equal plateau (${cropId})`
-  );
+  const untreatedLater = calculateTreatedSeverity(cropId, 100, 0, 'systemic_curative'); // spray never takes effect
+  assert(untreatedLater.plateauSeverityPct === 100, `Spraying at 100% changes nothing (${cropId})`);
 
-  // Early window latency buffer should remain small (<= 4.0% extra spread)
-  assert(
-    t15.expansionDeltaPct <= 4.0,
-    `Latency leakage in early window should be <= 4.0%, got ${t15.expansionDeltaPct}% for ${cropId}`
-  );
+  // Short protection so every crop's season spans several spray intervals.
+  const keep = simulateTreatment(cropId, sInt, 100, 'systemic_curative', { keepSpraying: true, protectionDays: 3 });
+  const once = simulateTreatment(cropId, sInt, 100, 'systemic_curative', { keepSpraying: false, protectionDays: 3 });
+  assert(keep.plateauSeverityPct < once.plateauSeverityPct, `Re-spraying must end lower than one spray (${cropId})`);
+  assert(once.plateauSeverityPct < 100, `One spray still slows the disease a little (${cropId})`);
+  assert(once.plateauSeverityPct > keep.plateauSeverityPct + 5, `One spray must wear off (${cropId})`);
+  assert(keep.spraysSeason >= 1 && once.spraysSeason === 1, `Spray counts (${cropId})`);
+
+  // Longer protection per spray means fewer sprays
+  const shortCover = simulateTreatment(cropId, sInt, 100, 'systemic_curative', { protectionDays: 3 });
+  const longCover = simulateTreatment(cropId, sInt, 100, 'systemic_curative', { protectionDays: 14 });
+  assert(shortCover.spraysSeason > longCover.spraysSeason, `Shorter protection needs more sprays (${cropId})`);
 }
-console.log('  [✓] Test 3 Passed: Smooth asymptotic relaxation, time continuity, and latency buffer confirmed');
+console.log('  [✓] Test 3 Passed: protection wears off, re-spraying and protection length matter');
 
 // ----------------------------------------------------------------------------
-// Test 4: Quantitative Yield Salvage & Financial ROI Analytics
+// Test 4: Season outcome and spray cost
 // ----------------------------------------------------------------------------
 for (const cropId of stapleCrops) {
-  // Untreated case
   const untreated = evaluateYieldRetention(cropId, 30.0, false);
   assert.strictEqual(untreated.salvagedYieldPct, 0.0, `Untreated must have 0 salvaged yield (${cropId})`);
-  assert.strictEqual(untreated.greenLeafAreaPct, 0.0, `Untreated terminal GLA must be 0 (${cropId})`);
   assert.strictEqual(untreated.netEconomicBenefitUSDPerHectare, 0, `Untreated net benefit must be 0 (${cropId})`);
+  assert.strictEqual(untreated.sprayCount, 0, `Untreated means no sprays (${cropId})`);
 
-  // Early treated case (intervened at 20%)
   const treatedEarly = evaluateYieldRetention(cropId, 20.0, true, 'systemic_curative');
-  assert(treatedEarly.salvagedYieldPct > 20.0, `Early intervention must salvage >20% yield for ${cropId}`);
-  assert(treatedEarly.greenLeafAreaPct >= 70.0, `Early intervention must retain >=70% GLA for ${cropId}`);
-  assert(treatedEarly.grossSavedUSDPerHectare > 0, `Gross saved revenue must be positive (${cropId})`);
-  assert(treatedEarly.netEconomicBenefitUSDPerHectare > 0, `Net economic benefit must be positive (${cropId})`);
-  assert(treatedEarly.returnOnInvestmentRatio >= 3.0, `Early intervention ROI must be >= 3.0x (${cropId})`);
-
-  // Late treated case (intervened at 65%)
-  const treatedLate = evaluateYieldRetention(cropId, 65.0, true, 'systemic_curative');
-  assert(
-    treatedLate.salvagedYieldPct < treatedEarly.salvagedYieldPct,
-    `Late treatment must salvage significantly less yield than early treatment (${cropId})`
+  assert(treatedEarly.salvagedYieldPct > 0, `Early spraying saves some yield for ${cropId}`);
+  assert(treatedEarly.sprayCount >= 1, `Treated means at least one spray (${cropId})`);
+  assert.strictEqual(
+    treatedEarly.sprayCostUSDPerHectare,
+    treatedEarly.sprayCount * AGRONOMIC_INTERVENTION_REGISTRY[cropId].sprayCostPerHectareUSD,
+    `Spray cost counts every spray (${cropId})`,
   );
+
+  const treatedLate = evaluateYieldRetention(cropId, 80.0, true, 'systemic_curative');
+  assert(treatedLate.salvagedYieldPct < treatedEarly.salvagedYieldPct, `Late spraying saves less (${cropId})`);
+  assert(treatedLate.netEconomicBenefitUSDPerHectare <= 0, `Spraying at 80% must not show a gain (${cropId})`);
 }
-console.log('  [✓] Test 4 Passed: Quantitative yield damage models and positive economic ROI validated');
+console.log('  [✓] Test 4 Passed: season outcome, per-spray cost and late-spray loss validated');
 
 // ----------------------------------------------------------------------------
 // Test 5: Chemical Product Filtering Utility

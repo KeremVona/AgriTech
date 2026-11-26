@@ -44,6 +44,8 @@ export interface StudioInspectorRailProps {
   onPinCurrentScrub: () => void;
   selectedCategory: FungicideCategory;
   onSelectCategory: (cat: FungicideCategory) => void;
+  keepSpraying: boolean;
+  onToggleKeepSpraying: (keep: boolean) => void;
   selectedProductId: string;
   onSelectProductId: (id: string) => void;
   efficacyResult: InterventionEfficacyResult;
@@ -77,6 +79,8 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
   onPinCurrentScrub,
   selectedCategory,
   onSelectCategory,
+  keepSpraying,
+  onToggleKeepSpraying,
   selectedProductId,
   onSelectProductId,
   efficacyResult,
@@ -233,6 +237,8 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
               onPinCurrentScrub={onPinCurrentScrub}
               selectedCategory={selectedCategory}
               onSelectCategory={onSelectCategory}
+              keepSpraying={keepSpraying}
+              onToggleKeepSpraying={onToggleKeepSpraying}
               selectedProductId={selectedProductId}
               onSelectProduct={onSelectProductId}
               efficacyResult={efficacyResult}
@@ -246,6 +252,9 @@ export const StudioInspectorRail: React.FC<StudioInspectorRailProps> = ({
               currentScrubDay={currentScrubDay}
               currentTreatedSeverity={treatedOutput.currentSeverityPct}
               plateauSeverity={treatedOutput.plateauSeverityPct}
+              spraysSoFar={treatedOutput.spraysSoFar}
+              protectionDays={treatedOutput.protectionDays}
+              keepSpraying={keepSpraying}
               yieldAnalytics={yieldAnalytics}
               efficacyResult={efficacyResult}
               selectedCategory={selectedCategory}

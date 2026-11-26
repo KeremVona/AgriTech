@@ -11,10 +11,11 @@ import type {
   YieldRetentionAnalyticsResult,
 } from '../../models/treatmentBranchingModel.ts';
 import {
+  CATEGORY_PROTECTION_DAYS,
   calculateInterventionEfficacy,
-  calculateTreatedSeverity,
   evaluateYieldRetention,
   getTreatmentProducts,
+  simulateTreatment,
 } from '../../models/treatmentBranchingModel.ts';
 import type { AgronomicFieldReportData } from '../../models/exportReportModel.ts';
 import {
@@ -66,6 +67,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
   const [selectedCategory, setSelectedCategory] = useState<FungicideCategory>('systemic_curative');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [trajectoryView, setTrajectoryView] = useState<TrajectoryViewMode>('treated');
+  const [keepSpraying, setKeepSpraying] = useState<boolean>(true);
 
   // Foliar Viewport Modes
   const [viewMode, setViewMode] = useState<FoliarViewMode>('rgb');
@@ -78,15 +80,23 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
   const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
   const [assembledReport, setAssembledReport] = useState<AgronomicFieldReportData | null>(null);
 
+  // Bacterial diseases have no curative spray: fall back to the first category this crop has products for.
+  const activeCategory: FungicideCategory =
+    getTreatmentProducts(cropId, selectedCategory).length > 0
+      ? selectedCategory
+      : getTreatmentProducts(cropId)[0]?.category ?? selectedCategory;
+
   // Derive active product id based on crop and category during render
   const availableProducts = useMemo(
-    () => getTreatmentProducts(cropId, selectedCategory),
-    [cropId, selectedCategory]
+    () => getTreatmentProducts(cropId, activeCategory),
+    [cropId, activeCategory]
   );
   const effectiveProductId =
     selectedProductId && availableProducts.some((p) => p.id === selectedProductId)
       ? selectedProductId
       : availableProducts[0]?.id || '';
+  const protectionDays =
+    availableProducts.find((p) => p.id === effectiveProductId)?.protectionDays ?? CATEGORY_PROTECTION_DAYS[activeCategory];
 
   // Synchronize microclimate when crop changes
   if (prevCropId !== cropId) {
@@ -209,28 +219,22 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
 
   // Compute treatment efficacy and outcome trajectory
   const efficacyResult: InterventionEfficacyResult = useMemo(() => {
-    return calculateInterventionEfficacy(cropId, interventionSeverity, selectedCategory);
-  }, [cropId, interventionSeverity, selectedCategory]);
+    return calculateInterventionEfficacy(cropId, interventionSeverity, activeCategory);
+  }, [cropId, interventionSeverity, activeCategory]);
 
-  const daysPostIntervention = Math.max(0, currentScrubDay - interventionDays);
+  // Same weather, product protection and re-spray choice drive the treated branch and the season outcome.
+  const scenario = useMemo(
+    () => ({ temperatureC: temperature, humidityPct: humidity, protectionDays, keepSpraying }),
+    [temperature, humidity, protectionDays, keepSpraying]
+  );
 
   const treatedOutput: TreatedSeverityTrajectoryResult = useMemo(() => {
-    return calculateTreatedSeverity(
-      cropId,
-      interventionSeverity,
-      daysPostIntervention,
-      selectedCategory
-    );
-  }, [cropId, interventionSeverity, daysPostIntervention, selectedCategory]);
+    return simulateTreatment(cropId, interventionSeverity, sliderValue, activeCategory, scenario);
+  }, [cropId, interventionSeverity, sliderValue, activeCategory, scenario]);
 
   const yieldAnalytics: YieldRetentionAnalyticsResult = useMemo(() => {
-    return evaluateYieldRetention(
-      cropId,
-      interventionSeverity,
-      treatmentActive,
-      selectedCategory
-    );
-  }, [cropId, interventionSeverity, treatmentActive, selectedCategory]);
+    return evaluateYieldRetention(cropId, interventionSeverity, treatmentActive, activeCategory, scenario);
+  }, [cropId, interventionSeverity, treatmentActive, activeCategory, scenario]);
 
   // Determine effective rendering severity
   const isPostTreatment = treatmentActive && sliderValue >= interventionSeverity;
@@ -351,7 +355,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
       treatmentActive,
       interventionSeverity,
       interventionDays,
-      selectedCategory,
+      selectedCategory: activeCategory,
       selectedProductId: effectiveProductId,
       efficacyResult,
       yieldAnalytics,
@@ -371,7 +375,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
     humidity,
     interventionDays,
     interventionSeverity,
-    selectedCategory,
+    activeCategory,
     temperature,
     treatmentActive,
     yieldAnalytics,
@@ -470,7 +474,7 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
                   <>Sprayed at {interventionSeverity.toFixed(0)}% — too late to change the outcome</>
                 ) : isPostTreatment ? (
                   <>
-                    Sprayed {stalled ? '' : <>on day <span className="font-medium tabular-nums">{interventionDays.toFixed(0)}</span> </>}· slows to about{' '}
+                    {treatedOutput.spraysSoFar} {treatedOutput.spraysSoFar === 1 ? 'spray' : 'sprays'} so far · season end about{' '}
                     <span className="font-medium tabular-nums">{treatedOutput.plateauSeverityPct.toFixed(0)}%</span>
                   </>
                 ) : (
@@ -623,7 +627,9 @@ export const DiseaseProgressionViewer: React.FC<DiseaseProgressionViewerProps> =
               interventionDays={interventionDays}
               onSetInterventionSeverity={setInterventionSeverity}
               onPinCurrentScrub={handlePinCurrentScrub}
-              selectedCategory={selectedCategory}
+              selectedCategory={activeCategory}
+              keepSpraying={keepSpraying}
+              onToggleKeepSpraying={setKeepSpraying}
               onSelectCategory={setSelectedCategory}
               selectedProductId={effectiveProductId}
               onSelectProductId={setSelectedProductId}

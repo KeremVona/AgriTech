@@ -108,3 +108,17 @@ Tomato early blight, potato late blight, corn common rust and apple scab match.
    rice/cassava) so a diagnosis can open the matching progression.
 7. **Longer term:** drive the speed with leaf-wetness hours from Open-Meteo (already used for irrigation) instead of a
    single RH slider.
+
+---
+
+## 4. Status (same branch)
+
+- **Done — recommendations 1–2:** honest labels and self-contradictions (`d0fd166`).
+- **Done — recommendation 3:** treatment now has protection that wears off. Each product has a typical re-spray
+  interval (`protectionDays`); while protected the disease runs at (1 − effect) of its normal speed, the effect is
+  re-evaluated at every re-spray, and "Keep spraying" can be turned off. Season outcome and money count every spray.
+  The product you pick now changes the result. The spray-effect curve and damage line are still hand-tuned.
+- **Done — part of recommendation 5:** crop antibiotics removed (pepper, peach — these now show "no curative spray"),
+  Inspire Super / difenoconazole slips fixed, "example products — follow the local label" note added.
+- **Open:** money in TRY / editable assumptions (4), Türkiye-registered product list (5), crop list aligned with the
+  diagnosis model (6), leaf-wetness hours from Open-Meteo (7).
