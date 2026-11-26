@@ -31,6 +31,9 @@ export const HERO = {
   subtitle: 'AgriTech maps your parcels, diagnoses leaf disease from one photo, and tells you when to water. All in one place.',
 } as const;
 
+/** Hero video, served as-is from `public/` so the browser can stream it. */
+export const HERO_VIDEO_SRC = '/media/landing-hero.mp4';
+
 export type FeaturePreviewKind = 'map' | 'diagnostics' | 'progression' | 'water';
 
 export interface Feature {

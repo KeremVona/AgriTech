@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  APP_CTA, CROPS, DIAGNOSIS_FLOW, FEATURES, FOOTER_COLUMNS, IRRIGATION_FLOW, NAV_LINKS, PRIMARY_CTA, SECONDARY_CTA,
+  APP_CTA, CROPS, DIAGNOSIS_FLOW, HERO_VIDEO_SRC, FEATURES, FOOTER_COLUMNS, IRRIGATION_FLOW, NAV_LINKS, PRIMARY_CTA, SECONDARY_CTA,
 } from '../src/components/Landing/landingContent.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -51,6 +51,7 @@ for (const crop of ['potato_stage0_healthy', 'potato_stage1_early', 'potato_stag
   images.push(`/progression-experimental/potato/${crop}.webp`);
 }
 for (const image of images) assert.ok(existsSync(`${root}public${image}`), `${image} exists in public/`);
+assert.ok(existsSync(`${root}public${HERO_VIDEO_SRC}`), `${HERO_VIDEO_SRC} exists in public/`);
 
 // ml-service's SUPPORTED_CLASSES is the source of truth for the condition lists.
 const mlKeys = new Set();
