@@ -1,10 +1,6 @@
 /**
- * CompactCropSelectorRail (SPEC-UI-007, Section 4.4).
- * Precision Ag-Intelligence light-mode 8-crop specimen selector rail with:
- * - 44px+ hit targets for touch ergonomics
- * - Auto-scroll active pill into view smoothly
- * - Light-mode design system tokens (#FFFFFF surface, #0F766E active teal accent)
- * - Full WAI-ARIA tablist/tab compliance and keyboard navigation
+ * Crop picker: one tile per crop with its healthy-leaf photo, name and disease.
+ * WAI-ARIA tablist with arrow/Home/End keys; scrolls the active tile into view on small screens.
  */
 
 import React, { useRef, useEffect } from 'react';
@@ -69,35 +65,15 @@ export const CompactCropSelectorRail: React.FC<CompactCropSelectorRailProps> = (
   };
 
   return (
-    <div
-      className={`relative w-full bg-white border border-slate-200 rounded-2xl p-2.5 shadow-xs ${className}`}
-      role="region"
-      aria-label="Crop Specimen Selector"
-    >
-      <div className="flex items-center justify-between px-2 pt-0.5 pb-2 border-b border-slate-100 mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-teal-800 font-bold flex items-center gap-1.5">
-            <span>🌱</span> Agricultural Specimen Rail
-          </span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 hidden sm:inline">
-            8 Pathosystems
-          </span>
-        </div>
-        <span className="text-[10px] text-slate-400 font-mono hidden md:inline">
-          Select crop specimen to update diffusion weights
-        </span>
-      </div>
-
-      {/* Horizontal Scroll Track */}
+    <div className={`relative ${className}`} role="region" aria-label="Crop selector">
       <div
         ref={railRef}
         role="tablist"
-        aria-label="Agricultural Crops"
-        className="flex items-center gap-2 overflow-x-auto scroll-smooth py-1 px-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        aria-label="Crops"
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-8 lg:px-0 [&::-webkit-scrollbar]:hidden"
       >
         {crops.map((crop, idx) => {
           const isSelected = selectedCrop === crop.id;
-
           return (
             <button
               key={crop.id}
@@ -112,26 +88,18 @@ export const CompactCropSelectorRail: React.FC<CompactCropSelectorRailProps> = (
               type="button"
               onClick={() => onSelectCrop(crop.id)}
               onKeyDown={(e) => handleKeyDown(e, idx)}
-              className={`shrink-0 min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2.5 border transition-all duration-150 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-700 focus:ring-offset-1 select-none ${
-                isSelected
-                  ? 'bg-teal-50 border-teal-700 text-teal-900 shadow-2xs ring-1 ring-teal-700/30 font-bold'
-                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300'
+              className={`flex w-28 shrink-0 cursor-pointer flex-col items-center rounded-2xl border px-2 pb-2.5 pt-2 text-center transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent lg:w-auto ${
+                isSelected ? 'border-ui-accent-line bg-ui-accent-soft' : 'border-ui-line bg-ui-bg hover:bg-ui-warm'
               }`}
             >
-              <span className="text-lg shrink-0 leading-none">{crop.icon}</span>
-              <div className="text-left min-w-0">
-                <div className="flex items-center gap-1.5 leading-tight">
-                  <span className={`font-bold truncate ${isSelected ? 'text-teal-950' : 'text-slate-800'}`}>
-                    {crop.label}
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-400 hidden lg:inline">
-                    ({crop.family})
-                  </span>
-                </div>
-                <div className="text-[10px] text-slate-500 font-normal truncate mt-0.5 max-w-[120px]">
-                  {crop.subtitle}
-                </div>
-              </div>
+              <img
+                src={`/progression-experimental/${crop.id}/${crop.id}_stage0_healthy.webp`}
+                alt=""
+                loading="lazy"
+                className="h-12 w-12 object-contain"
+              />
+              <span className={`mt-1.5 block text-sm ${isSelected ? 'font-medium text-ui-ink' : 'text-ui-ink'}`}>{crop.label}</span>
+              <span className="block w-full truncate text-[11px] text-ui-ink-3">{crop.subtitle}</span>
             </button>
           );
         })}

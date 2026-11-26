@@ -1,12 +1,3 @@
-/**
- * MicroclimateControlPanel (SPEC-UI-007, Section 4.7).
- * Precision Ag-Intelligence light-mode microclimate simulator featuring:
- * - Dual ambient weather sliders (Temperature & Relative Humidity)
- * - Interactive SVG Magarey Beta cardinal temperature response curve with live pin
- * - Dynamic epidemic speed multiplier badge & agronomic alert banner
- * - Preset scenarios for immediate epidemiology stress testing
- */
-
 import React, { useId, useMemo } from 'react';
 import type { SupportedCropId } from '../../types/progression.ts';
 import type { MicroclimateDiagnostics, WeatherPreset } from '../../models/agronomicTimelineModel.ts';
@@ -40,15 +31,15 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
 
   const getStatusBadgeStyle = () => {
     if (diagnostics.isStalled) {
-      return 'bg-rose-50 text-rose-800 border-rose-200';
+      return 'bg-red-50 text-red-700 border-red-200';
     }
     if (diagnostics.compositeFactor >= 0.8) {
-      return 'bg-amber-50 text-amber-800 border-amber-200';
+      return 'bg-amber-50 text-amber-700 border-amber-200';
     }
     if (diagnostics.compositeFactor >= 0.4) {
-      return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+      return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     }
-    return 'bg-sky-50 text-sky-800 border-sky-200';
+    return 'bg-ui-warm text-ui-ink-2 border-ui-line';
   };
 
   const handleApplyPreset = (preset: WeatherPreset) => {
@@ -90,85 +81,46 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
   const currentY = getY(currentTempFactor);
 
   return (
-    <div
-      className={`bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5 ${className}`}
-      role="region"
-      aria-label="Microclimate Simulation Controls"
-    >
-      {/* Header & Status Indicator */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 text-sm shadow-2xs">
-            🌡️
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              Microclimate Modifiers
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-semibold">
-                MAGAREY BETA
-              </span>
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Simulate ambient weather to dynamically accelerate or arrest pathogen development.
-            </p>
+    <div className={`space-y-4 ${className}`} role="region" aria-label="Weather Controls">
+      {/* Status: one big number + short label */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-[13px] font-medium text-ui-ink-3">Disease speed</div>
+          <div className="text-3xl font-semibold tabular-nums text-ui-ink">
+            {diagnostics.compositeFactor.toFixed(2)}×
           </div>
         </div>
-
-        {/* Live Multiplier Badge */}
-        <div className="flex items-center gap-2">
-          <div
-            className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-2 shadow-2xs ${getStatusBadgeStyle()}`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                diagnostics.isStalled ? 'bg-rose-500' : 'bg-current animate-pulse'
-              }`}
-            />
-            <span>{diagnostics.statusLabel}</span>
-            <span className="font-mono tabular-nums opacity-85">
-              ({diagnostics.compositeFactor.toFixed(2)}× speed)
-            </span>
-          </div>
-        </div>
+        <span
+          className={`rounded-full border px-3 py-1.5 text-sm font-medium ${getStatusBadgeStyle()}`}
+        >
+          {diagnostics.statusLabel}
+        </span>
       </div>
 
-      {/* Agronomic Warning / Alert Banner */}
       {diagnostics.agronomicAlert && (
         <div
-          className={`px-3.5 py-2.5 rounded-xl text-xs flex items-start gap-2.5 border transition-all ${
+          className={`rounded-xl border px-3.5 py-3 text-sm leading-snug ${
             diagnostics.isStalled
-              ? 'bg-rose-50 border-rose-200 text-rose-800'
-              : 'bg-amber-50 border-amber-200 text-amber-800'
+              ? 'border-red-200 bg-red-50 text-red-700'
+              : 'border-amber-200 bg-amber-50 text-amber-700'
           }`}
         >
-          <span className="text-sm mt-0.5">{diagnostics.isStalled ? '🛑' : '⚠️'}</span>
-          <div className="leading-relaxed">
-            <span className="font-semibold">
-              {diagnostics.isStalled ? 'Epidemic Arrested: ' : 'Epidemiological Notice: '}
-            </span>
-            {diagnostics.agronomicAlert}
-          </div>
+          {diagnostics.agronomicAlert}
         </div>
       )}
 
-      {/* Interactive Cardinal Curve SVG Mini-Visualizer */}
-      <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-            <span>📈</span>
-            <span>Thermal Response Beta Curve ({profile.diseaseName})</span>
-          </span>
-          <div className="flex items-center gap-2 font-mono text-[11px] text-slate-500">
-            <span>T_opt: <strong className="text-teal-700">{profile.cardinals.opt}°C</strong></span>
-            <span>Range: {profile.cardinals.min}–{profile.cardinals.max}°C</span>
-          </div>
+      {/* Temperature response curve */}
+      <div className="rounded-xl border border-ui-line bg-ui-warm p-3.5">
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium text-ui-ink">Best temperature for {profile.diseaseName}</span>
+          <span className="tabular-nums font-medium text-ui-accent-hover">{profile.cardinals.opt}°C</span>
         </div>
 
-        <div className="w-full flex justify-center py-1">
+        <div className="flex w-full justify-center py-1">
           <svg
             viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-            className="w-full max-w-[320px] h-[72px] overflow-visible"
-            aria-label="Magarey Beta Temperature Curve Chart"
+            className="h-[72px] w-full max-w-[320px] overflow-visible"
+            aria-label="Disease speed by temperature chart"
           >
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -176,30 +128,9 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
                 <stop offset="100%" stopColor="#0F766E" stopOpacity="0.02" />
               </linearGradient>
             </defs>
-
-            {/* Shaded Area under Curve */}
             <path d={areaPoints.join(' ')} fill={`url(#${gradientId})`} />
-
-            {/* Base Line */}
-            <line
-              x1="0"
-              y1={svgHeight - 4}
-              x2={svgWidth}
-              y2={svgHeight - 4}
-              stroke="#CBD5E1"
-              strokeWidth="1"
-            />
-
-            {/* Cardinal Curve */}
-            <path
-              d={curvePoints.join(' ')}
-              fill="none"
-              stroke="#0F766E"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-            />
-
-            {/* Vertical Marker for Current Temperature */}
+            <line x1="0" y1={svgHeight - 4} x2={svgWidth} y2={svgHeight - 4} stroke="#CBD5E1" strokeWidth="1" />
+            <path d={curvePoints.join(' ')} fill="none" stroke="#0F766E" strokeWidth="2.2" strokeLinecap="round" />
             <line
               x1={currentX}
               y1={currentY}
@@ -209,32 +140,21 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
               strokeWidth="1.5"
               strokeDasharray="2 2"
             />
-
-            {/* Current Temperature Pin Point */}
-            <circle
-              cx={currentX}
-              cy={currentY}
-              r="4.5"
-              fill="#0F766E"
-              stroke="#FFFFFF"
-              strokeWidth="2"
-            />
+            <circle cx={currentX} cy={currentY} r="4.5" fill="#0F766E" stroke="#FFFFFF" strokeWidth="2" />
           </svg>
         </div>
 
-        <div className="flex justify-between text-[10px] text-slate-400 font-mono pt-0.5">
-          <span>{tMinAxis}°C (Min: {profile.cardinals.min}°C)</span>
-          <span className="text-teal-700 font-semibold">{temperature.toFixed(1)}°C Live Position</span>
-          <span>{tMaxAxis}°C (Max: {profile.cardinals.max}°C)</span>
+        <div className="flex justify-between text-xs tabular-nums text-ui-ink-3">
+          <span>{tMinAxis}°C</span>
+          <span className="font-medium text-ui-accent-hover">{temperature.toFixed(1)}°C now</span>
+          <span>{tMaxAxis}°C</span>
         </div>
       </div>
 
-      {/* Quick Weather Presets */}
+      {/* Presets */}
       <div>
-        <label className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold block mb-2">
-          Microclimate Presets
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="mb-2 text-[13px] font-medium text-ui-ink-3">Quick weather</div>
+        <div className="grid grid-cols-2 gap-2">
           {WEATHER_PRESETS.map((preset) => {
             const isSelected =
               Math.abs(temperature - preset.temperature) < 1 &&
@@ -245,18 +165,16 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
                 key={preset.id}
                 type="button"
                 onClick={() => handleApplyPreset(preset)}
-                className={`p-2.5 rounded-xl border text-left transition-all duration-150 active:scale-95 cursor-pointer ${
+                aria-pressed={isSelected}
+                className={`min-h-11 cursor-pointer rounded-xl border p-2.5 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent ${
                   isSelected
-                    ? 'bg-teal-50 border-teal-600 text-teal-900 shadow-2xs'
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    ? 'border-ui-accent-line bg-ui-accent-soft text-ui-ink'
+                    : 'border-ui-line bg-ui-bg text-ui-ink hover:bg-ui-warm'
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-semibold text-xs">
-                  <span>{preset.icon}</span>
-                  <span className="truncate">{preset.label}</span>
-                </div>
-                <div className="text-[10px] font-mono tabular-nums text-teal-700 font-medium mt-1">
-                  {preset.temperature}°C • {preset.humidity}% RH
+                <div className="truncate text-sm font-medium">{preset.label}</div>
+                <div className="mt-0.5 text-xs tabular-nums text-ui-ink-2">
+                  {preset.temperature}°C · {preset.humidity}%
                 </div>
               </button>
             );
@@ -264,23 +182,13 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
         </div>
       </div>
 
-      {/* Sliders Grid: Temperature & Relative Humidity */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-        {/* Temperature Slider */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs">🌡️</span>
-              <span className="text-xs font-semibold text-slate-700">Ambient Temperature</span>
-            </div>
-            <div className="flex items-center gap-1.5 font-mono tabular-nums">
-              <span className="text-xs font-bold text-teal-700">{temperature.toFixed(1)}°C</span>
-              <span className="text-[10px] text-slate-400">
-                (Opt: {profile.cardinals.opt}°C)
-              </span>
-            </div>
+      {/* Sliders */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="space-y-2 rounded-xl border border-ui-line bg-ui-warm p-3.5">
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm font-medium text-ui-ink">Temperature</span>
+            <span className="text-xl font-semibold tabular-nums text-ui-ink">{temperature.toFixed(1)}°C</span>
           </div>
-
           <input
             type="range"
             min={0}
@@ -288,32 +196,21 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
             step={0.5}
             value={temperature}
             onChange={(e) => onTemperatureChange(parseFloat(e.target.value))}
-            className="w-full accent-teal-700 bg-slate-200 rounded-lg h-2 cursor-pointer"
+            className="h-6 w-full cursor-pointer accent-[var(--color-ui-accent)] focus-visible:outline-2 focus-visible:outline-ui-accent"
             aria-label="Ambient Temperature (°C)"
           />
-
-          <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-            <span>0°C (Min: {profile.cardinals.min}°C)</span>
-            <span className="text-teal-700 font-semibold">{profile.cardinals.opt}°C Peak</span>
-            <span>45°C (Max: {profile.cardinals.max}°C)</span>
+          <div className="flex justify-between text-xs tabular-nums text-ui-ink-3">
+            <span>0°C</span>
+            <span>Best {profile.cardinals.opt}°C</span>
+            <span>45°C</span>
           </div>
         </div>
 
-        {/* Relative Humidity Slider */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs">💧</span>
-              <span className="text-xs font-semibold text-slate-700">Relative Humidity (RH)</span>
-            </div>
-            <div className="flex items-center gap-1.5 font-mono tabular-nums">
-              <span className="text-xs font-bold text-teal-700">{humidity.toFixed(0)}%</span>
-              <span className="text-[10px] text-slate-400">
-                (Crit: {profile.humidity.crit}%)
-              </span>
-            </div>
+        <div className="space-y-2 rounded-xl border border-ui-line bg-ui-warm p-3.5">
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm font-medium text-ui-ink">Humidity</span>
+            <span className="text-xl font-semibold tabular-nums text-ui-ink">{humidity.toFixed(0)}%</span>
           </div>
-
           <input
             type="range"
             min={20}
@@ -321,14 +218,13 @@ export const MicroclimateControlPanel: React.FC<MicroclimateControlPanelProps> =
             step={1}
             value={humidity}
             onChange={(e) => onHumidityChange(parseFloat(e.target.value))}
-            className="w-full accent-teal-700 bg-slate-200 rounded-lg h-2 cursor-pointer"
+            className="h-6 w-full cursor-pointer accent-[var(--color-ui-accent)] focus-visible:outline-2 focus-visible:outline-ui-accent"
             aria-label="Relative Humidity (%)"
           />
-
-          <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-            <span>20% (Dry)</span>
-            <span className="text-amber-600 font-medium">{profile.humidity.crit}% Critical Risk</span>
-            <span>100% Saturated</span>
+          <div className="flex justify-between text-xs tabular-nums text-ui-ink-3">
+            <span>20%</span>
+            <span className="text-amber-700">Risky above {profile.humidity.crit}%</span>
+            <span>100%</span>
           </div>
         </div>
       </div>

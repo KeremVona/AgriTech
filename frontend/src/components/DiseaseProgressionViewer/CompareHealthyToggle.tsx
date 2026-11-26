@@ -14,11 +14,7 @@ export const CompareHealthyToggle: React.FC<CompareHealthyToggleProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <span id="compare-toggle-label" className="text-xs font-semibold text-slate-700">
-        Compare Healthy Baseline
-      </span>
-
+    <div className={`flex items-center gap-2.5 ${className}`}>
       <button
         type="button"
         role="switch"
@@ -26,19 +22,18 @@ export const CompareHealthyToggle: React.FC<CompareHealthyToggleProps> = ({
         aria-labelledby="compare-toggle-label"
         disabled={disabled}
         onClick={() => onToggle(!enabled)}
-        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
-          enabled ? 'bg-teal-700' : 'bg-slate-200 hover:bg-slate-300'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent ${
+          enabled ? 'bg-ui-accent' : 'bg-ui-warm-strong hover:bg-[#E2DFDB]'
+        } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
       >
         <span
-          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-            enabled ? 'translate-x-5' : 'translate-x-0'
+          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+            enabled ? 'translate-x-4' : 'translate-x-0'
           }`}
         />
       </button>
-
-      <span className="text-[11px] font-mono text-slate-500">
-        {enabled ? 'Side-by-Side (A/B)' : 'Single View'}
+      <span id="compare-toggle-label" className="text-sm text-ui-ink-2">
+        Compare with healthy
       </span>
     </div>
   );
