@@ -20,6 +20,7 @@ export const NAV_LINKS: readonly NavLink[] = [
   { label: 'Features', href: '#features' },
   { label: 'How it works', href: '#how-it-works' },
   { label: 'Crops', href: '#crops' },
+  { label: 'Blog', href: '/blog' },
 ];
 
 export const PRIMARY_CTA = { label: 'Open the field map', to: '/map' } as const;
@@ -180,6 +181,9 @@ export const FOOTER_COLUMNS: readonly FooterColumn[] = [
   },
   {
     title: 'Project',
-    links: [{ label: 'GitHub repository', href: REPOSITORY_URL, external: true }],
+    links: [
+      { label: 'Blog', href: '/blog' },
+      { label: 'GitHub repository', href: REPOSITORY_URL, external: true },
+    ],
   },
 ];
