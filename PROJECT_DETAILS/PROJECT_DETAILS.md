@@ -148,20 +148,16 @@ _Focus: WebGL integration, interactive inspection, and educational labeling._
   - Place interactive 3D HTML / SVG pins (raycasted to model mesh vertices) on specific plant regions: **Leaf blade**, **Stem/Stalk**, and **Root collar**.
   - Clicking a pin opens an inspection card demonstrating how common diseases manifest in that specific anatomical area (e.g., click tomato lower stem $\to$ show _Fusarium wilt_ vascular browning).
 
-#### Phase 5: Türkiye Regional Crop Climate Risk Engine (Feature #3)
+#### Phase 5: Türkiye Regional Risk Map (Feature #3)
 
-_Focus: Macro-agricultural risk modeling, regional GeoJSON visualization, and interactive dashboards._
+_Focus: Province-level soil, climate and crop-sensitivity risk profile, as described in the TÜBİTAK 2209-A proposal (section 2.4)._
 
-- **Spatial Boundary Data:** Procure or compile a clean GeoJSON dataset representing Türkiye's 7 agricultural/geographic regions (Marmara, Ege, Akdeniz, İç Anadolu, Karadeniz, Doğu Anadolu, Güneydoğu Anadolu) or down to provincial (81 İl) boundaries.
-- **Macro Risk Scoring Model:**
-  - Fetch regional weather parameters via Open-Meteo / Turkish State Meteorological Service (MGM) data feeds (precipitation anomalies, temperature deviations, consecutive dry days, humidity).
-  - Formulate risk index formulas ($0 - 100\%$):
-    - **Fungal Disease Risk Index (e.g., Karadeniz / Marmara):** High relative humidity ($>80\%$) + sustained moderate temperatures ($18\text{--}24^\circ\text{C}$) $\to$ High Mildew/Blight vulnerability.
-    - **Drought / Heat Stress Index (e.g., Güneydoğu / İç Anadolu):** Extended consecutive dry days ($>25\text{ days}$) + high temperatures ($>35^\circ\text{C}$) $\to$ High irrigation strain.
-    - **Frost Risk Index (e.g., Doğu Anadolu / İç Anadolu):** Sudden unseasonal temperature drops ($<0^\circ\text{C}$) during spring bud burst.
-- **Choropleth Interactive Map:**
-  - Render an interactive Türkiye map layer with dynamic color fills (Green = Low Risk, Amber = Moderate, Red = Severe).
-  - Allow clicking any region to reveal a breakdown: active crop vulnerabilities, prevailing weather anomaly percentages, and preventative agronomic advisories.
+- **Coverage:** 81 provinces (il) × 6 crops (tomato, potato, corn, apple, grape, rice), one score per province × crop × year over each crop's growing season.
+- **Risk families:** Soil (SoilGrids 2.0, FAO GSSmap, slope-based erosion estimate), Climate (ERA5-Land: SPEI drought, extreme heat, frost, heavy rain, fungal suitability), and a literature-based crop sensitivity table reviewed by the advisor.
+- **Scoring:** factors become 0–100 percentiles against reference years up to 2018, are combined with weights from the crop table, and are shown as low / medium / high. Learned (NNLS) weights and the H4 yield-loss validation come later in the TÜBİTAK period.
+- **Architecture:** an offline Python pipeline (`risk-pipeline/`) computes all numbers into PostGIS; a read-only `/api/v1/risk` API serves them; the `/risk` page shows a choropleth map with an always-visible side panel (ranked list and province profile).
+- **No causal claim:** the page states that it shows how risk factors line up, not what causes losses.
+- **Details:** `docs/superpowers/specs/2026-11-27-phase5-regional-risk-map-design.md` and `PROJECT_DETAILS/Phase Plans/Phase 5.md`.
 
 #### Phase 6: Full Integration, Telemetry Dashboard & Mobile Polish
 

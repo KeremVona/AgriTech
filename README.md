@@ -208,7 +208,7 @@ All technical blueprints, phase plans, and database design documents are organiz
 
 ### 1. Master System Specification
 
-- **[PROJECT_DETAILS/PROJECT_DETAILS.md](PROJECT_DETAILS/PROJECT_DETAILS.md)**: Complete capstone vision, system architecture, mathematical models (FAO-56 Penman-Monteith), ML dataset pipeline (PlantVillage), and the 3 flagship features (Disease Progression Slider, 3D Plant Anatomy Explorer, and Türkiye Regional Risk Engine).
+- **[PROJECT_DETAILS/PROJECT_DETAILS.md](PROJECT_DETAILS/PROJECT_DETAILS.md)**: Complete capstone vision, system architecture, mathematical models (FAO-56 Penman-Monteith), ML dataset pipeline (PlantVillage), and the 3 flagship features (Disease Progression Slider, 3D Plant Anatomy Explorer, and Türkiye Regional Risk Map).
 
 ### 2. Database Design & Schemas
 
@@ -225,5 +225,5 @@ All technical blueprints, phase plans, and database design documents are organiz
 - **[PROJECT_DETAILS/Phase Plans/Phase 2.md](PROJECT_DETAILS/Phase%20Plans/Phase%202.md)**: Phase 2 — Spatial Foundation, PostGIS Relational Data Layer & Leaflet Vector Boundary Editor.
 - **[PROJECT_DETAILS/Phase Plans/Phase 3.md](PROJECT_DETAILS/Phase%20Plans/Phase%203.md)**: Phase 3 — Open-Meteo Ingestion, Dynamic FAO-56 Irrigation Engine & IoT Telemetry Simulator.
 - **[PROJECT_DETAILS/Phase Plans/Phase 4.md](PROJECT_DETAILS/Phase%20Plans/Phase%204.md)**: Phase 4 — Interactive 3D Plant Anatomy Explorer (Feature #2, Three.js / React Three Fiber).
-- **[PROJECT_DETAILS/Phase Plans/Phase 5.md](PROJECT_DETAILS/Phase%20Plans/Phase%205.md)**: Phase 5 — Türkiye Regional Crop Climate Risk Engine (Feature #3, 7 Regions / 81 Provinces).
+- **[PROJECT_DETAILS/Phase Plans/Phase 5.md](PROJECT_DETAILS/Phase%20Plans/Phase%205.md)**: Phase 5 — Türkiye Regional Risk Map (Feature #3, 81 provinces × 6 crops; soil, climate and crop sensitivity).
 - **[PROJECT_DETAILS/Phase Plans/Phase 6.md](PROJECT_DETAILS/Phase%20Plans/Phase%206.md)**: Phase 6 — Full Integration, Mobile PWA In-Field Inspection, DBSCAN Outbreak Clustering & Capstone Demo Triggers.
