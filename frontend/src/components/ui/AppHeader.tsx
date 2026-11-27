@@ -5,6 +5,7 @@ const APP_LINKS = [
   { to: '/map', label: 'Field map', short: 'Map' },
   { to: '/diagnostics', label: 'Leaf diagnostics', short: 'Diagnose' },
   { to: '/disease-progression', label: 'Disease progression', short: 'Progression' },
+  { to: '/blog', label: 'Blog', short: 'Blog' },
 ] as const;
 
 /** Notion-style top bar shared by the app pages: logo home link + main sections. */
@@ -14,7 +15,7 @@ export function AppHeader() {
       <nav aria-label="Main" className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
         <Link to="/" className="flex shrink-0 items-center gap-2 rounded-md text-ui-ink focus-visible:outline-2 focus-visible:outline-ui-accent">
           <LeafMark className="h-6 w-6" />
-          <span className="font-semibold tracking-tight">AgriTech</span>
+          <span className="sr-only font-semibold tracking-tight sm:not-sr-only">AgriTech</span>
         </Link>
         <ul role="list" className="-mr-2 ml-auto flex items-center gap-0.5">
           {APP_LINKS.map((link) => (

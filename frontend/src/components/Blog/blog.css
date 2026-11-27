@@ -1,0 +1,139 @@
+/* Long-form text for blog posts (see docs/superpowers/specs/2026-11-27-blog-design.md). */
+.blog-prose {
+  color: var(--color-ui-ink);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.blog-prose > * + * {
+  margin-top: 1.15em;
+}
+
+.blog-prose h2 {
+  margin-top: 2.2em;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.blog-prose h3 {
+  margin-top: 1.8em;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.blog-prose h2 + *,
+.blog-prose h3 + * {
+  margin-top: 0.6em;
+}
+
+.blog-prose strong {
+  font-weight: 600;
+}
+
+.blog-prose a {
+  color: var(--color-ui-accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.blog-prose a:hover {
+  color: var(--color-ui-ink);
+}
+
+.blog-prose ul,
+.blog-prose ol {
+  padding-left: 1.4em;
+}
+
+.blog-prose ul {
+  list-style: disc;
+}
+
+.blog-prose ol {
+  list-style: decimal;
+}
+
+.blog-prose li + li {
+  margin-top: 0.4em;
+}
+
+.blog-prose li::marker {
+  color: var(--color-ui-ink-3);
+}
+
+.blog-prose blockquote {
+  border-left: 3px solid var(--color-ui-ink);
+  padding-left: 1em;
+  font-size: 19px;
+  color: var(--color-ui-ink);
+}
+
+.blog-prose code {
+  border-radius: 4px;
+  background: var(--color-ui-warm);
+  padding: 0.15em 0.35em;
+  font-size: 0.88em;
+}
+
+.blog-prose pre {
+  overflow-x: auto;
+  border-radius: 12px;
+  background: var(--color-ui-warm);
+  padding: 1em 1.2em;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.blog-prose pre code {
+  background: none;
+  padding: 0;
+}
+
+.blog-prose img {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--color-ui-line);
+}
+
+.blog-prose hr {
+  margin: 2.5em 0;
+  border: 0;
+  border-top: 1px solid var(--color-ui-line);
+}
+
+/* Tables scroll sideways on narrow screens instead of widening the page. */
+.blog-table {
+  overflow-x: auto;
+  border: 1px solid var(--color-ui-line);
+  border-radius: 12px;
+}
+
+.blog-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.blog-table th,
+.blog-table td {
+  padding: 0.65em 0.9em;
+  text-align: left;
+  vertical-align: top;
+}
+
+.blog-table th {
+  background: var(--color-ui-warm);
+  font-weight: 600;
+}
+
+.blog-table tr + tr td {
+  border-top: 1px solid var(--color-ui-line);
+}
+
+.blog-table td:first-child {
+  min-width: 14em;
+}

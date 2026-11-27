@@ -14,6 +14,10 @@ const fieldMapRoute = <Suspense fallback={<div className="p-6 text-ag-ink" role=
 const ParcelIrrigationPage = lazy(() => import('./pages/ParcelIrrigationPage').then((module) => ({ default: module.ParcelIrrigationPage })));
 const parcelIrrigationRoute = <Suspense fallback={<div className="p-6 text-ag-ink" role="status">Loading water dashboard…</div>}><ParcelIrrigationPage /></Suspense>;
 
+const BlogIndexPage = lazy(() => import('./pages/BlogIndexPage').then((module) => ({ default: module.BlogIndexPage })));
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then((module) => ({ default: module.BlogPostPage })));
+const blogFallback = <div className="p-6 text-ag-ink" role="status">Loading blog…</div>;
+
 function App() {
   return (
     <BrowserRouter>
@@ -37,6 +41,10 @@ function App() {
 
         {/* Parcel Water Dashboard (Phase 3: TODO-307 / 308 / 309) */}
         <Route path="/parcels/:parcelId/irrigation" element={parcelIrrigationRoute} />
+
+        {/* Blog: one Markdown file per post in src/content/blog */}
+        <Route path="/blog" element={<Suspense fallback={blogFallback}><BlogIndexPage /></Suspense>} />
+        <Route path="/blog/:slug" element={<Suspense fallback={blogFallback}><BlogPostPage /></Suspense>} />
 
         {/* Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />

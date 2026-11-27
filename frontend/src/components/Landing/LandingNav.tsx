@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { APP_CTA, NAV_LINKS } from './landingContent.ts';
 import { LeafMark, PillLink } from './primitives.tsx';
 
+const NAV_LINK_CLASS =
+  'rounded-md px-3 py-1.5 text-sm text-ui-ink-2 transition-colors hover:bg-ui-warm hover:text-ui-ink focus-visible:outline-2 focus-visible:outline-ui-accent';
+
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
 
@@ -28,12 +31,15 @@ export function LandingNav() {
         <ul className="hidden items-center gap-1 md:flex">
           {NAV_LINKS.map((link) => (
             <li key={link.href}>
-              <a
-                href={link.href}
-                className="rounded-md px-3 py-1.5 text-sm text-ui-ink-2 transition-colors hover:bg-ui-warm hover:text-ui-ink focus-visible:outline-2 focus-visible:outline-ui-accent"
-              >
-                {link.label}
-              </a>
+              {link.href.startsWith('#') ? (
+                <a href={link.href} className={NAV_LINK_CLASS}>
+                  {link.label}
+                </a>
+              ) : (
+                <Link to={link.href} className={NAV_LINK_CLASS}>
+                  {link.label}
+                </Link>
+              )}
             </li>
           ))}
         </ul>
